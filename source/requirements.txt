@@ -1,0 +1,59 @@
+# #################################################################################################
+# Verified to work with Python 3.11
+# #################################################################################################
+
+
+# #################################################################################################
+# This file contains python only requirements to be installed with pip
+
+# Python packages that cannot be installed with pip (e.g. GDAL) are not included.
+# For Windows, GDAL wheel can be found here: https://github.com/cgohlke/geospatial-wheels
+
+# Usage: pip install -r requirements.txt
+# #################################################################################################
+
+setuptools
+numpy>=1.16
+cycler>=0.10
+python-dateutil>=2.1
+kiwisolver>=1.1
+six
+dill
+simplejson
+qrcode>=6.1
+
+rtree
+# foronoi>=1.0.3
+shapely>=2.0
+
+# ###############################
+# OR-TOOLS package is now optional
+ortools>=7.0
+# ###############################
+
+lxml
+svg.path>=4.0
+svglib
+fontTools
+ezdxf>=0.16.0,<2.0.0
+
+reportlab>=3.5
+pyserial>=3.4
+# pikepdf>=2.0  # Optional - for enhanced PDF support. Set pdf_python_parser=false in defaults.py to enable.
+pyppeteer
+
+matplotlib>=3.5.0
+pyopengl
+PyQt6>=6.1.0
+
+freetype-py
+vispy>=0.9.0
+# pyqtdarktheme==1.1.1
+
+svgtrace
+
+# To detect OS dark mode
+darkdetect
+
+gdal
+rasterio
