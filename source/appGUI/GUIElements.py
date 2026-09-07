@@ -4149,6 +4149,10 @@ class VerticalScrollArea(QtWidgets.QScrollArea):
     This widget extends QtGui.QScrollArea to make a vertical-only
     scroll area that also expands horizontally to accommodate
     its contents.
+
+    Content is hosted in a permanent inner widget. Calling QScrollArea.takeWidget()
+    / setWidget() on the real content is unsafe in PyQt6 (segfault when the C++
+    object is destroyed while Python still holds Object.ui).
     """
 
     def __init__(self, parent=None):
@@ -4156,6 +4160,13 @@ class VerticalScrollArea(QtWidgets.QScrollArea):
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        self._fc_host = QtWidgets.QWidget()
+        self._fc_layout = QtWidgets.QVBoxLayout(self._fc_host)
+        self._fc_layout.setContentsMargins(0, 0, 0, 0)
+        self._fc_layout.setSpacing(0)
+        self._fc_content = None
+        QtWidgets.QScrollArea.setWidget(self, self._fc_host)
 
     @staticmethod
     def _widget_alive(widget):
@@ -4174,27 +4185,39 @@ class VerticalScrollArea(QtWidgets.QScrollArea):
         return True
 
     def alive_widget(self):
-        widget = self.widget()
-        return widget if self._widget_alive(widget) else None
+        return self._fc_content if self._widget_alive(self._fc_content) else None
+
+    def widget(self):
+        return self._fc_content
+
+    def setWidget(self, widget):
+        self.replace_widget(widget)
+
+    def takeWidget(self):
+        return self.replace_widget(None)
 
     def replace_widget(self, new_widget):
-        """
-        Replace the scroll-area widget without discarding takeWidget() ownership.
-        Dropping that return value can destroy the C++ object while Python still
-        holds self.ui — a common PyQt6 segfault.
-        """
-        current = self.alive_widget()
+        """Swap content inside the host. Does not call QScrollArea.takeWidget()."""
+        current = self._fc_content
         if current is new_widget:
             return current
 
-        taken = None
         if current is not None:
-            taken = self.takeWidget()
+            try:
+                current.removeEventFilter(self)
+            except RuntimeError:
+                pass
+            self._fc_layout.removeWidget(current)
+            if self._widget_alive(current):
+                current.setParent(None)
+            self._fc_content = None
 
         if new_widget is not None and self._widget_alive(new_widget):
-            self.setWidget(new_widget)
+            self._fc_layout.addWidget(new_widget)
+            new_widget.installEventFilter(self)
+            self._fc_content = new_widget
 
-        return taken
+        return current
 
     def eventFilter(self, source, event):
         """
@@ -4206,11 +4229,14 @@ class VerticalScrollArea(QtWidgets.QScrollArea):
         :return:
         """
         if event.type() == QtCore.QEvent.Type.Resize:
-            widget = self.alive_widget()
-            if widget is not None and source is widget:
-                self.setMinimumWidth(
-                    widget.sizeHint().width() + self.verticalScrollBar().sizeHint().width()
-                )
+            content = self.alive_widget()
+            if content is not None and source is content:
+                try:
+                    self.setMinimumWidth(
+                        content.sizeHint().width() + self.verticalScrollBar().sizeHint().width()
+                    )
+                except RuntimeError:
+                    pass
         return QtWidgets.QWidget.eventFilter(self, source, event)
 
 

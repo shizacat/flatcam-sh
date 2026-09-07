@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed a segfault when selecting an object: a second discarded `takeWidget()` destroyed the Properties UI in PyQt6
+- Fixed a segfault when selecting an object: Properties UI is swapped inside a host widget instead of `QScrollArea.takeWidget()`, which destroyed the still-referenced form in PyQt6
 
 ## [0.0.0] - 2026-09-07
 
