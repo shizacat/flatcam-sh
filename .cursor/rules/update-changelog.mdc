@@ -1,64 +1,64 @@
 ---
-description: Обновление changelog.md при изменениях в проекте
+description: Update changelog.md on project changes
 alwaysApply: true
 ---
 
-# Обновление changelog
+# Changelog updates
 
-При любых значимых изменениях в проекте обновляй `changelog.md` в корне репозитория.
+On any meaningful project change, update `changelog.md` in the repository root.
 
-## Формат
+## Format
 
-- Нотация [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/)
-- Версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
-- Шаблон: `rules/templates/changelog.md` (при создании проекта — скопировать в корень). Находиться в отдельном репозитории https://gitlab.centrofinans.ru/devops/empty-project.
-- Заголовки секций — на английском (`Added`, `Changed`, `Removed`, `Fixed`)
-- Текст записей — **только на русском языке**
+- Notation: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/)
+- Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
+- Template: `rules/templates/changelog.md` (copy to the repo root when creating a project). Lives in a separate repository: https://gitlab.centrofinans.ru/devops/empty-project
+- Section headers — English only (`Added`, `Changed`, `Removed`, `Fixed`)
+- Entry text — **English only**
 
-## Когда обновлять
+## When to update
 
-Добавляй запись в секцию `## [Unreleased]`, если изменение:
+Add an entry under `## [Unreleased]` when the change:
 
-- добавляет, меняет или удаляет функциональность
-- исправляет баг
-- меняет поведение API, конфигурацию, протоколы или артефакты деплоя
+- adds, changes, or removes functionality
+- fixes a bug
+- changes API behavior, configuration, protocols, or deploy artifacts
 
-Не добавляй: рефакторинг без изменения поведения, правки опечаток в комментариях, чисто внутренние правки без эффекта для пользователя.
+Do not add: behavior-neutral refactors, comment typo fixes, purely internal edits with no user-facing effect.
 
-## Категории
+## Categories
 
-| Секция   | Когда использовать                                      |
-|----------|---------------------------------------------------------|
-| Added    | Новый функционал                                        |
-| Changed  | Изменение существующего поведения                       |
-| Removed  | Удалённый функционал                                    |
-| Fixed    | Исправление ошибок                                      |
+| Section  | When to use                    |
+|----------|--------------------------------|
+| Added    | New functionality              |
+| Changed  | Existing behavior changed      |
+| Removed  | Functionality removed          |
+| Fixed    | Bug fix                        |
 
-## Правила записи
+## Entry rules
 
-- Одна строка — одно изменение, начинается с `- `
-- Формулировка в прошедшем времени или от глагола: «Добавлен…», «Исправлен…»
-- Конкретно и по делу: что изменилось и для кого это важно
-- Несколько связанных правок — одной записью; несвязанные — отдельными
+- One line per change, starts with `- `
+- Past tense or verb-led: “Added…”, “Fixed…”
+- Concrete: what changed and who it matters to
+- Related edits — one entry; unrelated — separate entries
 
-## Пример
+## Example
 
 ```markdown
 ## [Unreleased]
 
 ### Added
 
-- Добавлен эндпоинт `/health` для проверки готовности сервиса
+- Added a `/health` endpoint for service readiness checks
 
 ### Fixed
 
-- Исправлена обработка пустого тела запроса в POST `/items`
+- Fixed empty-body handling in POST `/items`
 ```
 
-## Релиз
+## Release
 
-При создании тега на `main`:
+When tagging `main`:
 
-1. Переименуй `## [Unreleased]` в `## [X.Y.Z] - ГГГГ-ММ-ДД` по semver
-2. Создай новую пустую секцию `## [Unreleased]` выше
-3. Описание тега (message tag) — на русском, по тем же правилам
+1. Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` following semver
+2. Create a new empty `## [Unreleased]` section above it
+3. Tag message — English, same rules as entries
