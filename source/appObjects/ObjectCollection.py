@@ -1091,7 +1091,11 @@ class ObjectCollection(QtCore.QAbstractItemModel):
     def on_row_activated(self, index):
         if index.isValid():
             if index.internalPointer().parent_item != self.root_item:
-                self.app.ui.notebook.setCurrentWidget(self.app.ui.properties_tab)
+                notebook = self.app.ui.notebook
+                if notebook.currentWidget() is not self.app.ui.properties_tab:
+                    # Switching tab already rebuilds Properties UI via on_notebook_tab_changed.
+                    notebook.setCurrentWidget(self.app.ui.properties_tab)
+                    return
         self.on_item_activated(index)
 
     def on_row_selected(self, obj_name):

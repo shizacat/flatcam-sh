@@ -327,18 +327,10 @@ class FlatCAMObj(QtCore.QObject):
             # it seems that the takewidget() does generate a focus out event for the QDoubleSpinbox ...
             # and reconnect after the takeWidget() is done
             # self.ui.scale_entry.returnPressed.disconnect(self.on_scale_button_click)
-            self.app.ui.properties_scroll_area.takeWidget()
+            self.app.ui.properties_scroll_area.replace_widget(self.ui)
             # self.ui.scale_entry.returnPressed.connect(self.on_scale_button_click)
         except Exception as e:
             self.app.log.error("FlatCAMObj.build_ui() --> Nothing to remove: %s" % str(e))
-
-        try:
-            self.app.ui.properties_scroll_area.setWidget(self.ui)
-        except RuntimeError:
-            try:
-                self.app.ui.properties_scroll_area.setWidget(self.ui)
-            except Exception:
-                pass
         # self.ui.setMinimumWidth(100)
         # self.ui.setMaximumWidth(self.app.ui.properties_tab.sizeHint().width())
 

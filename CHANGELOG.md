@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Добавлен запуск в режиме разработчика (`./dev.sh`): трейсы исключений и стек при segfault выводятся в терминал и в `tmp/last_trace.txt`
+
+### Fixed
+
+- Исправлен segfault при выборе объекта: повторный `takeWidget()` уничтожал UI свойств в PyQt6
+
 ## [0.0.0] - 2026-09-07
 
 ### Added

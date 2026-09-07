@@ -12,6 +12,12 @@
 # ##########################################################
 
 from PyQt6 import QtGui, QtCore, QtWidgets
+
+try:
+    from PyQt6 import sip
+except ImportError:
+    sip = None
+
 from PyQt6.QtCore import Qt, pyqtSlot, pyqtSignal, QDate, QDateTime
 from PyQt6.QtWidgets import QTextEdit, QCompleter
 from PyQt6.QtGui import QKeySequence, QTextCursor, QAction
@@ -4151,6 +4157,45 @@ class VerticalScrollArea(QtWidgets.QScrollArea):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
+    @staticmethod
+    def _widget_alive(widget):
+        if widget is None:
+            return False
+        if sip is not None:
+            try:
+                if sip.isdeleted(widget):
+                    return False
+            except Exception:
+                return False
+        try:
+            widget.objectName()
+        except RuntimeError:
+            return False
+        return True
+
+    def alive_widget(self):
+        widget = self.widget()
+        return widget if self._widget_alive(widget) else None
+
+    def replace_widget(self, new_widget):
+        """
+        Replace the scroll-area widget without discarding takeWidget() ownership.
+        Dropping that return value can destroy the C++ object while Python still
+        holds self.ui — a common PyQt6 segfault.
+        """
+        current = self.alive_widget()
+        if current is new_widget:
+            return current
+
+        taken = None
+        if current is not None:
+            taken = self.takeWidget()
+
+        if new_widget is not None and self._widget_alive(new_widget):
+            self.setWidget(new_widget)
+
+        return taken
+
     def eventFilter(self, source, event):
         """
         The event filter gets automatically installed when setWidget()
@@ -4160,21 +4205,12 @@ class VerticalScrollArea(QtWidgets.QScrollArea):
         :param event:
         :return:
         """
-        if event.type() == QtCore.QEvent.Type.Resize and source == self.widget():
-            # log.debug("VerticalScrollArea: Widget resized:")
-            # log.debug(" minimumSizeHint().width() = %d" % self.widget().minimumSizeHint().width())
-            # log.debug(" verticalScrollBar().width() = %d" % self.verticalScrollBar().width())
-
-            self.setMinimumWidth(self.widget().sizeHint().width() +
-                                 self.verticalScrollBar().sizeHint().width())
-
-            # if self.verticalScrollBar().isVisible():
-            #     log.debug(" Scroll bar visible")
-            #     self.setMinimumWidth(self.widget().minimumSizeHint().width() +
-            #                          self.verticalScrollBar().width())
-            # else:
-            #     log.debug(" Scroll bar hidden")
-            #     self.setMinimumWidth(self.widget().minimumSizeHint().width())
+        if event.type() == QtCore.QEvent.Type.Resize:
+            widget = self.alive_widget()
+            if widget is not None and source is widget:
+                self.setMinimumWidth(
+                    widget.sizeHint().width() + self.verticalScrollBar().sizeHint().width()
+                )
         return QtWidgets.QWidget.eventFilter(self, source, event)
 
 
