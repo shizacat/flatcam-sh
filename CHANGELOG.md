@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added a developer launch mode (`./dev.sh`) that prints exception traces and the segfault stack to the terminal and `tmp/last_trace.txt`
+- Added a developer launch mode (`./scripts/dev.sh`) that prints exception traces and the segfault stack to the terminal and `tmp/last_trace.txt`
 
 ### Fixed
 

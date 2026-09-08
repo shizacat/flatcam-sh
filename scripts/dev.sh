@@ -2,11 +2,11 @@
 # Launch FlatCAM in developer mode.
 # Requires an activated mamba env: mamba activate flatcam
 #
-#   ./dev.sh [args...]
+#   ./scripts/dev.sh [args...]
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LAUNCH="${ROOT}/scripts/dev_launch.py"
 
 if ! command -v python >/dev/null 2>&1; then
