@@ -1,4 +1,4 @@
-"""Запуск FlatCAM в режиме разработчика: трейсы в stderr, не в исходниках."""
+"""Launch FlatCAM in developer mode: traces on stderr, without patching sources."""
 
 import faulthandler
 import os
@@ -56,7 +56,7 @@ def wrap_thread_hook() -> None:
 
 
 def keep_handlers() -> None:
-    """Qt/VisPy могут перезаписать обработчики сигналов — возвращаем faulthandler."""
+    """Qt/VisPy may overwrite signal handlers; restore faulthandler."""
     while True:
         if not faulthandler.is_enabled():
             faulthandler.enable(all_threads=True)
@@ -67,7 +67,7 @@ def keep_handlers() -> None:
 
 def main() -> None:
     if not os.path.isfile(ENTRY):
-        raise SystemExit(f"нет точки входа: {ENTRY}")
+        raise SystemExit(f"entry point not found: {ENTRY}")
 
     faulthandler.enable(all_threads=True)
     wrap_excepthook()
@@ -75,7 +75,7 @@ def main() -> None:
     threading.Thread(target=keep_handlers, daemon=True).start()
 
     print(
-        f"[dev] трейсы в stderr и {TRACE_PATH}",
+        f"[dev] traces go to stderr and {TRACE_PATH}",
         file=sys.stderr,
         flush=True,
     )
