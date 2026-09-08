@@ -283,6 +283,8 @@ class TclCommandCncjob(TclCommandSignaled):
                     local_tools_dict[tool_uid]['data']['tools_mill_dwell'] = args["dwell"]
                     local_tools_dict[tool_uid]['data']['tools_mill_dwelltime'] = args["dwelltime"]
                     local_tools_dict[tool_uid]['data']['tools_mill_min_power'] = args['las_min_pwr']
+                    local_tools_dict[tool_uid]['data']['tools_mill_laser_on'] = \
+                        self.app.options.get("tools_mill_laser_on", "M3")
                     local_tools_dict[tool_uid]['data']['tools_mill_ppname_g'] = args["pp"]
 
             self.app.milling_tool.generate_cnc_job_handler(
