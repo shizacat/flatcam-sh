@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Запуск FlatCAM в режиме разработчика.
-# Нужен активированный mamba-env: mamba activate flatcam
+# Launch FlatCAM in developer mode.
+# Requires an activated mamba env: mamba activate flatcam
 #
 #   ./dev.sh [args...]
 
@@ -10,12 +10,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCH="${ROOT}/scripts/dev_launch.py"
 
 if ! command -v python >/dev/null 2>&1; then
-    printf 'ошибка: python не найден. Сначала: mamba activate flatcam\n' >&2
+    printf 'error: python not found. Run first: mamba activate flatcam\n' >&2
     exit 1
 fi
 
 if [[ ! -f "${LAUNCH}" ]]; then
-    printf 'ошибка: нет %s\n' "${LAUNCH}" >&2
+    printf 'error: missing %s\n' "${LAUNCH}" >&2
     exit 1
 fi
 
