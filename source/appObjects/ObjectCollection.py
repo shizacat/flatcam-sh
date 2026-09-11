@@ -44,6 +44,142 @@ if '_' not in builtins.__dict__:
 
 log = logging.getLogger('base')
 
+# Object kinds that can be shown/hidden on canvas. Script and Document stay without an eye,
+# matching Enable/Disable Plot in the Project context menu.
+_PLOT_EYE_KINDS = ('gerber', 'excellon', 'geometry', 'cncjob')
+
+
+def _tree_item_obj(index):
+    if not index.isValid():
+        return None
+    ptr = index.internalPointer()
+    return getattr(ptr, 'obj', None)
+
+
+def _index_has_plot_eye(index):
+    obj = _tree_item_obj(index)
+    return obj is not None and obj.kind in _PLOT_EYE_KINDS
+
+
+class ProjectTreeDelegate(QtWidgets.QStyledItemDelegate):
+    """
+    Paints a visibility eye between the object-type icon and the name.
+    The eye uses the same foreground color as the row text, so it follows
+    the light/dark project-tree palette (including disabled/hidden gray).
+    """
+
+    TYPE_SIZE = 16
+    EYE_SIZE = 16
+    GAP = 4
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        if not _index_has_plot_eye(index):
+            return
+
+        type_icon = QtGui.QIcon(option.icon)
+        option.icon = QtGui.QIcon(self._combined_pixmap(option, type_icon, index))
+        option.decorationSize = QtCore.QSize(
+            self.TYPE_SIZE + self.GAP + self.EYE_SIZE,
+            max(self.TYPE_SIZE, self.EYE_SIZE)
+        )
+
+    def helpEvent(self, event, view, option, index):
+        if event is not None and self.hit_eye(index, event.pos(), view):
+            obj = _tree_item_obj(index)
+            if obj is not None:
+                tip = _('Hide Plot') if obj.obj_options.get('plot') else _('Show Plot')
+                QtWidgets.QToolTip.showText(event.globalPos(), tip, view)
+                return True
+        return super().helpEvent(event, view, option, index)
+
+    def hit_eye(self, index, pos, view):
+        if not _index_has_plot_eye(index):
+            return False
+        option = QtWidgets.QStyleOptionViewItem()
+        option.initFrom(view)
+        option.rect = view.visualRect(index)
+        option.widget = view
+        if view.selectionModel() is not None and view.selectionModel().isSelected(index):
+            option.state |= QtWidgets.QStyle.StateFlag.State_Selected
+        return self.eye_rect(option, index).adjusted(-2, -2, 2, 2).contains(pos)
+
+    def eye_rect(self, option, index):
+        opt = QtWidgets.QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        widget = opt.widget
+        style = widget.style() if widget is not None else QtWidgets.QApplication.style()
+        deco = style.subElementRect(
+            QtWidgets.QStyle.SubElement.SE_ItemViewItemDecoration, opt, widget)
+        x = deco.x() + deco.width() - self.EYE_SIZE
+        y = deco.y() + max(0, (deco.height() - self.EYE_SIZE) // 2)
+        return QtCore.QRect(x, y, self.EYE_SIZE, self.EYE_SIZE)
+
+    def _combined_pixmap(self, option, type_icon, index):
+        dpr = option.widget.devicePixelRatioF() if option.widget is not None else 1.0
+        width = self.TYPE_SIZE + self.GAP + self.EYE_SIZE
+        height = max(self.TYPE_SIZE, self.EYE_SIZE)
+
+        image = QtGui.QImage(
+            max(1, int(width * dpr)),
+            max(1, int(height * dpr)),
+            QtGui.QImage.Format.Format_ARGB32_Premultiplied
+        )
+        image.fill(QtGui.QColor(0, 0, 0, 0))
+
+        painter = QtGui.QPainter(image)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
+        painter.scale(dpr, dpr)
+        type_pm = type_icon.pixmap(QtCore.QSize(self.TYPE_SIZE, self.TYPE_SIZE))
+        if not type_pm.isNull():
+            painter.drawPixmap(QtCore.QRect(0, 0, self.TYPE_SIZE, self.TYPE_SIZE), type_pm)
+
+        obj = _tree_item_obj(index)
+        visible = True if obj is None else bool(obj.obj_options.get('plot', True))
+        selected = bool(option.state & QtWidgets.QStyle.StateFlag.State_Selected)
+        if selected:
+            color = option.palette.color(QtGui.QPalette.ColorRole.HighlightedText)
+        else:
+            color = option.palette.color(QtGui.QPalette.ColorRole.Text)
+
+        eye_rect = QtCore.QRectF(self.TYPE_SIZE + self.GAP, 0, self.EYE_SIZE, self.EYE_SIZE)
+        self.draw_eye(painter, eye_rect, visible, color)
+        painter.end()
+
+        pixmap = QtGui.QPixmap.fromImage(image)
+        pixmap.setDevicePixelRatio(dpr)
+        return pixmap
+
+    @staticmethod
+    def draw_eye(painter, rect, visible, color):
+        painter.save()
+        painter.translate(rect.topLeft())
+        scale = min(rect.width(), rect.height()) / 16.0
+        painter.scale(scale, scale)
+
+        pen = QtGui.QPen(color, 1.2)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+
+        outline = QtGui.QPainterPath()
+        outline.moveTo(1.5, 8.0)
+        outline.cubicTo(4.2, 2.8, 11.8, 2.8, 14.5, 8.0)
+        outline.cubicTo(11.8, 13.2, 4.2, 13.2, 1.5, 8.0)
+        painter.drawPath(outline)
+
+        pupil = QtCore.QRectF(6.1, 5.4, 3.8, 5.2)
+        if visible:
+            painter.setBrush(QtGui.QBrush(color))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawEllipse(pupil)
+        else:
+            painter.drawEllipse(pupil)
+            painter.drawLine(QtCore.QPointF(3.0, 12.5), QtCore.QPointF(13.0, 3.5))
+
+        painter.restore()
+
 
 class EventSensitiveListView(QtWidgets.QTreeView):
     """
@@ -62,6 +198,7 @@ class EventSensitiveListView(QtWidgets.QTreeView):
         self.setAcceptDrops(True)
         self.filename = ""
         self.app = app
+        self._eye_press = False
 
         # Enabling Drag and Drop for the items in the Project Tab
         # Example: https://github.com/d1vanov/PyQt6-reorderable-list-model/blob/master/reorderable_list_model.py
@@ -78,6 +215,16 @@ class EventSensitiveListView(QtWidgets.QTreeView):
 
     keyPressed = QtCore.pyqtSignal(int)
     mouseReleased = QtCore.pyqtSignal(object)
+    eyeClicked = QtCore.pyqtSignal(object)
+
+    def _pos_on_eye(self, pos):
+        index = self.indexAt(pos)
+        if not index.isValid():
+            return False
+        delegate = self.itemDelegateForIndex(index)
+        if not isinstance(delegate, ProjectTreeDelegate):
+            return False
+        return delegate.hit_eye(index, pos, self)
 
     # def mouseMoveEvent(self, event):  # is called whenever the mouse moves while a mouse button is held down
     #     super().mouseMoveEvent(event)  # propagate
@@ -105,9 +252,43 @@ class EventSensitiveListView(QtWidgets.QTreeView):
         # print(QtGui.QKeySequence(event.key()).toString())
         self.keyPressed.emit(event.key())
 
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        self._eye_press = False
+        if event.button() == Qt.MouseButton.LeftButton and self._pos_on_eye(event.pos()):
+            self._eye_press = True
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
+        if getattr(self, '_eye_press', False) and event.button() == Qt.MouseButton.LeftButton:
+            self._eye_press = False
+            if self._pos_on_eye(event.pos()):
+                self.eyeClicked.emit(self.indexAt(event.pos()))
+            event.accept()
+            return
+        self._eye_press = False
         self.mouseReleased.emit(event.button())
         super().mouseReleaseEvent(event)
+
+    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._pos_on_eye(event.pos()):
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        # Swallow moves after an eye press. Otherwise QTreeView treats the
+        # leftover pressedPosition from the previously selected row as a
+        # drag-select and paints a Shift-like range.
+        if self._eye_press:
+            event.accept()
+            return
+        if self._pos_on_eye(event.pos()):
+            self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+        else:
+            self.viewport().unsetCursor()
+        super().mouseMoveEvent(event)
 
     def dragEnterEvent(self, event):
         # if event.source():
@@ -340,6 +521,8 @@ class ObjectCollection(QtCore.QAbstractItemModel):
         # ## View
         self.view = EventSensitiveListView(self.app)
         self.view.setModel(self)
+        self.view.setItemDelegate(ProjectTreeDelegate(self.view))
+        self.view.viewport().setMouseTracking(True)
 
         self.view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.view.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -372,6 +555,7 @@ class ObjectCollection(QtCore.QAbstractItemModel):
         self.view.mouseReleased.connect(self.on_list_click_release)
         # self.view.clicked.connect(self.on_mouse_down)
         self.view.customContextMenuRequested.connect(self.on_menu_request)
+        self.view.eyeClicked.connect(self.on_eye_clicked)
 
         self.click_modifier = None
 
@@ -1087,6 +1271,16 @@ class ObjectCollection(QtCore.QAbstractItemModel):
 
     def update_view(self):
         self.layoutChanged.emit()
+
+    def on_eye_clicked(self, index):
+        """Toggle canvas visibility for the object whose eye icon was clicked."""
+        obj = _tree_item_obj(index)
+        if obj is None or obj.kind not in _PLOT_EYE_KINDS:
+            return
+        if obj.obj_options.get('plot'):
+            self.app.disable_plots([obj])
+        else:
+            self.app.enable_plots([obj], silent=True)
 
     def on_row_activated(self, index):
         if index.isValid():
