@@ -27,14 +27,21 @@ if [[ ! -d "$ENV" ]]; then
   exit 1
 fi
 
-if [[ ! -w "$ENV" ]]; then
-  echo "Env is not writable; likely launched from a read-only DMG."
-  alert "Copy FlatCAM.app to Applications and run it from there. It cannot start from the read-only disk image."
+if [[ "$ROOT" == *"/AppTranslocation/"* ]] || [[ ! -w "$ENV" ]]; then
+  echo "Env is not writable (Gatekeeper App Translocation or read-only DMG): $ROOT"
+  alert "macOS isolated this copy. Drag FlatCAM.app to /Applications, then in Terminal run: xattr -cr /Applications/FlatCAM.app"
   exit 1
 fi
 
 export PATH="$ENV/bin:$PATH"
 export CONDA_PREFIX="$ENV"
+if [[ -d "$ENV/share/gdal" ]]; then
+  export GDAL_DATA="$ENV/share/gdal"
+fi
+if [[ -d "$ENV/share/proj" ]]; then
+  export PROJ_LIB="$ENV/share/proj"
+  export PROJ_DATA="$ENV/share/proj"
+fi
 
 for plugins in "$ENV/lib/qt6/plugins" "$ENV/plugins"; do
   if [[ -d "$plugins" ]]; then

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed a Python 3.11 SyntaxError in NCC tool add (`f-string` with a backslash) that stopped the packaged app at import
 - Fixed GitHub Actions uploading the intermediate conda-pack `env.tar.gz` next to the real package; only `FlatCAM-*` archives are published
 - Fixed the macOS app quitting silently when started from the read-only DMG or when Python failed: the launcher now requires a writable copy in Applications, runs `conda-unpack` for real, and shows an alert
 - Fixed Linux/Windows/macOS packaging calling `python -m conda_pack`, which has no `__main__` module; the build now runs the `conda-pack` CLI

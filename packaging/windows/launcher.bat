@@ -13,6 +13,10 @@ echo === %DATE% %TIME% FlatCAM launch ===>> "%LOG_FILE%"
 
 set "PATH=%ENV%;%ENV%\Scripts;%ENV%\Library\bin;%PATH%"
 set "CONDA_PREFIX=%ENV%"
+if exist "%ENV%\Library\share\gdal" set "GDAL_DATA=%ENV%\Library\share\gdal"
+if exist "%ENV%\share\gdal" set "GDAL_DATA=%ENV%\share\gdal"
+if exist "%ENV%\Library\share\proj" set "PROJ_LIB=%ENV%\Library\share\proj"
+if exist "%ENV%\share\proj" set "PROJ_LIB=%ENV%\share\proj"
 
 if exist "%ENV%\Scripts\conda-unpack.exe" (
   "%ENV%\Scripts\conda-unpack.exe" >> "%LOG_FILE%" 2>&1
