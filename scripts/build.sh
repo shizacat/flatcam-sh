@@ -225,21 +225,39 @@ env_python() {
   fi
 }
 
+# conda-pack has no python -m entry point; use the console script.
+conda_pack_bin() {
+  local candidate
+  for candidate in \
+      "$ENV_PREFIX/bin/conda-pack" \
+      "$ENV_PREFIX/Scripts/conda-pack.exe" \
+      "$ENV_PREFIX/Scripts/conda-pack"; do
+    if [[ -x "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
+  return 1
+}
+
 ensure_conda_pack() {
-  local py
-  py="$(env_python)"
-  if ! "$py" -c "import conda_pack" >/dev/null 2>&1; then
-    log "Install conda-pack"
-    "$py" -m pip install conda-pack
+  if conda_pack_bin >/dev/null; then
+    return
+  fi
+  log "Install conda-pack"
+  "$(env_python)" -m pip install conda-pack
+  if ! conda_pack_bin >/dev/null; then
+    echo "conda-pack executable not found in $ENV_PREFIX after install" >&2
+    exit 1
   fi
 }
 
 pack_env() {
-  local py
-  py="$(env_python)"
+  local pack
+  pack="$(conda_pack_bin)"
   log "conda-pack → $PACK_TAR"
   rm -f "$PACK_TAR"
-  "$py" -m conda_pack \
+  "$pack" \
     -p "$(native_path "$ENV_PREFIX")" \
     -o "$(native_path "$PACK_TAR")" \
     --ignore-missing-files
