@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed GitHub Actions uploading the intermediate conda-pack `env.tar.gz` next to the real package; only `FlatCAM-*` archives are published
+- Fixed the macOS app quitting silently when started from the read-only DMG or when Python failed: the launcher now requires a writable copy in Applications, runs `conda-unpack` for real, and shows an alert
 - Fixed Linux/Windows/macOS packaging calling `python -m conda_pack`, which has no `__main__` module; the build now runs the `conda-pack` CLI
 - Fixed the conda environment numpy/ortools conflict by requiring numpy 2.x, so isolation routing can import after a fresh env create
 - Fixed Project tree range-selecting other layers when clicking a visibility eye while another row was already selected

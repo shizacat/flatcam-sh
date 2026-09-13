@@ -34,15 +34,15 @@ jobs:
           - name: macos-arm64
             os: macos-15
             target: macos
-          - name: macos-x86_64
-            os: macos-15-intel
-            target: macos
-          - name: linux-x86_64
-            os: ubuntu-24.04
-            target: linux
-          - name: windows-x86_64
-            os: windows-2022
-            target: windows
+          # - name: macos-x86_64
+          #   os: macos-15-intel
+          #   target: macos
+          # - name: linux-x86_64
+          #   os: ubuntu-24.04
+          #   target: linux
+          # - name: windows-x86_64
+          #   os: windows-2022
+          #   target: windows
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,9 +80,9 @@ jobs:
           name: FlatCAM-${{ matrix.name }}
           if-no-files-found: error
           path: |
-            build/*.dmg
-            build/*.tar.gz
-            build/*.zip
+            build/FlatCAM-*.dmg
+            build/FlatCAM-*.tar.gz
+            build/FlatCAM-*.zip
 
   release:
     name: GitHub Release

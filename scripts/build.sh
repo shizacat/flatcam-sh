@@ -263,6 +263,14 @@ pack_env() {
     --ignore-missing-files
 }
 
+extract_packed_env() {
+  local dest="$1"
+  mkdir -p "$dest"
+  tar -xzf "$PACK_TAR" -C "$dest"
+  # Intermediate archive is not part of the shipped package.
+  rm -f "$PACK_TAR"
+}
+
 copy_tree() {
   local src="$1"
   local dest="$2"
@@ -332,13 +340,18 @@ package_macos() {
            "$app_dir/Contents/Resources/env" \
            "$app_dir/Contents/Resources/src"
 
-  tar -xzf "$PACK_TAR" -C "$app_dir/Contents/Resources/env"
+  extract_packed_env "$app_dir/Contents/Resources/env"
   copy_sources_to "$app_dir/Contents/Resources/src"
   make_icns "$icns_path"
   cp "$icns_path" "$app_dir/Contents/Resources/AppIcon.icns"
   write_plist "$app_dir/Contents/Info.plist"
   cp "$ROOT/packaging/macos/launcher.sh" "$app_dir/Contents/MacOS/FlatCAM"
   chmod 755 "$app_dir/Contents/MacOS/FlatCAM"
+
+  if command -v codesign >/dev/null 2>&1; then
+    log "Ad-hoc codesign $app_dir"
+    codesign --force --deep --sign - "$app_dir" || log "codesign failed (continuing)"
+  fi
 
   mkdir -p "$staging"
   rm -rf "${staging:?}/"*
@@ -379,7 +392,7 @@ package_linux() {
   log "Assemble $dist"
   rm -rf "$dist"
   mkdir -p "$dist/env" "$dist/src"
-  tar -xzf "$PACK_TAR" -C "$dist/env"
+  extract_packed_env "$dist/env"
   copy_sources_to "$dist/src"
   cp "$ROOT/packaging/linux/launcher.sh" "$dist/${APP_NAME}"
   chmod 755 "$dist/${APP_NAME}"
@@ -400,7 +413,7 @@ package_windows() {
   log "Assemble $dist"
   rm -rf "$dist"
   mkdir -p "$dist/env" "$dist/src"
-  tar -xzf "$PACK_TAR" -C "$dist/env"
+  extract_packed_env "$dist/env"
   copy_sources_to "$dist/src"
   cp "$ROOT/packaging/windows/launcher.bat" "$dist/${APP_NAME}.bat"
   if [[ -f "$APP_SRC_DIR/assets/resources/flatcam_icon256.ico" ]]; then

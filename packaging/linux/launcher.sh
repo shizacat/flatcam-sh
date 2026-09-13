@@ -15,8 +15,9 @@ echo "=== $(date '+%Y-%m-%d %H:%M:%S') FlatCAM launch ==="
 export PATH="$ENV/bin:$PATH"
 export CONDA_PREFIX="$ENV"
 
-if [[ -x "$ENV/bin/conda-unpack" ]]; then
-  "$ENV/bin/conda-unpack" || true
+if [[ -x "$ENV/bin/conda-unpack" && ! -f "$ENV/.conda-unpack-done" ]]; then
+  "$ENV/bin/conda-unpack"
+  touch "$ENV/.conda-unpack-done"
 fi
 
 if [[ -f "$SRC/FlatCAM.py" ]]; then
