@@ -4,3 +4,5 @@ tmp/*
 source/tests/tmp/
 .venv/
 tmp/
+/build/
+*.dmg

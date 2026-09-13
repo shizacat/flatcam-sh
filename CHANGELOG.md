@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added GitHub Actions packaging for Windows, Linux, macOS Intel and macOS Apple Silicon (conda-pack; macOS ships as a DMG)
 - Added a visibility eye icon in the Project tree between the object-type icon and the name (Gerber, Excellon, Geometry, CNC Job), following the light and dark tree colors
 
 ### Fixed
 
+- Fixed the conda environment numpy/ortools conflict by requiring numpy 2.x, so isolation routing can import after a fresh env create
 - Fixed Project tree range-selecting other layers when clicking a visibility eye while another row was already selected
 
 ## [1.9.0] - 2026-09-08

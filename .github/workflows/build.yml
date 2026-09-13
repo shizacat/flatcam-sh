@@ -1,0 +1,114 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "[0-9]*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version (defaults to the git tag, or dev)"
+        required: false
+        type: string
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-arm64
+            os: macos-15
+            target: macos
+          - name: macos-x86_64
+            os: macos-15-intel
+            target: macos
+          - name: linux-x86_64
+            os: ubuntu-24.04
+            target: linux
+          - name: windows-x86_64
+            os: windows-2022
+            target: windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up micromamba
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          environment-file: environment.yml
+          environment-name: flatcam
+          create-args: python=3.11
+          cache-environment: true
+          init-shell: bash
+
+      - name: Build package
+        env:
+          SKIP_ENV_CREATE: "1"
+          DISPATCH_VERSION: ${{ github.event.inputs.version || '' }}
+        run: |
+          if [[ -n "${DISPATCH_VERSION}" ]]; then
+            ver="${DISPATCH_VERSION}"
+          elif [[ "${GITHUB_REF_TYPE}" == tag ]]; then
+            ver="${GITHUB_REF_NAME}"
+          else
+            ver=dev
+          fi
+          export APP_VERSION="${ver#v}"
+          prefix="${CONDA_PREFIX:-${MAMBA_ROOT_PREFIX}/envs/flatcam}"
+          prefix="$(micromamba run -n flatcam python -c 'import sys; print(sys.prefix)' 2>/dev/null || printf '%s\n' "$prefix")"
+          export ENV_PREFIX="$prefix"
+          ./scripts/build.sh "${{ matrix.target }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlatCAM-${{ matrix.name }}
+          if-no-files-found: error
+          path: |
+            build/*.dmg
+            build/*.tar.gz
+            build/*.zip
+
+  release:
+    name: GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          shopt -s nullglob
+          assets=(dist/*)
+          if [[ ${#assets[@]} -eq 0 ]]; then
+            echo "No artifacts to publish" >&2
+            exit 1
+          fi
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
+          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
