@@ -1404,7 +1404,9 @@ class ToolNcc(Gerber, AppTool):
 
         if tool_found > 1:
             self.app.inform.emit(
-                f'[WARNING_NOTCL] {_("Cancelled.\nMultiple tools for one tool diameter found in Tools Database.")}')
+                '[WARNING_NOTCL] %s' %
+                _("Cancelled.\nMultiple tools for one tool diameter found in Tools Database.")
+            )
             self.blockSignals(False)
             return
 
