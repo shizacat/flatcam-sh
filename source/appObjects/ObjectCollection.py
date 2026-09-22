@@ -545,7 +545,6 @@ class ObjectCollection(QtCore.QAbstractItemModel):
 
         font = QtGui.QFont()
         font.setPixelSize(fsize)
-        font.setFamily("Segoe UI")
         self.view.setFont(font)
 
         # ## GUI Events

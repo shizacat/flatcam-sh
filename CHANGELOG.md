@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed opening a project hanging when the legacy-project confirmation was built on a worker thread
-- Fixed the Project tree font family typo `Seagoe UI`, which made Qt warn about a missing font at startup
+- Fixed the Project tree using a hardcoded Segoe UI font, so it follows the system UI font and no longer warns about a missing font at startup
 
 ## [1.10.0] - 2026-09-22
 
