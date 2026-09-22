@@ -1,0 +1,10 @@
+{
+  "objs": [
+    {
+      "apertures": {},
+      "options": {"name": "legacy-gerber"}
+    }
+  ],
+  "options": {},
+  "version": "test"
+}

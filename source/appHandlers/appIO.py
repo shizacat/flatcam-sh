@@ -60,6 +60,10 @@ if '_' not in builtins.__dict__:
 
 
 class appIO(QtCore.QObject):
+    # Worker fills nothing itself: the GUI-thread slot writes result[0].
+    # BlockingQueuedConnection makes parse_worker wait for that answer.
+    _legacy_project_prompt = QtCore.pyqtSignal(object)
+
     def __init__(self, app):
         """
         A class that holds all the menu -> file handlers
@@ -76,6 +80,9 @@ class appIO(QtCore.QObject):
         self.pagesize = {}
 
         self.app.new_project_signal.connect(self.on_new_project_house_keeping)
+        self._legacy_project_prompt.connect(
+            self._on_legacy_project_prompt,
+            Qt.ConnectionType.BlockingQueuedConnection)
 
     def on_file_open_gerber(self, name=None):
         """
@@ -2479,6 +2486,45 @@ class appIO(QtCore.QObject):
             self.inform.emit('[ERROR_NOTCL] %s: %s' % (_("Failed."), filename))
             return
 
+    def _confirm_legacy_project(self) -> bool:
+        """
+        Ask whether to keep loading a project detected as legacy.
+
+        parse_worker runs on a worker thread. QMessageBox must be created on the
+        GUI thread (the thread that owns this object), so the question is sent
+        there and the worker blocks until the user answers.
+
+        :return: True if loading should continue
+        """
+        if QtCore.QThread.currentThread() == self.thread():
+            return self._legacy_project_dialog()
+
+        result: list[bool] = [False]
+        self._legacy_project_prompt.emit(result)
+        return bool(result[0])
+
+    def _on_legacy_project_prompt(self, result: list[bool]) -> None:
+        result[0] = self._legacy_project_dialog()
+
+    def _legacy_project_dialog(self) -> bool:
+        msgbox = FCMessageBox(parent=self.app.ui)
+        title = _("Legacy Project")
+        txt = _("The project was made with an older app version.\n"
+                "It may not load correctly.\n\n"
+                "Do you want to continue?")
+        msgbox.setWindowTitle(title)  # taskbar still shows it
+        msgbox.setWindowIcon(QtGui.QIcon(self.app.resource_location + '/app128.png'))
+        msgbox.setText('<b>%s</b>' % title)
+        msgbox.setInformativeText(txt)
+        msgbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
+
+        bt_ok = msgbox.addButton(_('Ok'), QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+        bt_cancel = msgbox.addButton(_('Cancel'), QtWidgets.QMessageBox.ButtonRole.RejectRole)
+
+        msgbox.setDefaultButton(bt_ok)
+        msgbox.exec()
+        return msgbox.clickedButton() != bt_cancel
+
     def open_project(self, filename, run_from_arg=False, plot=True, cli=False, from_tcl=False):
         """
         Loads a project from the specified file.
@@ -2571,25 +2617,7 @@ class appIO(QtCore.QObject):
 
                 if found_older_project:
                     if not run_from_arg or not cli or from_tcl is False:
-                        msgbox = FCMessageBox(parent=self.app.ui)
-                        title = _("Legacy Project")
-                        txt = _("The project was made with an older app version.\n"
-                                "It may not load correctly.\n\n"
-                                "Do you want to continue?")
-                        msgbox.setWindowTitle(title)  # taskbar still shows it
-                        msgbox.setWindowIcon(QtGui.QIcon(self.app.resource_location + '/app128.png'))
-                        msgbox.setText('<b>%s</b>' % title)
-                        msgbox.setInformativeText(txt)
-                        msgbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
-
-                        bt_ok = msgbox.addButton(_('Ok'), QtWidgets.QMessageBox.ButtonRole.AcceptRole)
-                        bt_cancel = msgbox.addButton(_('Cancel'), QtWidgets.QMessageBox.ButtonRole.RejectRole)
-
-                        msgbox.setDefaultButton(bt_ok)
-                        msgbox.exec()
-                        response = msgbox.clickedButton()
-
-                        if response == bt_cancel:
+                        if not self._confirm_legacy_project():
                             return
                     else:
                         self.app.log.error("Legacy Project. Loading not supported.")
