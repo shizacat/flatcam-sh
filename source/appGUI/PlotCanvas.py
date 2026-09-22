@@ -162,8 +162,15 @@ class PlotCanvas(QtCore.QObject, VisPyCanvas):
 
         # setup HUD
 
+        # Georgia is a screen serif present on Windows and macOS. Skip it when the
+        # family is missing so Qt does not rebuild font aliases on every HUD update.
+        self._hud_font_family = "Georgia" if "Georgia" in QtGui.QFontDatabase.families() else None
+
         # TEXT HUD
-        self.text_hud = Text('', color=self.text_hud_color, method='gpu', anchor_x='left', parent=None)
+        self.text_hud = Text(
+            '', color=self.text_hud_color, method='gpu', anchor_x='left',
+            face=self._hud_font_family or 'OpenSans', parent=None
+        )
         # RECT HUD
         self.rect_hud = Rectangle(width=10, height=10, radius=[5, 5, 5, 5], center=(20, 20),
                                   border_color=self.rect_hud_color, color=self.rect_hud_color, parent=None)
@@ -343,10 +350,9 @@ class PlotCanvas(QtCore.QObject, VisPyCanvas):
         else:
             fsize = 8
 
-        try:
-            c_font = QtGui.QFont("times", fsize)
-        except Exception:
-            # maybe Unix-like OS's don't have the Times font installed, use whatever is available
+        if self._hud_font_family:
+            c_font = QtGui.QFont(self._hud_font_family, fsize)
+        else:
             c_font = QtGui.QFont()
             c_font.setPointSize(fsize)
 
