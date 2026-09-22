@@ -46,10 +46,16 @@ class VisPyCanvas(scene.SceneCanvas):
         else:
             dark_canvas = False
 
+        window_color = QPalette().color(QPalette.ColorRole.Window)
         if (theme == 'default' or theme == 'light') and not dark_canvas:
             theme_color = Color('#FFFFFF')
-            tick_color = Color('#000000')
-            back_color = str(QPalette().color(QPalette.ColorRole.Window).name())
+            back_color = window_color.name()
+            # Axis labels sit on the OS window color. A dark system palette keeps
+            # that gutter dark while the plot stays light, so black ticks disappear.
+            if window_color.lightness() < 128:
+                tick_color = Color('#E6E6E6')
+            else:
+                tick_color = Color('#000000')
         else:
             if theme not in ['default', 'light']:
                 theme_color = Color('#202124')
@@ -58,8 +64,6 @@ class VisPyCanvas(scene.SceneCanvas):
                 theme_color = Color('#000000')
                 back_color = Color('#000000')
             tick_color = Color('gray')
-            # back_color = Color('#272822') # darker
-            # back_color = Color('#3c3f41') # lighter
 
         self.central_widget.bgcolor = back_color
         self.central_widget.border_color = back_color
