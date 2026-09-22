@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed opening a project hanging when the legacy-project confirmation was built on a worker thread
+
 ## [1.10.0] - 2026-09-22
 
 ### Added
