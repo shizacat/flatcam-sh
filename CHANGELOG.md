@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed opening a project hanging when the legacy-project confirmation was built on a worker thread
+- Fixed the Project tree font family typo `Seagoe UI`, which made Qt warn about a missing font at startup
 
 ## [1.10.0] - 2026-09-22
 
@@ -17,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GitHub Actions packaging for Windows, Linux, macOS Intel and macOS Apple Silicon (conda-pack; macOS ships as a DMG)
 - Added a visibility eye icon in the Project tree between the object-type icon and the name (Gerber, Excellon, Geometry, CNC Job), following the light and dark tree colors
+
+  ![Visibility eye in the Project tree](docs/chlg_images/1.10.0_001.png)
 
 ### Fixed
 
