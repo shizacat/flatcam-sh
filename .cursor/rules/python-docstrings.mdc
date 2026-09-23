@@ -1,0 +1,33 @@
+---
+description: Python docstrings use a summary line and Sphinx :param fields
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python docstrings
+
+Use [Sphinx](https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#info-field-lists) docstrings (reStructuredText info field lists). English only.
+
+- First line: one sentence, what the class or function does.
+- Blank line, then one `:param name:` field per argument.
+- Align the descriptions with spaces so they start in the same column.
+- A returned value gets `:return:`. Use `:rtype:` only when the type is not already in the signature.
+- An exception the caller must handle gets `:raises ExceptionType:`.
+- A function with no arguments, return value, or raised exceptions is the summary sentence only.
+
+```python
+def load(self, filename: str, inform):
+    """
+    Loads the defaults from a file on disk, performing migration if required.
+
+    :param filename:    a path to the file that is to be loaded
+    :param inform:      a pyqtSignal used to display information in the status bar
+
+    :return:            True when the file was loaded
+
+    :raises OSError:    the file could not be read
+    :raises ValueError: the file contents are not valid defaults
+    """
+```
+
+Do not use Google style (`Args:`) or NumPy style (`Parameters`).
