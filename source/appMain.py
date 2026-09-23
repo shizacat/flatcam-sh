@@ -12,6 +12,7 @@ from PyQt6.QtCore import QSettings, pyqtSlot
 from PyQt6.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt6.QtGui import QAction
 
+import os
 import os.path
 import sys
 
@@ -1634,6 +1635,49 @@ class App(QtCore.QObject):
         self.pool_recreated.emit(self.pool)
 
         gc.collect()
+
+    def _shutdown_background_work(self):
+        """Stop worker threads and the process pool without spawning a new one.
+
+        ``clear_pool()`` replaces the pool, which is right for a new project and
+        fatal during shutdown: a fresh pool on macOS bus-errors once Qt and
+        OpenGL are already tearing down.
+        """
+        pool = getattr(self, "pool", None)
+        self.pool = None
+        if pool is not None:
+            try:
+                pool.terminate()
+            except Exception as exc:
+                self.log.error("App.quit_application() --> pool terminate: %s" % exc)
+
+        workers = getattr(self, "workers", None)
+        if workers is not None:
+            try:
+                workers.quit()
+            except Exception as exc:
+                self.log.error("App.quit_application() --> workers: %s" % exc)
+
+        if pool is not None:
+            try:
+                pool.join()
+            except Exception as exc:
+                self.log.error("App.quit_application() --> pool join: %s" % exc)
+
+    def _release_multiprocessing_resources(self):
+        """Unregister pool semaphores before ``os._exit``.
+
+        ``os._exit`` skips ``atexit``, so the resource tracker otherwise reports
+        the pool semaphores as leaked.
+        """
+        try:
+            from multiprocessing.resource_tracker import _resource_tracker
+            from multiprocessing.util import _run_finalizers
+            _run_finalizers(0)
+            _run_finalizers()
+            _resource_tracker._stop()
+        except Exception as exc:
+            self.log.error("App.quit_application() --> resource tracker: %s" % exc)
 
     def install_tools(self, init_tcl=False):
         """
@@ -3943,16 +3987,18 @@ class App(QtCore.QObject):
             if silent is False:
                 self.log.error("App.quit_application() --> %s" % str(e))
 
-        # terminate workers
-        # self.workers.__del__()
-        self.clear_pool()
+        # Stop threads and the process pool. Do not call clear_pool() here:
+        # it spawns a replacement pool during Qt/OpenGL teardown.
+        self._shutdown_background_work()
 
-        self.workers.quit()
-
-        # quit app by signalling for self.kill_app() method
-        # self.close_app_signal.emit()
-        # sys.exit(0)
         QtWidgets.QApplication.quit()
+        # quit() only posts an event. Returning to the loop then destroys the
+        # VisPy OpenGL widget, and that C++ destructor segfaults on macOS.
+        # Preferences and the window state are already saved.
+        if sys.platform == "darwin":
+            self._release_multiprocessing_resources()
+            os._exit(0)
+
         if sys.platform == 'win32':
             try:
                 self.new_launch.close_command()
