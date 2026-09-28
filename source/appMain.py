@@ -96,6 +96,8 @@ from appDatabase import ToolsDB2
 # App defaults (preferences)
 from defaults import AppDefaults
 from defaults import AppOptions
+from exceptions import SettingsError
+from settings import Settings
 
 # App Objects
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
@@ -1581,6 +1583,35 @@ class App(QtCore.QObject):
 
     def tools_database_path(self):
         return os.path.join(self.data_path, 'tools_db_%s.FlatDB' % str(self.version))
+
+    def load_settings(self, filename: str | None = None) -> Settings:
+        """
+        Loads application settings from a JSON file.
+
+        A missing file is created from the built-in defaults and those defaults are used.
+        An invalid file is reported on the status bar and the built-in defaults are returned instead.
+
+        :param filename:    path to the settings file. Defaults to settings_path()
+
+        :return:            validated settings
+        """
+        if filename is None:
+            filename = self.settings_path()
+
+        if not os.path.isfile(filename):
+            settings = Settings()
+            try:
+                settings.write(filename)
+                self.log.info("Created settings file: %s" % filename)
+            except SettingsError:
+                self.inform.emit('[ERROR] %s' % _("Failed to write defaults to file."))
+            return settings
+
+        try:
+            return Settings.load(filename)
+        except SettingsError:
+            self.inform.emit('[ERROR] %s' % _("Could not load the file."))
+            return Settings()
 
     def settings_path(self):
         return os.path.join(self.data_path, 'current_defaults_%s.FlatConfig' % str(self.version))
