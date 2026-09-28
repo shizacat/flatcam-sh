@@ -105,6 +105,18 @@ def test_write_raises_settings_error(tmp_path: Path) -> None:
         Settings().write(tmp_path / "missing" / "settings.json")
 
 
+def test_report_usage_counts_resources() -> None:
+    """Verify each resource usage counter increments on its own."""
+    settings = Settings()
+
+    settings.report_usage("ToolMove()")
+    settings.report_usage("ToolMove()")
+    settings.report_usage("ToolFilm()")
+
+    assert settings.global_stats["ToolMove()"] == 2
+    assert settings.global_stats["ToolFilm()"] == 1
+
+
 def test_bind_reports_changed_settings() -> None:
     """Verify a bound callback receives the name of a changed setting."""
     settings = Settings()

@@ -13,7 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a typed Pydantic settings model containing all current factory defaults as the first stage of settings migration
 - Added JSON loading and writing for the typed settings model; a failed read or write raises `SettingsError`
 - Added `Settings.bind` and `Settings.unbind` so a callback can observe changes to setting values
+- Added `propagate_settings` to copy parser settings onto the Excellon, Gerber, and Geometry classes
+- Added `Settings.report_usage` to count how often a tool or action is used
 - Added `FlatCAMError` as the project base exception; settings errors inherit from it
+
+### Changed
+
+- Changed New Project to reload the saved preferences file into application defaults
 
 ### Fixed
 

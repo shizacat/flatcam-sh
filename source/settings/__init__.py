@@ -2020,6 +2020,17 @@ class Settings(BaseModel):
         except (OSError, TypeError, ValueError) as error:
             raise SettingsError(f"Could not write settings to {filename}.") from error
 
+    def report_usage(self, resource: str) -> None:
+        """
+        Increments the usage counter for a resource.
+
+        :param resource: name of the resource
+        """
+        if resource in self.global_stats:
+            self.global_stats[resource] += 1
+        else:
+            self.global_stats[resource] = 1
+
     def bind(self, callback: Callable[[str], None]) -> None:
         """
         Binds a callback invoked when a setting value changes.
