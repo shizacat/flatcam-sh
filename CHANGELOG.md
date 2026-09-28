@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.7] - 2026-09-28
+
 ### Added
 
 - Added a Getting started page that lists where Qt settings and the application data folder are stored on Windows, macOS, and Linux
@@ -23,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the tab close icon filename typo `inselected`, which made Qt warn about a missing SVG in the light and dark themes
 - Fixed a bus error on quit with no project open: on macOS the process exits after saving state and releasing multiprocessing semaphores, before Qt destroys the OpenGL canvas
 
-## [1.10.0] - 2026-09-22
+## [1.9.6] - 2026-09-22
 
 ### Added
 
