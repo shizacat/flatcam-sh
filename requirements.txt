@@ -21,6 +21,7 @@ six
 dill
 simplejson
 qrcode>=6.1
+pydantic>=2,<3
 
 rtree
 # foronoi>=1.0.3
