@@ -105,6 +105,45 @@ def test_write_raises_settings_error(tmp_path: Path) -> None:
         Settings().write(tmp_path / "missing" / "settings.json")
 
 
+def test_bind_reports_changed_settings() -> None:
+    """Verify a bound callback receives the name of a changed setting."""
+    settings = Settings()
+    changed = []
+    settings.bind(changed.append)
+
+    settings.units = "IN"
+    settings.units = "IN"
+
+    assert changed == ["units"]
+    assert settings.units == "IN"
+
+
+def test_unbind_stops_change_notifications() -> None:
+    """Verify an unbound callback no longer receives setting changes."""
+    settings = Settings()
+    changed = []
+    settings.bind(changed.append)
+
+    settings.unbind(changed.append)
+    settings.units = "IN"
+
+    assert changed == []
+    with pytest.raises(SettingsError):
+        settings.unbind(changed.append)
+
+
+def test_bind_is_not_called_when_assignment_is_rejected() -> None:
+    """Verify a rejected assignment does not notify bound callbacks."""
+    settings = Settings()
+    changed = []
+    settings.bind(changed.append)
+
+    with pytest.raises(ValidationError):
+        settings.units = []
+
+    assert changed == []
+
+
 def test_assignment_is_validated() -> None:
     """Verify field validation also applies after initialization."""
     settings = Settings()
