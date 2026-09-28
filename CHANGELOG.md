@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a Getting started page that lists where Qt settings and the application data folder are stored on Windows, macOS, and Linux
 - Added a typed Pydantic settings model containing all current factory defaults as the first stage of settings migration
-- Added JSON loading for the typed settings model; a missing or invalid file raises `SettingsError`
+- Added JSON loading and writing for the typed settings model; a failed read or write raises `SettingsError`
 - Added `FlatCAMError` as the project base exception; settings errors inherit from it
 
 ### Fixed

@@ -558,7 +558,7 @@ class App(QtCore.QObject):
             f.close()
 
         # create current_defaults.FlatConfig file if there is none
-        def_path = self.defaults_path()
+        def_path = self.settings_path()
         try:
             f = open(def_path)
             f.close()
@@ -609,7 +609,7 @@ class App(QtCore.QObject):
         self.defaults = AppDefaults(beta=self.beta, version=self.version)
 
         # current_defaults_path = os.path.join(self.data_path, "current_defaults.FlatConfig")
-        current_defaults_path = self.defaults_path()
+        current_defaults_path = self.settings_path()
         if user_defaults:
             self.defaults.load(filename=current_defaults_path, inform=self.inform)
 
@@ -1582,7 +1582,7 @@ class App(QtCore.QObject):
     def tools_database_path(self):
         return os.path.join(self.data_path, 'tools_db_%s.FlatDB' % str(self.version))
 
-    def defaults_path(self):
+    def settings_path(self):
         return os.path.join(self.data_path, 'current_defaults_%s.FlatConfig' % str(self.version))
 
     def factory_defaults_path(self):
