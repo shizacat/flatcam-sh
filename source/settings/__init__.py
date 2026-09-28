@@ -1,6 +1,7 @@
 """Define validated, typed application settings defaults."""
 
 import gettext
+import json
 import os
 from typing import Self
 
@@ -1995,3 +1996,17 @@ class Settings(BaseModel):
                 return cls.model_validate_json(settings_file.read())
         except (OSError, ValidationError, ValueError) as error:
             raise SettingsError(f"Could not load settings from {filename}.") from error
+
+    def write(self, filename: str | os.PathLike[str]) -> None:
+        """
+        Writes the settings to a JSON file.
+
+        :param filename:        path to the JSON settings file
+
+        :raises SettingsError:  the file could not be written
+        """
+        try:
+            with open(filename, "w", encoding="utf-8") as settings_file:
+                json.dump(self.model_dump(), settings_file, indent=2, sort_keys=True)
+        except (OSError, TypeError, ValueError) as error:
+            raise SettingsError(f"Could not write settings to {filename}.") from error

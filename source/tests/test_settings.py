@@ -89,6 +89,22 @@ def test_load_raises_settings_error(tmp_path: Path) -> None:
         Settings.load(invalid_value)
 
 
+def test_write_saves_json_file(tmp_path: Path) -> None:
+    """Verify settings written to disk can be loaded back."""
+    path = tmp_path / "settings.json"
+    settings = Settings(units="IN")
+
+    settings.write(path)
+
+    assert Settings.load(path).units == "IN"
+
+
+def test_write_raises_settings_error(tmp_path: Path) -> None:
+    """Verify a failed settings write raises the shared settings error."""
+    with pytest.raises(SettingsError):
+        Settings().write(tmp_path / "missing" / "settings.json")
+
+
 def test_assignment_is_validated() -> None:
     """Verify field validation also applies after initialization."""
     settings = Settings()
