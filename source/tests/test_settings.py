@@ -32,7 +32,7 @@ def test_representative_defaults() -> None:
     """Verify representative scalar, translated, and collection defaults."""
     settings = Settings()
 
-    assert settings.version == 8.992
+    assert settings.version == "8.992"
     assert settings.units == "MM"
     assert settings.tools_transform_reference == "Selection"
     assert settings.global_grid_context_menu == {
@@ -70,7 +70,7 @@ def test_load_reads_json_file(tmp_path: Path) -> None:
     settings = Settings.load(path)
 
     assert settings.units == "IN"
-    assert settings.version == 8.992
+    assert settings.version == "8.992"
 
 
 def test_load_raises_settings_error(tmp_path: Path) -> None:

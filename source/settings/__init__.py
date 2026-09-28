@@ -35,7 +35,7 @@ class Settings(BaseModel):
 
     _change_callbacks: list[Callable[[str], None]] = PrivateAttr(default_factory=list)
 
-    version: float = Field(default=8.992, description="Settings data-format version.")
+    version: str = Field(default="8.992", description="Settings data-format version.")
     first_run: bool = Field(
         default=True,
         description="Whether the application is running for the first time.",
@@ -43,8 +43,8 @@ class Settings(BaseModel):
     root_folder_path: str = Field(
         default="", description="Root folder used to resolve application resources."
     )
-    global_serial: int = Field(
-        default=0, description="Serial number of the saved settings revision."
+    global_serial: str = Field(
+        default="0", description="Installation identifier stored with the settings."
     )
     global_stats: dict[str, int] = Field(
         default_factory=dict,
@@ -1996,7 +1996,13 @@ class Settings(BaseModel):
         """
         try:
             with open(filename, encoding="utf-8") as settings_file:
-                return cls.model_validate_json(settings_file.read())
+                loaded = json.loads(settings_file.read())
+            if not isinstance(loaded, dict):
+                raise SettingsError(f"Could not load settings from {filename}.")
+            known = {name: value for name, value in loaded.items() if name in cls.model_fields}
+            return cls.model_validate(known)
+        except SettingsError:
+            raise
         except (OSError, ValidationError, ValueError) as error:
             raise SettingsError(f"Could not load settings from {filename}.") from error
 
