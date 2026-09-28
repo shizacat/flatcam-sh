@@ -59,7 +59,7 @@ They are copied only at these points.
 
 **Close Preferences without saving** restores the form and `app.defaults` from `defaults.current_defaults`. `app.options` is left as it was.
 
-**New Project** loads the FlatConfig file into `app.options`, then `on_defaults2options()` reads the form back into `app.defaults` and copies `app.defaults` over `app.options` again.
+**New Project** loads the FlatConfig file into `app.defaults`, then `on_defaults2options()` reads the form back into `app.defaults` and copies `app.defaults` over `app.options`.
 
 After Apply, `options.update(defaults)` stores the same value objects in both dictionaries. A later in-place edit of a nested list or dict is visible from both sides. The startup copy is a `deepcopy`, so the two dictionaries are independent until the next Apply or Save Defaults.
 
