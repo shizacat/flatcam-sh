@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Settings.bind` and `Settings.unbind` so a callback can observe changes to setting values
 - Added `propagate_settings` to copy parser settings onto the Excellon, Gerber, and Geometry classes
 - Added `Settings.report_usage` to count how often a tool or action is used
+- Added an `Options` model for session values that start from saved settings and do not write the settings file; shared preference groups are defined once and reused by both objects
 - Added `FlatCAMError` as the project base exception; settings errors inherit from it
 
 ### Changed

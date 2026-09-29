@@ -1,6 +1,28 @@
 # Settings
 
-Three stores. Each one is the source of truth for a different question.
+`Settings` and `Options` answer different questions.
+
+## `Settings`
+
+Saved application settings. They are loaded from `current_defaults_<version>.FlatConfig` and written back when the user saves preferences. Field defaults are used when that file does not exist. The file-format `version` and the usage counters in `global_stats` belong here.
+
+## `Options`
+
+Session values used by tools, editors, and the open project. `Options.from_settings()` builds them from the saved settings. After that they may diverge: a theme choice or a loaded project changes options and does not write the settings file.
+
+Options do not repeat the settings schema. Shared preference groups are defined once and inherited by both objects:
+
+- application behavior: units, language, workers, autosave
+- interface: theme, canvas, grid, cursor, layout
+- Gerber, Excellon, geometry, and CNC job
+- each tool
+- file associations, scripts, and documents
+
+`version` and `global_stats` stay on `Settings` only.
+
+## Current application stores
+
+The running `App` still keeps this split in `app.defaults` and `app.options` until those call sites move to the typed objects. Each store answers a different question.
 
 | Question | Read and write |
 |---|---|

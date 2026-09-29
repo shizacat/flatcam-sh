@@ -9,7 +9,7 @@ from pydantic import ValidationError
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from exceptions import FlatCAMError, SettingsError
-from settings import Settings
+from settings import Options, Settings
 
 
 def test_settings_error_uses_the_project_base_exception() -> None:
@@ -162,3 +162,22 @@ def test_assignment_is_validated() -> None:
 
     with pytest.raises(ValidationError):
         settings.units = []
+
+
+def test_options_start_from_settings_and_then_diverge() -> None:
+    """Verify session options copy saved settings and do not write them back."""
+    settings = Settings()
+    options = Options.from_settings(settings)
+
+    options.units = "IN"
+    options.global_theme = "dark"
+    options.global_grid_context_menu["mm"].append(5.0)
+
+    assert options.units == "IN"
+    assert options.global_theme == "dark"
+    assert settings.units == "MM"
+    assert settings.global_theme == "default"
+    assert 5.0 not in settings.global_grid_context_menu["mm"]
+    assert "version" not in Options.model_fields
+    assert "global_stats" not in Options.model_fields
+    assert set(Options.model_fields) < set(Settings.model_fields)
