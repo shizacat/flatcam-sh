@@ -55,7 +55,7 @@ class TclCommandGetSys(TclCommand):
 
         name = args['name']
 
-        if name in self.app.options:
-            return self.app.options[name]
+        if name in type(self.app.options).model_fields:
+            return getattr(self.app.options, name)
         else:
             return "The keyword: %s does not exist as a parameter" % str(name)

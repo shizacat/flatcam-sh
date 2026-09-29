@@ -71,7 +71,7 @@ class SolderPaste(AppTool):
         self.flat_geometry = []
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolSolderPaste()")
+        self.app.settings.report_usage("ToolSolderPaste()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -213,16 +213,16 @@ class SolderPaste(AppTool):
             "tools_solderpaste_pp": self.ui.pp_combo
         })
 
-        for option in self.app.options:
+        for option in type(self.app.options).model_fields:
             if option.find('tools_') == 0:
-                self.obj_options[option] = deepcopy(self.app.options[option])
+                self.obj_options[option] = deepcopy(getattr(self.app.options, option))
         self.read_form_to_options()
 
         self.clear_context_menu()
         self.init_context_menu()
 
         # either originally it was a string or not, xy_end will be made string
-        dias_option = self.app.options["tools_solderpaste_tools"]
+        dias_option = self.app.options.tools_solderpaste_tools
         dias_option = re.sub(r'[()\[\]]', '', str(dias_option)) if dias_option else None
         try:
             dias = [float(eval(dia)) for dia in dias_option.split(",") if dia != '']
@@ -528,8 +528,8 @@ class SolderPaste(AppTool):
         :return:
         """
         for key in self.form_fields:
-            if key in self.app.options:
-                self.form_fields[key].set_value(self.app.options[key])
+            if key in type(self.app.options).model_fields:
+                self.form_fields[key].set_value(getattr(self.app.options, key))
 
     def set_form(self, val):
         """
@@ -1053,8 +1053,8 @@ class SolderPaste(AppTool):
                 tool_dia = tooluid_value['tooldia']
                 tool_cnc_dict = deepcopy(tooluid_value)
 
-                new_obj.coords_decimals = self.app.options["cncjob_coords_decimals"]
-                new_obj.fr_decimals = self.app.options["cncjob_fr_decimals"]
+                new_obj.coords_decimals = self.app.options.cncjob_coords_decimals
+                new_obj.fr_decimals = self.app.options.cncjob_fr_decimals
                 new_obj.tool = int(tooluid_key)
 
                 # Propagate options
@@ -1233,7 +1233,7 @@ class SolderPaste(AppTool):
                                        "Most likely another app is holding the file open and not accessible."))
                 return 'fail'
 
-        if self.app.options["global_open_style"] is False:
+        if self.app.options.global_open_style is False:
             self.app.file_opened.emit("gcode", filename)
         self.app.file_saved.emit("gcode", filename)
         self.app.inform.emit('[success] %s: %s' % (_("Saved to"), filename))

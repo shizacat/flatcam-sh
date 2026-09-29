@@ -41,7 +41,7 @@ class ExcSlotEditorTool(AppToolEditor):
             pass
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor ToolPath()")
+        self.app.settings.report_usage("Geo Editor ToolPath()")
         super().run()
 
         # if the splitter us hidden, display it

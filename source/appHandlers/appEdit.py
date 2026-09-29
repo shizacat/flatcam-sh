@@ -28,7 +28,7 @@ class appEditor(QtCore.QObject):
         self.worker_task = self.app.worker_task
         self.options = self.app.options
         self.app_units = self.app.app_units
-        self.defaults = self.app.defaults
+        self.settings = self.app.settings
         self.collection = self.app.collection
         self.app_obj = self.app.app_obj
         self.decimals = self.app.decimals
@@ -38,23 +38,23 @@ class appEditor(QtCore.QObject):
         Will convert any object out of Gerber, Excellon, Geometry to Geometry object.
         :return:
         """
-        self.defaults.report_usage("convert_any2geo()")
+        self.settings.report_usage("convert_any2geo()")
 
         # store here the default data for Geometry Data
         default_data = {}
 
-        for opt_key, opt_val in self.options.items():
+        for opt_key, opt_val in ((name, getattr(self.options, name)) for name in type(self.options).model_fields):
             if opt_key.find('geometry' + "_") == 0:
                 o_name = opt_key[len('geometry') + 1:]
-                default_data[o_name] = self.options[opt_key]
+                default_data[o_name] = getattr(self.options, opt_key)
             else:
-                default_data[opt_key] = self.options[opt_key]
+                default_data[opt_key] = getattr(self.options, opt_key)
 
-        if isinstance(self.options["tools_mill_tooldia"], float):
-            tools_diameters = [self.options["tools_mill_tooldia"]]
+        if isinstance(self.options.tools_mill_tooldia, float):
+            tools_diameters = [self.options.tools_mill_tooldia]
         else:
             try:
-                dias = str(self.options["tools_mill_tooldia"]).strip('[').strip(']')
+                dias = str(self.options.tools_mill_tooldia).strip('[').strip(']')
                 tools_string = dias.split(",")
                 tools_diameters = [eval(a) for a in tools_string if a != '']
             except Exception as e:
@@ -416,7 +416,7 @@ class appEditor(QtCore.QObject):
 
         :return: None
         """
-        self.defaults.report_usage("on_convert_singlegeo_to_multigeo()")
+        self.settings.report_usage("on_convert_singlegeo_to_multigeo()")
 
         obj = self.collection.get_active()
 
@@ -452,7 +452,7 @@ class appEditor(QtCore.QObject):
 
         :return: None
         """
-        self.defaults.report_usage("on_convert_multigeo_to_singlegeo()")
+        self.settings.report_usage("on_convert_multigeo_to_singlegeo()")
 
         obj = self.collection.get_active()
 
@@ -487,7 +487,7 @@ class appEditor(QtCore.QObject):
 
         :return: None
         """
-        self.defaults.report_usage("on_edit_join()")
+        self.settings.report_usage("on_edit_join()")
 
         obj_name_single = str(name) if name else "Combo_SingleGeo"
         obj_name_multi = str(name) if name else "Combo_MultiGeo"
@@ -515,7 +515,7 @@ class appEditor(QtCore.QObject):
                                "Check the generated GCODE."))
             return
 
-        fuse_tools = self.options["geometry_merge_fuse_tools"]
+        fuse_tools = self.options.geometry_merge_fuse_tools
 
         # Determine parameters based on the check
         # Since len(geo_type_set) == 1, we just need to check which value is in the set
@@ -554,7 +554,7 @@ class appEditor(QtCore.QObject):
 
         :return: None
         """
-        self.defaults.report_usage("on_edit_join_exc()")
+        self.settings.report_usage("on_edit_join_exc()")
 
         objs = self.collection.get_selected()
 
@@ -568,7 +568,7 @@ class appEditor(QtCore.QObject):
                              (_("At least two objects are required for join. Objects currently selected"), len(objs)))
             return 'fail'
 
-        fuse_tools = self.options["excellon_merge_fuse_tools"]
+        fuse_tools = self.options.excellon_merge_fuse_tools
 
         def initialize(exc_obj, app):
             ExcellonObject.merge(exc_list=objs, exc_final=exc_obj, decimals=self.decimals, fuse_tools=fuse_tools,
@@ -585,7 +585,7 @@ class appEditor(QtCore.QObject):
 
         :return: None
         """
-        self.defaults.report_usage("on_edit_join_grb()")
+        self.settings.report_usage("on_edit_join_grb()")
 
         objs = self.collection.get_selected()
 

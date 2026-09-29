@@ -37,7 +37,7 @@ class BufferEditorTool(AppToolEditor):
         pass
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor ToolBuffer()")
+        self.app.settings.report_usage("Geo Editor ToolBuffer()")
         super().run()
 
         # if the splitter us hidden, display it
@@ -73,7 +73,7 @@ class BufferEditorTool(AppToolEditor):
 
     def set_tool_ui(self):
         # Init appGUI
-        self.ui.buffer_distance_entry.set_value(self.draw_app.app.options['gerber_editor_buff_f'])
+        self.ui.buffer_distance_entry.set_value(self.draw_app.app.options.gerber_editor_buff_f)
 
     def on_tab_close(self):
         self.draw_app.select_tool("select")

@@ -47,7 +47,7 @@ class ToolEtchCompensation(AppTool):
         AppTool.install(self, icon, separator, shortcut='', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolEtchCompensation()")
+        self.app.settings.report_usage("ToolEtchCompensation()")
         self.app.log.debug("ToolEtchCompensation() is running ...")
 
         if toggle:
@@ -182,7 +182,7 @@ class ToolEtchCompensation(AppTool):
         ratio_type = self.ui.ratio_radio.get_value()
         thickness = self.ui.thick_entry.get_value() / 1000     # in microns
 
-        grb_circle_steps = int(self.app.options["gerber_circle_steps"])
+        grb_circle_steps = int(self.app.options.gerber_circle_steps)
         obj_name = self.ui.gerber_combo.currentText()
 
         outname = obj_name + "_comp"

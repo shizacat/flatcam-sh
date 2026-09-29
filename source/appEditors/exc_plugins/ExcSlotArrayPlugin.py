@@ -38,7 +38,7 @@ class ExcSlotArrayEditorTool(AppToolEditor):
         pass
 
     def run(self):
-        self.app.defaults.report_usage("Exc Editor ArrayTool()")
+        self.app.settings.report_usage("Exc Editor ArrayTool()")
         super().run()
 
         # if the splitter us hidden, display it

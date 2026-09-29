@@ -60,8 +60,8 @@ class TclCommandListSys(TclCommand):
         """
         if 'selection' in args:
             argument = args['selection']
-            return str([k for k in self.app.options.keys() if str(k).startswith(str(argument))])
+            return str([k for k in type(self.app.options).model_fields if str(k).startswith(str(argument))])
         else:
-            ret_val = list(self.app.options.keys())
+            ret_val = list(type(self.app.options).model_fields)
             return str(ret_val)
             # return str([*self.app.options])

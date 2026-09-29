@@ -36,6 +36,7 @@ from datetime import datetime
 import simplejson as json
 
 from appCommon.Common import LoudDict
+from settings.utils import copy_shared
 
 from vispy.gloo.util import _screenshot
 from vispy.io import write_png
@@ -50,6 +51,7 @@ import appTranslation as fcTranslate
 import builtins
 
 import typing
+from settings.utils import apply_options, propagate_settings
 
 if typing.TYPE_CHECKING:
     import appMain
@@ -351,7 +353,7 @@ class appIO(QtCore.QObject):
             return
         else:
             self.export_svg(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("SVG", filename)
             self.app.file_saved.emit("SVG", filename)
 
@@ -393,7 +395,7 @@ class appIO(QtCore.QObject):
             else:
                 self.app.plotcanvas.figure.savefig(filename)
 
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("png", filename)
             self.app.file_saved.emit("png", filename)
 
@@ -435,7 +437,7 @@ class appIO(QtCore.QObject):
             return
         else:
             self.save_source_file(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("Gerber", filename)
             self.app.file_saved.emit("Gerber", filename)
 
@@ -477,7 +479,7 @@ class appIO(QtCore.QObject):
             return
         else:
             self.save_source_file(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("Script", filename)
             self.app.file_saved.emit("Script", filename)
 
@@ -519,7 +521,7 @@ class appIO(QtCore.QObject):
             return
         else:
             self.save_source_file(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("Document", filename)
             self.app.file_saved.emit("Document", filename)
 
@@ -560,7 +562,7 @@ class appIO(QtCore.QObject):
             return
         else:
             self.save_source_file(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("Excellon", filename)
             self.app.file_saved.emit("Excellon", filename)
 
@@ -584,7 +586,7 @@ class appIO(QtCore.QObject):
 
         name = self.app.collection.get_active().obj_options["name"]
 
-        _filter = self.options["excellon_save_filters"]
+        _filter = self.options.excellon_save_filters
         try:
             filename, _f = FCFileSaveDialog.get_saved_filename(
                 caption=_("Export Excellon"),
@@ -605,7 +607,7 @@ class appIO(QtCore.QObject):
             obj.update_filters(last_ext=used_extension, filter_string='excellon_save_filters')
 
             self.export_excellon(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("Excellon", filename)
             self.app.file_saved.emit("Excellon", filename)
 
@@ -629,7 +631,7 @@ class appIO(QtCore.QObject):
 
         name = self.app.collection.get_active().obj_options["name"]
 
-        _filter_ = self.options['gerber_save_filters']
+        _filter_ = self.options.gerber_save_filters
         try:
             filename, _f = FCFileSaveDialog.get_saved_filename(
                 caption=_("Export Gerber"),
@@ -650,7 +652,7 @@ class appIO(QtCore.QObject):
             obj.update_filters(last_ext=used_extension, filter_string='gerber_save_filters')
 
             self.export_gerber(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("Gerber", filename)
             self.app.file_saved.emit("Gerber", filename)
 
@@ -705,7 +707,7 @@ class appIO(QtCore.QObject):
             return
         else:
             self.export_dxf(name, filename)
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("DXF", filename)
             self.app.file_saved.emit("DXF", filename)
 
@@ -905,12 +907,8 @@ class appIO(QtCore.QObject):
         # Clear project filename
         self.app.project_filename = None
 
-        default_file = self.app.settings_path()
-        # Load the application options
-        self.options.load(filename=default_file, inform=self.inform)
-
-        # Re-fresh project options
-        self.app.on_defaults2options()
+        # Re-fresh project options from the settings already in memory.
+        self.app.on_settings2options()
 
         if use_thread is True:
             self.app.new_project_signal.emit()
@@ -1130,7 +1128,7 @@ class appIO(QtCore.QObject):
             self.on_file_save_project_as()
         else:
             self.worker_task.emit({'fcn': self.save_project, 'params': [self.app.project_filename, silent]})
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("project", self.app.project_filename)
             self.app.file_saved.emit("project", self.app.project_filename)
 
@@ -1177,7 +1175,7 @@ class appIO(QtCore.QObject):
             self.save_project(filename, quit_action)
 
         # self.save_project(filename)
-        if self.options["global_open_style"] is False:
+        if self.options.global_open_style is False:
             self.app.file_opened.emit("project", filename)
         self.app.file_saved.emit("project", filename)
 
@@ -1237,15 +1235,15 @@ class appIO(QtCore.QObject):
             self.save_pdf(filename, obj_selection)
 
         # self.save_project(filename)
-        if self.options["global_open_style"] is False:
+        if self.options.global_open_style is False:
             self.app.file_opened.emit("pdf", filename)
         self.app.file_saved.emit("pdf", filename)
 
     def save_pdf(self, file_name, obj_selection):
         self.log.debug("save_pdf()")
 
-        p_size = self.options['global_workspaceT']
-        orientation = self.options['global_workspace_orientation']
+        p_size = self.options.global_workspaceT
+        orientation = self.options.global_workspace_orientation
         color = 'black'
         transparency_level = 1.0
 
@@ -1318,7 +1316,7 @@ class appIO(QtCore.QObject):
                 color = obj.fill_color[:-2]
                 transparency_level = obj.fill_color[-2:]
             elif obj.kind.lower() == 'geometry':
-                color = self.options["global_draw_color"]
+                color = self.options.global_draw_color
 
             # Change the attributes of the exported SVG
             # We don't need stroke-width
@@ -1432,8 +1430,8 @@ class appIO(QtCore.QObject):
         :return:
         """
         if filename is None:
-            filename = self.app.options["global_last_save_folder"] if \
-                self.app.options["global_last_save_folder"] is not None else self.app.options["global_last_folder"]
+            filename = self.app.options.global_last_save_folder if \
+                self.app.options.global_last_save_folder is not None else self.app.options.global_last_folder
 
         self.log.debug("export_svg()")
 
@@ -1482,7 +1480,7 @@ class appIO(QtCore.QObject):
                                    "Most likely another app is holding the file open and not accessible."))
                 return 'fail'
 
-            if self.options["global_open_style"] is False:
+            if self.options.global_open_style is False:
                 self.app.file_opened.emit("SVG", filename)
             self.app.file_saved.emit("SVG", filename)
             self.inform.emit('[success] %s: %s' % (_("SVG file exported to"), filename))
@@ -1548,7 +1546,7 @@ class appIO(QtCore.QObject):
 
         # Update options
         self.app.preferencesUiManager.defaults_read_form()
-        self.options.propagate_defaults()
+        propagate_settings(self.options)
 
         # Save update options
         try:
@@ -1557,7 +1555,7 @@ class appIO(QtCore.QObject):
             self.inform.emit('[ERROR_NOTCL] %s %s' % (_("Failed to write defaults to file."), str(filename)))
             return
 
-        if self.options["global_open_style"] is False:
+        if self.options.global_open_style is False:
             self.app.file_opened.emit("preferences", filename)
         self.app.file_saved.emit("preferences", filename)
         self.inform.emit('[success] %s: %s' % (_("Exported preferences to"), filename))
@@ -1574,15 +1572,15 @@ class appIO(QtCore.QObject):
         """
 
         if filename is None:
-            if self.app.options["global_last_save_folder"]:
-                filename = self.app.options["global_last_save_folder"] + '/' + 'exported_excellon'
+            if self.app.options.global_last_save_folder:
+                filename = self.app.options.global_last_save_folder + '/' + 'exported_excellon'
             else:
-                filename = self.app.options["global_last_folder"] + '/' + 'exported_excellon'
+                filename = self.app.options.global_last_folder + '/' + 'exported_excellon'
 
         self.log.debug("export_excellon()")
 
-        format_exc = ';FILE_FORMAT=%d:%d\n' % (self.options["excellon_exp_integer"],
-                                               self.options["excellon_exp_decimals"]
+        format_exc = ';FILE_FORMAT=%d:%d\n' % (self.options.excellon_exp_integer,
+                                               self.options.excellon_exp_decimals
                                                )
 
         if local_use is None:
@@ -1599,12 +1597,12 @@ class appIO(QtCore.QObject):
             return
 
         # updated units
-        e_units = self.options["excellon_exp_units"]
-        e_whole = self.options["excellon_exp_integer"]
-        e_fract = self.options["excellon_exp_decimals"]
-        e_zeros = self.options["excellon_exp_zeros"]
-        e_format = self.options["excellon_exp_format"]
-        slot_type = self.options["excellon_exp_slot_type"]
+        e_units = self.options.excellon_exp_units
+        e_whole = self.options.excellon_exp_integer
+        e_fract = self.options.excellon_exp_decimals
+        e_zeros = self.options.excellon_exp_zeros
+        e_format = self.options.excellon_exp_format
+        slot_type = self.options.excellon_exp_slot_type
 
         fc_units = self.app_units.upper()
         if fc_units == 'MM':
@@ -1690,7 +1688,7 @@ class appIO(QtCore.QObject):
                                            "Most likely another app is holding the file open and not accessible."))
                         return 'fail'
 
-                    if self.options["global_open_style"] is False:
+                    if self.options.global_open_style is False:
                         self.app.file_opened.emit("Excellon", filename)
                     self.app.file_saved.emit("Excellon", filename)
                     self.inform.emit('[success] %s: %s' % (_("Excellon file exported to"), filename))
@@ -1732,8 +1730,8 @@ class appIO(QtCore.QObject):
         :return:
         """
         if filename is None:
-            filename = self.app.options["global_last_save_folder"] if \
-                self.app.options["global_last_save_folder"] is not None else self.app.options["global_last_folder"]
+            filename = self.app.options.global_last_save_folder if \
+                self.app.options.global_last_save_folder is not None else self.app.options.global_last_folder
 
         self.log.debug("export_gerber()")
 
@@ -1746,10 +1744,10 @@ class appIO(QtCore.QObject):
             obj = local_use
 
         # updated units
-        g_units = self.options["gerber_exp_units"]
-        g_whole = self.options["gerber_exp_integer"]
-        g_fract = self.options["gerber_exp_decimals"]
-        g_zeros = self.options["gerber_exp_zeros"]
+        g_units = self.options.gerber_exp_units
+        g_whole = self.options.gerber_exp_integer
+        g_fract = self.options.gerber_exp_decimals
+        g_zeros = self.options.gerber_exp_zeros
 
         fc_units = self.app_units.upper()
         if fc_units == 'MM':
@@ -1825,7 +1823,7 @@ class appIO(QtCore.QObject):
                                            "Most likely another app is holding the file open and not accessible."))
                         return 'fail'
 
-                    if self.options["global_open_style"] is False:
+                    if self.options.global_open_style is False:
                         self.app.file_opened.emit("Gerber", filename)
                     self.app.file_saved.emit("Gerber", filename)
                     self.inform.emit('[success] %s: %s' % (_("Gerber file exported to"), filename))
@@ -1866,8 +1864,8 @@ class appIO(QtCore.QObject):
         :return:
         """
         if filename is None:
-            filename = self.app.options["global_last_save_folder"] if \
-                self.app.options["global_last_save_folder"] is not None else self.app.options["global_last_folder"]
+            filename = self.app.options.global_last_save_folder if \
+                self.app.options.global_last_save_folder is not None else self.app.options.global_last_folder
 
         self.log.debug("export_dxf()")
 
@@ -1891,7 +1889,7 @@ class appIO(QtCore.QObject):
                                            "Most likely another app is holding the file open and not accessible."))
                         return 'fail'
 
-                    if self.options["global_open_style"] is False:
+                    if self.options.global_open_style is False:
                         self.app.file_opened.emit("DXF", filename)
                     self.app.file_saved.emit("DXF", filename)
                     self.inform.emit('[success] %s: %s' % (_("DXF file exported to"), filename))
@@ -2106,7 +2104,7 @@ class appIO(QtCore.QObject):
                 return
             if ret_val == 'fail':
                 if from_tcl:
-                    filename = self.options['global_tcl_path'] + '/' + name
+                    filename = self.options.global_tcl_path + '/' + name
                     ret_val = self.app.app_obj.new_object("gerber", name, obj_init, autoselected=False, plot=plot)
                 if ret_val == 'fail':
                     self.inform.emit('[ERROR_NOTCL] %s' % _('Open Gerber failed. Probable not a Gerber file.'))
@@ -2174,7 +2172,7 @@ class appIO(QtCore.QObject):
             ret_val = self.app.app_obj.new_object("excellon", name, obj_init, autoselected=False, plot=plot)
             if ret_val == 'fail':
                 if from_tcl:
-                    filename = self.options['global_tcl_path'] + '/' + name
+                    filename = self.options.global_tcl_path + '/' + name
                     ret_val = self.app.app_obj.new_object("excellon", name, obj_init, autoselected=False, plot=plot)
                 if ret_val == 'fail':
                     self.inform.emit('[ERROR_NOTCL] %s' %
@@ -2301,7 +2299,7 @@ class appIO(QtCore.QObject):
             ret_val = self.app.app_obj.new_object("cncjob", name, obj_init, autoselected=False, plot=plot)
             if ret_val == 'fail':
                 if from_tcl:
-                    filename = self.options['global_tcl_path'] + '/' + name
+                    filename = self.options.global_tcl_path + '/' + name
                     ret_val = self.app.app_obj.new_object("cncjob", name, obj_init, autoselected=False, plot=plot)
                 if ret_val == 'fail':
                     self.inform.emit('[ERROR_NOTCL] %s' %
@@ -2430,7 +2428,7 @@ class appIO(QtCore.QObject):
             # Object creation
             ret_val = self.app.app_obj.new_object("script", script_name, obj_init, autoselected=False, plot=False)
             if ret_val == 'fail':
-                filename = self.options['global_tcl_path'] + '/' + script_name
+                filename = self.options.global_tcl_path + '/' + script_name
                 ret_val = self.app.app_obj.new_object("script", script_name, obj_init, autoselected=False, plot=False)
                 if ret_val == 'fail':
                     self.inform.emit('[ERROR_NOTCL]%s' % _('Failed to open TCL Script.'))
@@ -2575,7 +2573,7 @@ class appIO(QtCore.QObject):
                 except IOError:
                     if from_tcl:
                         name = prj_filename.split('/')[-1].split('\\')[-1]
-                        prj_filename = os.path.join(self.options['global_tcl_path'], name)
+                        prj_filename = os.path.join(self.options.global_tcl_path, name)
                         try:
                             f = open(prj_filename, 'r')
                         except IOError:
@@ -2659,13 +2657,13 @@ class appIO(QtCore.QObject):
                 # self.app.defaults.update(self.app.options)
                 # self.app.preferencesUiManager.save_defaults()
                 # Project options
-                self.app.options.update(proj_dict['options'])
+                apply_options(self.app.options, proj_dict['options'])
             if response == bt_no:
                 pass
         else:
             # Load by default new options when not using GUI
             # Project options
-            self.app.options.update(proj_dict['options'])
+            apply_options(self.app.options, proj_dict['options'])
 
         self.app.project_filename = filename
 
@@ -2821,14 +2819,14 @@ class appIO(QtCore.QObject):
             except Exception as e:
                 self.log.error("save_project() --> There was no active object. Skipping read_form. %s" % str(e))
 
-            app_options = {k: v for k, v in self.app.options.items()}
+            app_options = {k: v for k, v in ((name, getattr(self.app.options, name)) for name in type(self.app.options).model_fields)}
             d = {
                 "objs":             [obj.to_dict() for obj in self.app.collection.get_list()],
                 "options":          app_options,
                 "version":          self.app.version
             }
 
-            if self.options["global_save_compressed"] is True:
+            if self.options.global_save_compressed is True:
                 try:
                     # This is the correct way to handle inf/nan
                     project_as_json = json.dumps(
@@ -2867,11 +2865,11 @@ class appIO(QtCore.QObject):
                         return
 
                 try:
-                    # with lzma.open(filename, "w", preset=int(self.options['global_compression_level'])) as f:
+                    # with lzma.open(filename, "w", preset=int(self.options.global_compression_level)) as f:
                     #     # # Write
                     #     f.write(project_as_json)
 
-                    compressor_obj = lzma.LZMACompressor(preset=int(self.options['global_compression_level']))
+                    compressor_obj = lzma.LZMACompressor(preset=int(self.options.global_compression_level))
                     out1 = compressor_obj.compress(project_as_json)
                     out2 = compressor_obj.flush()
                     project_zipped = b"".join([out1, out2])
@@ -2969,7 +2967,7 @@ class appIO(QtCore.QObject):
         """
 
         if filename is None:
-            filename = self.app.options["global_last_save_folder"] or self.app.options["global_last_folder"]
+            filename = self.app.options.global_last_save_folder or self.app.options.global_last_folder
 
         self.log.debug("save_source_file()")
 
@@ -3003,5 +3001,5 @@ class appIO(QtCore.QObject):
 
         :return: None
         """
-        self.app.defaults.update(self.app.options)
+        copy_shared(self.app.settings, self.app.options)
         self.app.preferencesUiManager.save_defaults()

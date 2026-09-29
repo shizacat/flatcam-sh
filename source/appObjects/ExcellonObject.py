@@ -45,7 +45,7 @@ class ExcellonObject(FlatCAMObj, Excellon):
         self.app = app
         self.decimals = self.app.decimals
 
-        self.circle_steps = int(self.app.options["excellon_circle_steps"])
+        self.circle_steps = int(self.app.options.excellon_circle_steps)
 
         Excellon.__init__(self, excellon_circle_steps=self.circle_steps, app=app)
         FlatCAMObj.__init__(self, name, app)
@@ -101,8 +101,8 @@ class ExcellonObject(FlatCAMObj, Excellon):
         self.multigeo = False
         self.units_found = self.app.app_units
 
-        self.fill_color = self.app.options['excellon_plot_fill']
-        self.outline_color = self.app.options['excellon_plot_line']
+        self.fill_color = self.app.options.excellon_plot_fill
+        self.outline_color = self.app.options.excellon_plot_line
         self.alpha_level = 'bf'
 
         # the key is the tool id and the value is a list of shapes keys (indexes)
@@ -129,12 +129,12 @@ class ExcellonObject(FlatCAMObj, Excellon):
         self.units = self.app.app_units.upper()
 
         # # fill in self.obj_options values  for the Drilling Tool from self.app.options
-        # for opt_key, opt_val in self.app.options.items():
+        # for opt_key, opt_val in ((name, getattr(self.app.options, name)) for name in type(self.app.options).model_fields):
         #     if opt_key.find('tools_drill_') == 0:
         #         self.obj_options[opt_key] = deepcopy(opt_val)
         #
         # # fill in self.default_data values from self.obj_options
-        # for opt_key, opt_val in self.app.options.items():
+        # for opt_key, opt_val in ((name, getattr(self.app.options, name)) for name in type(self.app.options).model_fields):
         #     if opt_key.find('excellon_') == 0 or opt_key.find('tools_drill_') == 0:
         #         self.default_data[opt_key] = deepcopy(opt_val)
 
@@ -194,7 +194,7 @@ class ExcellonObject(FlatCAMObj, Excellon):
         self.init_context_menu()
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
     def set_offset_values(self):
@@ -249,8 +249,8 @@ class ExcellonObject(FlatCAMObj, Excellon):
             self.ui.tools_table.setColumnHidden(4, False)
             self.ui.tools_table.setColumnHidden(5, False)
             self.ui.table_visibility_cb.show()
-            self.ui.table_visibility_cb.set_value(self.app.options["excellon_tools_table_display"])
-            self.on_table_visibility_toggle(state=self.app.options["excellon_tools_table_display"])
+            self.ui.table_visibility_cb.set_value(self.app.options.excellon_tools_table_display)
+            self.on_table_visibility_toggle(state=self.app.options.excellon_tools_table_display)
             self.ui.autoload_db_cb.show()
 
             # Context Menu section
@@ -361,8 +361,8 @@ class ExcellonObject(FlatCAMObj, Excellon):
                 h_color = QtGui.QColor(red, green, blue, alpha)
                 self.ui.tools_table.item(self.tool_row, 4).setBackground(h_color)
             else:
-                h1 = self.app.options["excellon_plot_fill"][1:7]
-                h2 = self.app.options["excellon_plot_fill"][7:9]
+                h1 = self.app.options.excellon_plot_fill[1:7]
+                h2 = self.app.options.excellon_plot_fill[7:9]
                 h_color = QtGui.QColor('#' + h2 + h1)
                 self.ui.tools_table.item(self.tool_row, 4).setBackground(h_color)
 
@@ -1025,7 +1025,7 @@ class ExcellonObject(FlatCAMObj, Excellon):
 
             geo_obj.obj_options['type'] = 'Excellon Geometry'
             geo_obj.obj_options["tools_mill_tooldia"] = str(tooldia)
-            geo_obj.obj_options["multidepth"] = app_obj.options["tools_mill_multidepth"]
+            geo_obj.obj_options["multidepth"] = app_obj.options.tools_mill_multidepth
             geo_obj.solid_geometry = []
 
             # in case that the tool used has the same diameter with the hole, and since the maximum resolution
@@ -1129,7 +1129,7 @@ class ExcellonObject(FlatCAMObj, Excellon):
 
             geo_obj.obj_options['type'] = 'Excellon Geometry'
             geo_obj.obj_options["tools_mill_tooldia"] = str(tooldia)
-            geo_obj.obj_options["tools_mill_multidepth"] = app_obj.options["tools_mill_multidepth"]
+            geo_obj.obj_options["tools_mill_multidepth"] = app_obj.options.tools_mill_multidepth
             geo_obj.solid_geometry = []
 
             # in case that the tool used has the same diameter with the hole, and since the maximum resolution
@@ -1176,12 +1176,12 @@ class ExcellonObject(FlatCAMObj, Excellon):
         return True, ""
 
     def on_generate_milling_button_click(self):
-        self.app.defaults.report_usage("excellon_on_create_milling_drills button")
+        self.app.settings.report_usage("excellon_on_create_milling_drills button")
         self.read_form()
         self.generate_milling_drills(use_thread=False, plot=True)
 
     def on_generate_milling_slots_button_click(self):
-        self.app.defaults.report_usage("excellon_on_create_milling_slots_button")
+        self.app.settings.report_usage("excellon_on_create_milling_slots_button")
         self.read_form()
         self.generate_milling_slots(use_thread=False, plot=True)
 
@@ -1197,10 +1197,10 @@ class ExcellonObject(FlatCAMObj, Excellon):
         # self.obj_options['feedrate_rapid'] = float(self.obj_options['feedrate_rapid']) * factor
         # self.obj_options['toolchangez'] = float(self.obj_options['toolchangez']) * factor
         #
-        # if self.app.options["excellon_toolchangexy"] == '':
+        # if self.app.options.excellon_toolchangexy == '':
         #     self.obj_options['toolchangexy'] = "0.0, 0.0"
         # else:
-        #     coords_xy = [float(eval(coord)) for coord in self.app.options["excellon_toolchangexy"].split(",")]
+        #     coords_xy = [float(eval(coord)) for coord in self.app.options.excellon_toolchangexy.split(",")]
         #     if len(coords_xy) < 2:
         #         self.app.inform.emit('[ERROR] %s' % _("The Toolchange X,Y field in Edit -> Preferences has to be "
         #                                               "in the format (x, y) \n"
@@ -1229,7 +1229,7 @@ class ExcellonObject(FlatCAMObj, Excellon):
             self.build_ui()
 
     def on_autoload_db_toggled(self, state):
-        self.app.options["excellon_autoload_db"] = True if state else False
+        self.app.options.excellon_autoload_db = True if state else False
 
     def on_plot_cb_click(self):
         if self.muted_ui:

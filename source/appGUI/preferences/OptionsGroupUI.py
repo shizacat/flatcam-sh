@@ -54,7 +54,7 @@ class OptionsGroupUI2(OptionsGroupUI):
         self.options = self.build_options()
 
         row = 0
-        for option in self.options:
+        for option in type(self.options).model_fields:
             row += option.add_to_grid(grid=self.grid, row=row)
 
         self.layout.addStretch()
@@ -64,6 +64,6 @@ class OptionsGroupUI2(OptionsGroupUI):
 
     def option_dict(self) -> Dict[str, OptionUI]:
         result = {}
-        for optionui in self.options:
+        for optionui in type(self.options).model_fields:
             result[optionui.option] = optionui
         return result

@@ -57,7 +57,7 @@ class DblSidedTool(AppTool):
         AppTool.install(self, icon, separator, shortcut='Alt+D', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("Tool2Sided()")
+        self.app.settings.report_usage("Tool2Sided()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -156,12 +156,12 @@ class DblSidedTool(AppTool):
         self.ui.point_entry.set_value("")
         self.ui.alignment_holes.set_value("")
 
-        self.ui.mirror_axis.set_value(self.app.options["tools_2sided_mirror_axis"])
-        self.ui.axis_location.set_value(self.app.options["tools_2sided_axis_loc"])
+        self.ui.mirror_axis.set_value(self.app.options.tools_2sided_mirror_axis)
+        self.ui.axis_location.set_value(self.app.options.tools_2sided_axis_loc)
         self.on_toggle_pointbox(self.ui.axis_location.get_value())
 
-        self.ui.drill_dia.set_value(self.app.options["tools_2sided_drilldia"])
-        self.ui.align_type_radio.set_value(self.app.options["tools_2sided_align_type"])
+        self.ui.drill_dia.set_value(self.app.options.tools_2sided_drilldia)
+        self.ui.align_type_radio.set_value(self.app.options.tools_2sided_align_type)
         self.ui.on_align_type_changed(val=self.ui.align_type_radio.get_value())
 
         self.ui.xmin_entry.set_value(0.0)
@@ -204,7 +204,7 @@ class DblSidedTool(AppTool):
             self.disconnect_events()
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
     def change_level(self, level):
@@ -548,7 +548,7 @@ class DblSidedTool(AppTool):
         self.app.inform.emit('[success] %s: %s' % (_("Object was mirrored"), str(fcobj.obj_options['name'])))
 
     def on_point_add(self):
-        val = self.app.options["global_point_clipboard_format"] % \
+        val = self.app.options.global_point_clipboard_format % \
               (self.decimals, self.app.mouse_click_pos[0], self.decimals, self.app.mouse_click_pos[1])
         self.ui.point_entry.set_value(val)
 
@@ -635,9 +635,9 @@ class DblSidedTool(AppTool):
 
         try:
             px, py = self.ui.point_entry.get_value()
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, xmin, self.decimals, py)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, xmin, self.decimals, py)
         except TypeError:
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, xmin, self.decimals, 0.0)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, xmin, self.decimals, 0.0)
         self.ui.point_entry.set_value(val)
 
     def on_ymin_clicked(self):
@@ -646,9 +646,9 @@ class DblSidedTool(AppTool):
 
         try:
             px, py = self.ui.point_entry.get_value()
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, px, self.decimals, ymin)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, px, self.decimals, ymin)
         except TypeError:
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, 0.0, self.decimals, ymin)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, 0.0, self.decimals, ymin)
         self.ui.point_entry.set_value(val)
 
     def on_xmax_clicked(self):
@@ -657,9 +657,9 @@ class DblSidedTool(AppTool):
 
         try:
             px, py = self.ui.point_entry.get_value()
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, xmax, self.decimals, py)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, xmax, self.decimals, py)
         except TypeError:
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, xmax, self.decimals, 0.0)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, xmax, self.decimals, 0.0)
         self.ui.point_entry.set_value(val)
 
     def on_ymax_clicked(self):
@@ -668,9 +668,9 @@ class DblSidedTool(AppTool):
 
         try:
             px, py = self.ui.point_entry.get_value()
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, px, self.decimals, ymax)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, px, self.decimals, ymax)
         except TypeError:
-            val = self.app.options["global_point_clipboard_format"] % (self.decimals, 0.0, self.decimals, ymax)
+            val = self.app.options.global_point_clipboard_format % (self.decimals, 0.0, self.decimals, ymax)
         self.ui.point_entry.set_value(val)
 
     def reset_fields(self):

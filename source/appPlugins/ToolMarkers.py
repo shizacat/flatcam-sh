@@ -40,7 +40,7 @@ class ToolMarkers(AppTool):
 
         self.cursor_color_memory = None
         # store the current cursor type to be restored after manual geo
-        self.old_cursor_type = self.app.options["global_cursor_type"]
+        self.old_cursor_type = self.app.options.global_cursor_type
 
         self.decimals = self.app.decimals
         self.units = ''
@@ -66,7 +66,7 @@ class ToolMarkers(AppTool):
         # Tool properties
         self.fid_dia = None
 
-        self.grb_steps_per_circle = self.app.options["gerber_circle_steps"]
+        self.grb_steps_per_circle = self.app.options.gerber_circle_steps
 
         self.handlers_connected = False
 
@@ -101,7 +101,7 @@ class ToolMarkers(AppTool):
                 pass
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolMarkers()")
+        self.app.settings.report_usage("ToolMarkers()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -184,23 +184,23 @@ class ToolMarkers(AppTool):
         self.pluginName = self.ui.pluginName
         self.connect_signals_at_init()
 
-        self.ui.thick_entry.set_value(self.app.options["tools_markers_thickness"])
-        self.ui.l_entry.set_value(float(self.app.options["tools_markers_length"]))
+        self.ui.thick_entry.set_value(self.app.options.tools_markers_thickness)
+        self.ui.l_entry.set_value(float(self.app.options.tools_markers_length))
 
-        self.ui.ref_radio.set_value(self.app.options["tools_markers_reference"])
-        self.ui.offset_x_entry.set_value(float(self.app.options["tools_markers_offset_x"]))
-        self.ui.offset_y_entry.set_value(float(self.app.options["tools_markers_offset_y"]))
+        self.ui.ref_radio.set_value(self.app.options.tools_markers_reference)
+        self.ui.offset_x_entry.set_value(float(self.app.options.tools_markers_offset_x))
+        self.ui.offset_y_entry.set_value(float(self.app.options.tools_markers_offset_y))
         self.ui.offset_link_button.setChecked(True)
         self.ui.on_link_checked(True)
 
         self.ui.toggle_all_cb.set_value(False)
-        self.ui.type_radio.set_value(self.app.options["tools_markers_type"])
-        self.ui.drill_dia_entry.set_value(self.app.options["tools_markers_drill_dia"])
-        self.ui.mode_combo.set_value(self.app.options["tools_markers_mode"])
-        self.on_selection_changed(self.app.options["tools_markers_mode"])
+        self.ui.type_radio.set_value(self.app.options.tools_markers_type)
+        self.ui.drill_dia_entry.set_value(self.app.options.tools_markers_drill_dia)
+        self.ui.mode_combo.set_value(self.app.options.tools_markers_mode)
+        self.on_selection_changed(self.app.options.tools_markers_mode)
         self.ui.insert_type_radio.set_value(val="grb")
 
-        self.ui.big_cursor_cb.set_value(self.app.options["tools_markers_big_cursor"])
+        self.ui.big_cursor_cb.set_value(self.app.options.tools_markers_big_cursor)
 
         self.points.clear()
         self.on_points_changed(None)
@@ -215,11 +215,11 @@ class ToolMarkers(AppTool):
             self.ui.object_combo.setCurrentIndex(0)
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
         # set cursor
-        self.old_cursor_type = self.app.options["global_cursor_type"]
+        self.old_cursor_type = self.app.options.global_cursor_type
 
     def change_level(self, level):
         """
@@ -316,9 +316,9 @@ class ToolMarkers(AppTool):
 
     def on_cursor_change(self, val):
         if val:
-            self.app.options['tools_markers_big_cursor'] = True
+            self.app.options.tools_markers_big_cursor = True
         else:
-            self.app.options['tools_markers_big_cursor'] = False
+            self.app.options.tools_markers_big_cursor = False
 
     def add_markers(self):
         self.app.call_source = "markers_tool"
@@ -756,13 +756,13 @@ class ToolMarkers(AppTool):
                 new_tool = 1
 
             new_data = {}
-            for opt_key in self.app.options:
+            for opt_key in type(self.app.options).model_fields:
                 if opt_key.find('geometry' + "_") == 0:
                     oname = opt_key[len('geometry') + 1:]
-                    new_data[oname] = self.app.options[opt_key]
-            for opt_key in self.app.options:
+                    new_data[oname] = getattr(self.app.options, opt_key)
+            for opt_key in type(self.app.options).model_fields:
                 if opt_key.find('tools_') == 0:
-                    new_data[opt_key] = self.app.options[opt_key]
+                    new_data[opt_key] = getattr(self.app.options, opt_key)
 
             new_tools.update(
                 {

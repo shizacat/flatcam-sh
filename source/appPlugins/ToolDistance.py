@@ -80,7 +80,7 @@ class Distance(AppTool):
         # store here the cursor color
         self.cursor_color_memory = None
         # store the current cursor type to be restored after manual geo
-        self.old_cursor_type = self.app.options["global_cursor_type"]
+        self.old_cursor_type = self.app.options.global_cursor_type
 
         # VisPy visuals
         if self.app.use_3d_engine:
@@ -152,7 +152,7 @@ class Distance(AppTool):
             if self.app.ui.splitter.sizes()[0] == 0:
                 self.app.ui.splitter.setSizes([1, 1])
 
-        self.old_cursor_type = self.app.options["global_cursor_type"]
+        self.old_cursor_type = self.app.options.global_cursor_type
 
         self.on_start_measuring() if self.active is False else self.on_exit()
 
@@ -208,10 +208,10 @@ class Distance(AppTool):
         self.tool_done = False
         self.grid_status_memory = True if self.app.ui.grid_snap_btn.isChecked() else False
 
-        self.ui.snap_center_cb.set_value(self.app.options['tools_dist_snap_center'])
-        self.ui.big_cursor_cb.set_value(self.app.options['tools_dist_big_cursor'])
+        self.ui.snap_center_cb.set_value(self.app.options.tools_dist_snap_center)
+        self.ui.big_cursor_cb.set_value(self.app.options.tools_dist_big_cursor)
 
-        snap_center = self.app.options['tools_dist_snap_center']
+        snap_center = self.app.options.tools_dist_snap_center
         self.on_snap_toggled(snap_center)
 
         try:
@@ -232,7 +232,7 @@ class Distance(AppTool):
             self.app.on_cursor_type(val="big", control_cursor=True)
             self.cursor_color_memory = self.app.plotcanvas.cursor_color
 
-            if self.app.options["global_theme"] in ['default', 'light']:
+            if self.app.options.global_theme in ['default', 'light']:
                 if self.app.use_3d_engine is True:
                     self.app.plotcanvas.cursor_color = '#000000FF'
                 else:
@@ -256,7 +256,7 @@ class Distance(AppTool):
         self.ui.total_distance_entry.set_value('%.*f' % (self.decimals, 0.0))
 
     def on_snap_toggled(self, state):
-        self.app.options['tools_dist_snap_center'] = state
+        self.app.options.tools_dist_snap_center = state
         if state:
             # disengage the grid snapping since it will be hard to find the drills or pads on grid
             if self.app.ui.grid_snap_btn.isChecked():
@@ -536,8 +536,8 @@ class Distance(AppTool):
 
         self.app.app_cursor.set_data(np.asarray([(pos[0], pos[1])]),
                                      symbol='++', edge_color='#000000',
-                                     edge_width=self.app.options["global_cursor_width"],
-                                     size=self.app.options["global_cursor_size"])
+                                     edge_width=self.app.options.global_cursor_width,
+                                     size=self.app.options.global_cursor_size)
         return pos
 
     def on_multipoint_measurement_changed(self, val):
@@ -562,10 +562,10 @@ class Distance(AppTool):
 
     def on_cursor_change(self, val):
         if val:
-            self.app.options['tools_dist_big_cursor'] = True
+            self.app.options.tools_dist_big_cursor = True
             self.app.on_cursor_type(val="big", control_cursor=True)
         else:
-            self.app.options['tools_dist_big_cursor'] = False
+            self.app.options.tools_dist_big_cursor = False
             self.app.on_cursor_type(val="small", control_cursor=True)
 
     def update_position_info(self, pos_canvas):
@@ -578,8 +578,8 @@ class Distance(AppTool):
                 # Update cursor
                 self.app.app_cursor.set_data(np.asarray([(pos[0], pos[1])]),
                                              symbol='++', edge_color=self.app.plotcanvas.cursor_color,
-                                             edge_width=self.app.options["global_cursor_width"],
-                                             size=self.app.options["global_cursor_size"])
+                                             edge_width=self.app.options.global_cursor_width,
+                                             size=self.app.options.global_cursor_size)
             else:
                 pos = (pos_canvas[0], pos_canvas[1])
         else:
@@ -592,8 +592,8 @@ class Distance(AppTool):
             # Update cursor
             self.app.app_cursor.set_data(np.asarray([(pos[0], pos[1])]),
                                          symbol='++', edge_color=self.app.plotcanvas.cursor_color,
-                                         edge_width=self.app.options["global_cursor_width"],
-                                         size=self.app.options["global_cursor_size"])
+                                         edge_width=self.app.options.global_cursor_width,
+                                         size=self.app.options.global_cursor_size)
 
         return pos
 

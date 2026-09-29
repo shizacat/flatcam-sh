@@ -37,7 +37,7 @@ class SimplificationTool(AppToolEditor):
         self.update_ui.connect(self.on_update_ui)   # noqa
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor SimplificationTool()")
+        self.app.settings.report_usage("Geo Editor SimplificationTool()")
         super().run()
 
         # if the splitter us hidden, display it

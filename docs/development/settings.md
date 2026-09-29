@@ -4,7 +4,7 @@
 
 ## `Settings`
 
-Saved application settings. They are loaded from `current_defaults_<version>.FlatConfig` and written back when the user saves preferences. Field defaults are used when that file does not exist. The file-format `version` and the usage counters in `global_stats` belong here.
+Saved application settings. They are loaded from `current_defaults_<version>.FlatConfig` and written back when the user saves preferences. A missing file is created from the built-in defaults. A file that cannot be read is deleted and replaced with those defaults; the replacement is written to the log. The file-format `version` and the usage counters in `global_stats` belong here.
 
 ## `Options`
 
@@ -22,7 +22,7 @@ Options do not repeat the settings schema. Shared preference groups are defined 
 
 ## Current application stores
 
-The running `App` still keeps this split in `app.defaults` and `app.options` until those call sites move to the typed objects. Each store answers a different question.
+`App` stores saved settings on `self.settings` and the session copy on `self.options`. Modules outside `appMain.py` still read `app.defaults` and dictionary keys on `app.options` until those call sites are switched. Each store answers a different question.
 
 | Question | Read and write |
 |---|---|
@@ -44,11 +44,11 @@ Data folder:
 - Windows, portable: `<app>/config`
 - macOS and Linux: `~/.FlatCAM`
 
-`version` inside `factory_defaults` is the preferences-file format, and it is part of the filename. A file whose `version` does not match is treated as old. While `beta` is true the load path resets to `factory_defaults` instead of migrating.
+The settings file name uses the application version, `App.version`, as in `current_defaults_Unstable.FlatConfig`. The `version` field inside the file is the data-format version and is not part of the file name.
 
-`defaults.current_defaults` is an in-memory snapshot used to undo an unsaved Preferences edit. It is not the file.
+`PreferencesUIManager.current_defaults` is an in-memory `Settings` snapshot used to undo an unsaved Preferences edit. It is not the file.
 
-`factory_defaults_<version>.FlatConfig` is written once, read-only, as a snapshot of the built-in set. Startup does not load it. Restore uses the in-memory `factory_defaults`.
+Startup no longer writes `factory_defaults_<version>.FlatConfig`. Built-in defaults live on `Settings`. Restore through the old preferences code still uses the in-memory `factory_defaults`.
 
 ## `app.options`
 
@@ -73,21 +73,21 @@ They are copied only at these points.
 
 **Apply in Preferences** (`PreferencesUIManager.on_save_button`):
 
-1. The form writes into `app.defaults`. Only keys listed in `defaults_form_fields` are read.
+1. The form writes into `app.defaults`. Only keys listed in `settings_from_fields` are read.
 2. `app.options.update(app.defaults)` copies the whole defaults dictionary over the session.
 3. `save_defaults()` writes `app.defaults` to `current_defaults_<version>.FlatConfig`.
 
-**File → Save Defaults** (`AppIO.on_file_save_defaults`) goes the other way: `app.defaults.update(app.options)`, then the same file write.
+**File → Save Defaults** (`AppIO.on_file_save_defaults`) copies `app.options` onto `app.settings`, then writes the settings file.
 
-**Close Preferences without saving** restores the form and `app.defaults` from `defaults.current_defaults`. `app.options` is left as it was.
+**Close Preferences without saving** restores the form and `app.settings` from `PreferencesUIManager.current_defaults`. `app.options` is left as it was.
 
-**New Project** loads the FlatConfig file into `app.defaults`, then `on_defaults2options()` reads the form back into `app.defaults` and copies `app.defaults` over `app.options`.
+**New Project** does not read the settings file again. `on_settings2options()` reads the form into `app.settings` and copies `app.settings` over `app.options`.
 
 After Apply, `options.update(defaults)` stores the same value objects in both dictionaries. A later in-place edit of a nested list or dict is visible from both sides. The startup copy is a `deepcopy`, so the two dictionaries are independent until the next Apply or Save Defaults.
 
 ## Preferences form
 
-`PreferencesUIManager.defaults_form_fields` maps an option key to a widget. Apply reads that map into `app.defaults`. Keys absent from the map are never taken from the form, so they stay at the factory or file value and are still written out with the rest of `app.defaults`.
+`PreferencesUIManager.settings_from_fields` maps an option key to a widget. Apply reads that map into `app.defaults`. Keys absent from the map are never taken from the form, so they stay at the factory or file value and are still written out with the rest of `app.defaults`.
 
 Opening Preferences fills the form from `app.defaults` (`defaults_write_form`). A change callback on `app.options` can push a single key back into the matching widget (`App.on_defaults_dict_change`). The widget is not a store.
 
@@ -115,6 +115,6 @@ On the first run, `app.options["first_run"]` clears every key in this `QSettings
 
 Use `app.options` when the running tool or object needs the value now.
 
-Also add it to `factory_defaults` and to `defaults_form_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.defaults`, into `app.options`, and into the FlatConfig file.
+Also add it to `factory_defaults` and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.defaults`, into `app.options`, and into the FlatConfig file.
 
 Use `QSettings("Open Source", "FlatCAM_EVO")` for window chrome, theme, language, and font sizes. Those keys are not part of `app.defaults`.

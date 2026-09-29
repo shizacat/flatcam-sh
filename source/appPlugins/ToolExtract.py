@@ -85,7 +85,7 @@ class ToolExtract(AppTool):
         AppTool.install(self, icon, separator, shortcut='Alt+I', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("Extract Drills()")
+        self.app.settings.report_usage("Extract Drills()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -194,30 +194,30 @@ class ToolExtract(AppTool):
 
         self.ui_disconnect()
         self.ui_connect()
-        self.ui.method_radio.set_value(self.app.options["tools_extract_hole_type"])
+        self.ui.method_radio.set_value(self.app.options.tools_extract_hole_type)
 
-        self.ui.dia_entry.set_value(float(self.app.options["tools_extract_hole_fixed_dia"]))
+        self.ui.dia_entry.set_value(float(self.app.options.tools_extract_hole_fixed_dia))
 
-        self.ui.circular_ring_entry.set_value(float(self.app.options["tools_extract_circular_ring"]))
-        self.ui.oblong_ring_entry.set_value(float(self.app.options["tools_extract_oblong_ring"]))
-        self.ui.square_ring_entry.set_value(float(self.app.options["tools_extract_square_ring"]))
-        self.ui.rectangular_ring_entry.set_value(float(self.app.options["tools_extract_rectangular_ring"]))
-        self.ui.other_ring_entry.set_value(float(self.app.options["tools_extract_others_ring"]))
+        self.ui.circular_ring_entry.set_value(float(self.app.options.tools_extract_circular_ring))
+        self.ui.oblong_ring_entry.set_value(float(self.app.options.tools_extract_oblong_ring))
+        self.ui.square_ring_entry.set_value(float(self.app.options.tools_extract_square_ring))
+        self.ui.rectangular_ring_entry.set_value(float(self.app.options.tools_extract_rectangular_ring))
+        self.ui.other_ring_entry.set_value(float(self.app.options.tools_extract_others_ring))
 
-        self.ui.circular_cb.set_value(self.app.options["tools_extract_circular"])
-        self.ui.oblong_cb.set_value(self.app.options["tools_extract_oblong"])
-        self.ui.square_cb.set_value(self.app.options["tools_extract_square"])
-        self.ui.rectangular_cb.set_value(self.app.options["tools_extract_rectangular"])
-        self.ui.other_cb.set_value(self.app.options["tools_extract_others"])
+        self.ui.circular_cb.set_value(self.app.options.tools_extract_circular)
+        self.ui.oblong_cb.set_value(self.app.options.tools_extract_oblong)
+        self.ui.square_cb.set_value(self.app.options.tools_extract_square)
+        self.ui.rectangular_cb.set_value(self.app.options.tools_extract_rectangular)
+        self.ui.other_cb.set_value(self.app.options.tools_extract_others)
 
-        self.ui.factor_entry.set_value(float(self.app.options["tools_extract_hole_prop_factor"]))
+        self.ui.factor_entry.set_value(float(self.app.options.tools_extract_hole_prop_factor))
 
         # Extract Soldermask
-        self.ui.clearance_entry.set_value(float(self.app.options["tools_extract_sm_clearance"]))
+        self.ui.clearance_entry.set_value(float(self.app.options.tools_extract_sm_clearance))
 
         # Extract Cutout
-        self.ui.margin_cut_entry.set_value(float(self.app.options["tools_extract_cut_margin"]))
-        self.ui.thick_cut_entry.set_value(float(self.app.options["tools_extract_cut_thickness"]))
+        self.ui.margin_cut_entry.set_value(float(self.app.options.tools_extract_cut_margin))
+        self.ui.thick_cut_entry.set_value(float(self.app.options.tools_extract_cut_thickness))
 
         # SELECT THE CURRENT OBJECT
         obj = self.app.collection.get_active()
@@ -966,7 +966,7 @@ class ToolExtract(AppTool):
         assert isinstance(wdg, FCCheckBox)
         if wdg.isChecked():
             # self.plot_aperture(color='#2d4606bf', marked_aperture=aperture, visible=True)
-            color = self.app.options['global_sel_draw_color']
+            color = self.app.options.global_sel_draw_color
             color = (color + 'AA') if len(color) == 7 else (color[:-2] + 'AA')
             grb_obj.plot_aperture(color=color, marked_aperture=aperture, visible=True, run_thread=True)
         else:

@@ -26,6 +26,7 @@ import appTranslation as fcTranslate
 import builtins
 
 from appObjects.AppObjectTemplate import ObjectDeleted
+from settings.utils import option_items
 from appGUI.VisPyVisuals import *
 from appEditors.appTextEditor import AppTextEditor
 
@@ -72,7 +73,7 @@ class ToolLevelling(CNCjob, AppTool):
         self.decimals = self.app.decimals
 
         AppTool.__init__(self, app)
-        CNCjob.__init__(self, steps_per_circle=self.app.options["cncjob_steps_per_circle"], app=app)
+        CNCjob.__init__(self, steps_per_circle=self.app.options.cncjob_steps_per_circle, app=app)
 
         # updated in the self.set_tool_ui()
         self.form_fields = {}
@@ -122,7 +123,7 @@ class ToolLevelling(CNCjob, AppTool):
         self.gcode_viewer_tab = None
 
         # store the current selection shape status to be restored after manual adding test points
-        self.old_selection_state = self.app.options['global_selection_shape']
+        self.old_selection_state = self.app.options.global_selection_shape
 
         # #############################################################################
         # ######################### Tool GUI ##########################################
@@ -136,7 +137,7 @@ class ToolLevelling(CNCjob, AppTool):
         AppTool.install(self, icon, separator, shortcut='', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolLevelling()")
+        self.app.settings.report_usage("ToolLevelling()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -293,8 +294,8 @@ class ToolLevelling(CNCjob, AppTool):
         self.to_form()
         self.on_controller_change_alter_ui()
 
-        self.ui.plot_probing_pts_cb.set_value(self.app.options["tools_al_plot_points"])
-        self.ui.avoid_exc_holes_cb.set_value(self.app.options["tools_al_avoid_exc_holes"])
+        self.ui.plot_probing_pts_cb.set_value(self.app.options.tools_al_plot_points)
+        self.ui.avoid_exc_holes_cb.set_value(self.app.options.tools_al_avoid_exc_holes)
 
         self.ui.al_probe_points_table.setRowCount(0)
         self.ui.al_probe_points_table.resizeColumnsToContents()
@@ -324,7 +325,7 @@ class ToolLevelling(CNCjob, AppTool):
         self.ui.al_method_radio.setDisabled(True)
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
         try:
@@ -345,7 +346,7 @@ class ToolLevelling(CNCjob, AppTool):
         else:
             self.ui.al_frame.setDisabled(True)
 
-        self.on_avoid_exc_holes(self.app.options["tools_al_avoid_exc_holes"])
+        self.on_avoid_exc_holes(self.app.options.tools_al_avoid_exc_holes)
 
     def on_object_changed(self):
 
@@ -509,11 +510,11 @@ class ToolLevelling(CNCjob, AppTool):
             storage = self.app.options
 
         for k in self.form_fields:
-            for option in storage:
+            for option, value in option_items(storage):
                 if option.startswith('tools_al_'):
                     if k == option:
                         try:
-                            self.form_fields[k].set_value(storage[option])
+                            self.form_fields[k].set_value(value)
                         except Exception:
                             # it may fail for form fields found in the tools tables if there are no rows
                             pass
@@ -679,7 +680,7 @@ class ToolLevelling(CNCjob, AppTool):
         fprobe_pt_buff = f_probe_pt.buffer(radius)
 
         self.app.inform.emit(_("Click on canvas to add a Probe Point..."))
-        self.app.options['global_selection_shape'] = False
+        self.app.options.global_selection_shape = False
 
         if self.app.use_3d_engine:
             self.app.plotcanvas.graph_event_disconnect('key_press', self.app.ui.keyPressEvent)
@@ -1000,7 +1001,7 @@ class ToolLevelling(CNCjob, AppTool):
             self.mouse_events_connected = False
 
             # restore selection
-            self.app.options['global_selection_shape'] = self.old_selection_state
+            self.app.options.global_selection_shape = self.old_selection_state
 
             self.app.inform.emit(_("Finished adding Probe Points..."))
 
@@ -1075,7 +1076,7 @@ class ToolLevelling(CNCjob, AppTool):
                 self.app.mr = self.app.plotcanvas.graph_event_connect('mouse_release',
                                                                       self.app.on_mouse_click_release_over_plot)
                 # restore selection
-                self.app.options['global_selection_shape'] = self.old_selection_state
+                self.app.options.global_selection_shape = self.old_selection_state
 
         # Grid toggle
         if key == QtCore.Qt.Key.Key_G or key == 'G':
@@ -1136,7 +1137,7 @@ class ToolLevelling(CNCjob, AppTool):
             self.ui.al_columns_label.setDisabled(False)
             self.ui.al_method_lbl.setDisabled(False)
             self.ui.al_method_radio.setDisabled(False)
-            self.ui.al_method_radio.set_value(self.app.options['tools_al_method'])
+            self.ui.al_method_radio.set_value(self.app.options.tools_al_method)
             # self.ui.avoid_exc_holes_cb.setDisabled(True)
 
     def on_avoid_exc_holes(self, state):
@@ -1398,7 +1399,7 @@ class ToolLevelling(CNCjob, AppTool):
 
         step = self.ui.jog_step_entry.get_value(),
         feedrate = self.ui.jog_fr_entry.get_value()
-        travelz = float(self.app.options["tools_al_grbl_travelz"])
+        travelz = float(self.app.options.tools_al_grbl_travelz)
 
         if direction == 'xplus':
             cmd = "$J=G91 %s X%s F%s" % ({'IN': 'G20', 'MM': 'G21'}[self.units], str(step), str(feedrate))
@@ -1597,7 +1598,7 @@ class ToolLevelling(CNCjob, AppTool):
     def on_save_probing_gcode(self):
         lines = StringIO(self.probing_gcode_text)
 
-        _filter_ = self.app.options['cncjob_save_filters']
+        _filter_ = self.app.options.cncjob_save_filters
         name = "probing_gcode"
         try:
             dir_file_to_save = self.app.get_last_save_folder() + '/' + str(name)
@@ -1616,7 +1617,7 @@ class ToolLevelling(CNCjob, AppTool):
             return
         else:
             try:
-                force_windows_line_endings = self.app.options['cncjob_line_ending']
+                force_windows_line_endings = self.app.options.cncjob_line_ending
                 if force_windows_line_endings and sys.platform != 'win32':
                     with open(filename, 'w', newline='\r\n') as f:
                         for line in lines:
@@ -1808,7 +1809,7 @@ class ToolLevelling(CNCjob, AppTool):
                 return
             else:
                 try:
-                    force_windows_line_endings = self.app.options['cncjob_line_ending']
+                    force_windows_line_endings = self.app.options.cncjob_line_ending
                     if force_windows_line_endings and sys.platform != 'win32':
                         with open(filename, 'w', newline='\r\n') as f:
                             for line in self.grbl_probe_result:
@@ -2525,7 +2526,7 @@ class LevelUI:
             self.app.inform[str, bool].emit('[success] %s' % _("Edited value is within limits."), False)
 
     def on_plot_points_changed(self, state):
-        self.app.options["tools_al_plot_points"] = False if not state else True
+        self.app.options.tools_al_plot_points = False if not state else True
 
     def on_avoid_exc_holes_changed(self, state):
-        self.app.options["tools_al_avoid_exc_holes"] = False if not state else True
+        self.app.options.tools_al_avoid_exc_holes = False if not state else True

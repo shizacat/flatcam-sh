@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 
+from .st_types import ToolDiameters, XYPair
 from .support import _
 
 
@@ -34,8 +35,9 @@ class CopperThievingTool(BaseModel):
     tools_copper_thieving_area: float = Field(
         default=0.1, description="Default copper-thieving area."
     )
-    tools_copper_thieving_reference: str = Field(
-        default="itself", description="Default copper-thieving reference."
+    tools_copper_thieving_reference: int = Field(
+        default=0,
+        description="Copper-thieving reference. 0 is the object itself, 1 is an area selection, 2 is another object.",
     )
     tools_copper_thieving_box_type: str = Field(
         default="rect", description="Default copper-thieving box type."
@@ -43,8 +45,9 @@ class CopperThievingTool(BaseModel):
     tools_copper_thieving_circle_steps: int = Field(
         default=16, description="Default copper-thieving circle steps."
     )
-    tools_copper_thieving_fill_type: str = Field(
-        default="solid", description="Copper-thieving fill pattern."
+    tools_copper_thieving_fill_type: int = Field(
+        default=0,
+        description="Copper-thieving fill pattern. 0 is solid, 1 is a dots grid, 2 is a squares grid, 3 is a lines grid.",
     )
     tools_copper_thieving_dots_dia: float = Field(
         default=1.0, description="Default copper-thieving dots diameter."
@@ -77,16 +80,18 @@ class CopperThievingTool(BaseModel):
     tools_copper_thieving_mask_clearance: float = Field(
         default=0.0, description="Default copper-thieving mask clearance."
     )
-    tools_copper_thieving_geo_choice: str = Field(
-        default="b", description="Default copper-thieving geometry choice."
+    tools_copper_thieving_geo_choice: int = Field(
+        default=0,
+        description="Geometry added to the pattern plating mask. 0 is both, 1 is thieving, 2 is the robber bar, 3 is none.",
     )
 
 
 class SolderPasteTool(BaseModel):
     """Store solder paste settings shared by saved settings and session options."""
 
-    tools_solderpaste_tools: str = Field(
-        default="1.0, 0.3", description="Default solder-paste dispensing tools."
+    tools_solderpaste_tools: ToolDiameters = Field(
+        default=(1.0, 0.3),
+        description="Solder-paste nozzle diameters. One number, or several when more than one nozzle is listed.",
     )
     tools_solderpaste_new: float = Field(
         default=0.3, description="Default solder-paste dispensing new."
@@ -109,9 +114,9 @@ class SolderPasteTool(BaseModel):
     tools_solderpaste_z_toolchange: float = Field(
         default=1.0, description="Tool-change Z height for solder-paste dispensing."
     )
-    tools_solderpaste_xy_toolchange: str = Field(
-        default="0.0, 0.0",
-        description="Solder-paste tool-change XY coordinates as an X, Y pair.",
+    tools_solderpaste_xy_toolchange: XYPair = Field(
+        default=(0.0, 0.0),
+        description="Solder-paste tool-change position as X and Y.",
     )
     tools_solderpaste_frxy: int = Field(
         default=150, description="Default solder-paste dispensing XY feed rate."
@@ -392,8 +397,9 @@ class DistanceTool(BaseModel):
 class DrillTool(BaseModel):
     """Store drill-tool settings shared by saved settings and session options."""
 
-    tools_drill_tool_order: str = Field(
-        default="no", description="Default drilling tool order."
+    tools_drill_tool_order: int = Field(
+        default=0,
+        description="Drilling tool order. 0 keeps the file order, 1 sorts from small to big, 2 sorts from big to small.",
     )
     tools_drill_cutz: float = Field(
         default=-1.7, description="Default drilling cutting Z depth."
@@ -410,8 +416,9 @@ class DrillTool(BaseModel):
     tools_drill_endz: int = Field(
         default=15, description="Default drilling ending Z height."
     )
-    tools_drill_endxy: str | tuple[float, float] | list[float] | None = Field(
-        default=None, description="Drilling job ending XY coordinates."
+    tools_drill_endxy: XYPair | None = Field(
+        default=None,
+        description="Drilling job ending position as X and Y. Empty when the job has no ending position.",
     )
     tools_drill_feedrate_z: int = Field(
         default=300, description="Default drilling feed rate Z."
@@ -456,9 +463,9 @@ class DrillTool(BaseModel):
     tools_drill_offset: float = Field(
         default=0.0, description="Default drilling offset."
     )
-    tools_drill_toolchangexy: str = Field(
-        default="0.0, 0.0",
-        description="Drilling tool-change XY coordinates as an X, Y pair.",
+    tools_drill_toolchangexy: XYPair = Field(
+        default=(0.0, 0.0),
+        description="Drilling tool-change position as X and Y.",
     )
     tools_drill_startz: float | None = Field(
         default=None, description="Default drilling starting Z height."
@@ -566,8 +573,9 @@ class FiducialsTool(BaseModel):
     tools_fiducials_second_pos: str = Field(
         default="up", description="Position of the second fiducial marker."
     )
-    tools_fiducials_type: str = Field(
-        default="circular", description="Default fiducial type."
+    tools_fiducials_type: int = Field(
+        default=0,
+        description="Fiducial marker shape. 0 is circular, 1 is a cross, 2 is a chess pattern.",
     )
     tools_fiducials_line_thickness: float = Field(
         default=0.25, description="Default fiducial line thickness."
@@ -680,11 +688,13 @@ class InvertTool(BaseModel):
 class IsolationTool(BaseModel):
     """Store isolation-routing settings shared by saved settings and session options."""
 
-    tools_iso_tooldia: str = Field(
-        default="0.1", description="Default isolation routing tool diameter."
+    tools_iso_tooldia: ToolDiameters = Field(
+        default=0.1,
+        description="Isolation tool diameters. One number, or several when more than one tool is listed.",
     )
     tools_iso_order: int = Field(
-        default=2, description="Default isolation routing order."
+        default=2,
+        description="Isolation tool order. 0 keeps the file order, 1 sorts from small to big, 2 sorts from big to small.",
     )
     tools_iso_tool_cutz: float = Field(
         default=-0.05, description="Default isolation routing tool cutting Z depth."
@@ -829,8 +839,9 @@ class MillingTool(BaseModel):
     tools_mill_endz: float = Field(
         default=15.0, description="Default milling ending Z height."
     )
-    tools_mill_endxy: str | tuple[float, float] | list[float] | None = Field(
-        default=None, description="Milling job ending XY coordinates."
+    tools_mill_endxy: XYPair | None = Field(
+        default=None,
+        description="Milling job ending position as X and Y. Empty when the job has no ending position.",
     )
     tools_mill_feedrate: int = Field(
         default=120, description="Default milling feed rate."
@@ -860,9 +871,9 @@ class MillingTool(BaseModel):
     tools_mill_ppname_g: str = Field(
         default="default", description="Default milling preprocessor name g."
     )
-    tools_mill_toolchangexy: str = Field(
-        default="0.0, 0.0",
-        description="Milling tool-change XY coordinates as an X, Y pair.",
+    tools_mill_toolchangexy: XYPair = Field(
+        default=(0.0, 0.0),
+        description="Milling tool-change position as X and Y.",
     )
     tools_mill_startz: float | None = Field(
         default=None, description="Default milling starting Z height."
@@ -937,11 +948,13 @@ class MillingTool(BaseModel):
 class NonCopperClearTool(BaseModel):
     """Store non-copper-clear settings shared by saved settings and session options."""
 
-    tools_ncc_tools: str = Field(
-        default="0.5", description="Default non-copper clearing tools."
+    tools_ncc_tools: ToolDiameters = Field(
+        default=0.5,
+        description="Non-copper clearing tool diameters. One number, or several when more than one tool is listed.",
     )
     tools_ncc_order: int = Field(
-        default=2, description="Default non-copper clearing order."
+        default=2,
+        description="Non-copper clearing tool order. 0 keeps the file order, 1 sorts from small to big, 2 sorts from big to small.",
     )
     tools_ncc_operation: str = Field(
         default="clear", description="Default non-copper clearing operation."
@@ -1014,7 +1027,10 @@ class PaintTool(BaseModel):
     tools_paint_tooldia: float = Field(
         default=0.3, description="Default paint tool diameter."
     )
-    tools_paint_order: int = Field(default=2, description="Default paint order.")
+    tools_paint_order: int = Field(
+        default=2,
+        description="Paint tool order. 0 keeps the file order, 1 sorts from small to big, 2 sorts from big to small.",
+    )
     tools_paint_overlap: int = Field(
         default=20, description="Default paint overlap as a percentage."
     )
@@ -1186,8 +1202,9 @@ class TransformTool(BaseModel):
         default=_("Gerber"),
         description="Default object transformation reference object.",
     )
-    tools_transform_ref_point: str = Field(
-        default="0, 0", description="Transformation reference point as an X, Y pair."
+    tools_transform_ref_point: XYPair = Field(
+        default=(0.0, 0.0),
+        description="Transformation reference point as X and Y.",
     )
     tools_transform_rotate: int = Field(
         default=90, description="Default object transformation rotate."

@@ -65,7 +65,7 @@ class ToolPDF(AppTool):
         self.parsing_promises = []
 
         self.parser = PdfParser(units=self.app.app_units,
-                                resolution=self.app.options["gerber_circle_steps"],
+                                resolution=self.app.options.gerber_circle_steps,
                                 abort=self.app.abort_flag,
                                 hole_detection_mode='both')  # Default: detect on both stroke and fill
 
@@ -76,7 +76,7 @@ class ToolPDF(AppTool):
         self.app.log.info(f"PDF stream parser initialized: {self.pdf_stream_parser.name}")
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolPDF()")
+        self.app.settings.report_usage("ToolPDF()")
 
         self.set_tool_ui()
         self.on_open_pdf_click()
@@ -94,7 +94,7 @@ class ToolPDF(AppTool):
         :return: None
         """
 
-        self.app.defaults.report_usage("ToolPDF.on_open_pdf_click()")
+        self.app.settings.report_usage("ToolPDF.on_open_pdf_click()")
         self.app.log.debug("ToolPDF was called. Launching....")
         self.app.log.info(f"ToolPDF PDF: using stream parser: {self.pdf_stream_parser.name}")
 

@@ -68,7 +68,7 @@ class ObjectReport(AppTool):
         self.calculations_finished.connect(self.show_area_chull)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolReport()")
+        self.app.settings.report_usage("ToolReport()")
 
         if self.app.plugin_tab_locked is True:
             return
@@ -170,7 +170,7 @@ class ObjectReport(AppTool):
         font = QtGui.QFont()
         font.setBold(True)
 
-        p_color = QtGui.QColor("#000000") if self.app.options['global_theme'] in ['default', 'light'] \
+        p_color = QtGui.QColor("#000000") if self.app.options.global_theme in ['default', 'light'] \
             else QtGui.QColor("#FFFFFF")
 
         # main Items categories

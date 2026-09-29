@@ -368,7 +368,7 @@ class ExcellonGenPrefGroupUI(OptionsGroupUI):
         self.update_excellon_cb.stateChanged.connect(self.on_update_exc_export)
 
         # call it once to make sure it is updated at startup
-        self.on_update_exc_export(state=self.app.options["excellon_update"])
+        self.on_update_exc_export(state=self.app.options.excellon_update)
 
         self.excellon_optimization_radio.activated_custom.connect(self.optimization_selection)
 
@@ -390,28 +390,28 @@ class ExcellonGenPrefGroupUI(OptionsGroupUI):
 
     # Setting plot colors handlers
     def on_fill_color_entry(self):
-        self.app.options['excellon_plot_fill'] = self.fill_color_entry.get_value()[:7] + \
-            self.app.options['excellon_plot_fill'][7:9]
+        self.app.options.excellon_plot_fill = self.fill_color_entry.get_value()[:7] + \
+            self.app.options.excellon_plot_fill[7:9]
 
     def on_line_color_entry(self):
-        self.app.options['excellon_plot_line'] = self.line_color_entry.get_value()[:7] + \
-                                                self.app.options['excellon_plot_line'][7:9]
+        self.app.options.excellon_plot_line = self.line_color_entry.get_value()[:7] + \
+                                                self.app.options.excellon_plot_line[7:9]
 
     def on_excellon_alpha_changed(self, spinner_value):
-        self.app.options['excellon_plot_fill'] = \
-            self.app.options['excellon_plot_fill'][:7] + \
+        self.app.options.excellon_plot_fill = \
+            self.app.options.excellon_plot_fill[:7] + \
             (hex(spinner_value)[2:] if int(hex(spinner_value)[2:], 16) > 0 else '00')
-        self.app.options['excellon_plot_line'] = \
-            self.app.options['excellon_plot_line'][:7] + \
+        self.app.options.excellon_plot_line = \
+            self.app.options.excellon_plot_line[:7] + \
             (hex(spinner_value)[2:] if int(hex(spinner_value)[2:], 16) > 0 else '00')
 
     def on_excellon_defaults_button(self):
-        self.app.preferencesUiManager.defaults_form_fields["excellon_format_lower_in"].set_value('4')
-        self.app.preferencesUiManager.defaults_form_fields["excellon_format_upper_in"].set_value('2')
-        self.app.preferencesUiManager.defaults_form_fields["excellon_format_lower_mm"].set_value('3')
-        self.app.preferencesUiManager.defaults_form_fields["excellon_format_upper_mm"].set_value('3')
-        self.app.preferencesUiManager.defaults_form_fields["excellon_zeros"].set_value('L')
-        self.app.preferencesUiManager.defaults_form_fields["excellon_units"].set_value('INCH')
+        self.app.preferencesUiManager.settings_from_fields["excellon_format_lower_in"].set_value('4')
+        self.app.preferencesUiManager.settings_from_fields["excellon_format_upper_in"].set_value('2')
+        self.app.preferencesUiManager.settings_from_fields["excellon_format_lower_mm"].set_value('3')
+        self.app.preferencesUiManager.settings_from_fields["excellon_format_upper_mm"].set_value('3')
+        self.app.preferencesUiManager.settings_from_fields["excellon_zeros"].set_value('L')
+        self.app.preferencesUiManager.settings_from_fields["excellon_units"].set_value('INCH')
 
     def on_update_exc_export(self, state):
         """

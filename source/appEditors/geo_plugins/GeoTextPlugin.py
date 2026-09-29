@@ -40,7 +40,7 @@ class TextInputTool(AppToolEditor):
         self.set_tool_ui()
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor TextInputTool()")
+        self.app.settings.report_usage("Geo Editor TextInputTool()")
         super().run()
 
         # if the splitter us hidden, display it

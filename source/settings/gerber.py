@@ -15,8 +15,9 @@ class GerberPreferences(BaseModel):
     gerber_multicolored: bool = Field(
         default=False, description="Whether Gerber multiple colors is enabled."
     )
-    gerber_color_list: list[str] = Field(
-        default_factory=list, description="Available Gerber color palette values."
+    gerber_color_list: list[tuple[str, str, str] | list[str]] = Field(
+        default_factory=list,
+        description="Stored Gerber layer colors. Each entry is the outline color, the fill color, and the layer name.",
     )
     gerber_store_color_list: bool = Field(
         default=True, description="Whether Gerber store color palette is enabled."
@@ -136,8 +137,9 @@ class GerberPreferences(BaseModel):
     gerber_editor_newtype: str = Field(
         default="C", description="Default Gerber editor new aperture type."
     )
-    gerber_editor_newdim: str = Field(
-        default="0.5, 0.5", description="Default Gerber editor new aperture dimensions."
+    gerber_editor_newdim: str | tuple[float, float] | list[float] = Field(
+        default="0.5, 0.5",
+        description="Gerber editor aperture dimensions. A comma-separated width and height, or those two numbers.",
     )
     gerber_editor_array_size: int = Field(
         default=5, description="Default Gerber editor array size."

@@ -210,7 +210,7 @@ class ToolsDrillPrefGroupUI(OptionsGroupUI):
         self.pp_excellon_name_cb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.pp_excellon_name_cb.setSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding,
                                                QtWidgets.QSizePolicy.Policy.Preferred)
-        self.pp_excellon_name_cb.addItems(self.options["tools_drill_preprocessor_list"])
+        self.pp_excellon_name_cb.addItems(self.options.tools_drill_preprocessor_list)
 
         for it in range(self.pp_excellon_name_cb.count()):
             self.pp_excellon_name_cb.setItemData(it, self.pp_excellon_name_cb.itemText(it),

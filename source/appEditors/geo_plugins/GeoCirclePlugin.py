@@ -38,7 +38,7 @@ class CircleEditorTool(AppToolEditor):
         self.ui.add_button.clicked.connect(self.on_execute)
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor CircleTool()")
+        self.app.settings.report_usage("Geo Editor CircleTool()")
         super().run()
 
         # if the splitter us hidden, display it

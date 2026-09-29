@@ -143,8 +143,9 @@ class Application(BaseModel):
     pdf_python_parser: bool = Field(
         default=True, description="Whether to parse PDF files with the Python parser."
     )
-    global_bookmarks: dict[str, int] = Field(
-        default_factory=dict, description="Default application bookmarks."
+    global_bookmarks: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Help-menu bookmarks. The key is the order as text, and the value is the title and the web link.",
     )
     global_bookmarks_limit: int = Field(
         default=10, description="Default application bookmarks limit."

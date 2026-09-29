@@ -54,7 +54,7 @@ class TransformEditorTool(AppToolEditor):
         self.ui.buffer_factor_button.clicked.connect(lambda: self.on_buffer_by_factor())
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("Geo Editor Transform Tool()")
+        self.app.settings.report_usage("Geo Editor Transform Tool()")
 
         # if the splitter us hidden, display it
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -107,27 +107,27 @@ class TransformEditorTool(AppToolEditor):
 
     def set_tool_ui(self):
         # Initialize form
-        ref_val = self.app.options["tools_transform_reference"]
+        ref_val = self.app.options.tools_transform_reference
         if ref_val == _("Object"):
             ref_val = _("Selection")
         self.ui.ref_combo.set_value(ref_val)
-        self.ui.point_entry.set_value(self.app.options["tools_transform_ref_point"])
-        self.ui.rotate_entry.set_value(self.app.options["tools_transform_rotate"])
+        self.ui.point_entry.set_value(self.app.options.tools_transform_ref_point)
+        self.ui.rotate_entry.set_value(self.app.options.tools_transform_rotate)
 
-        self.ui.skewx_entry.set_value(self.app.options["tools_transform_skew_x"])
-        self.ui.skewy_entry.set_value(self.app.options["tools_transform_skew_y"])
-        self.ui.skew_link_cb.set_value(self.app.options["tools_transform_skew_link"])
+        self.ui.skewx_entry.set_value(self.app.options.tools_transform_skew_x)
+        self.ui.skewy_entry.set_value(self.app.options.tools_transform_skew_y)
+        self.ui.skew_link_cb.set_value(self.app.options.tools_transform_skew_link)
 
-        self.ui.scalex_entry.set_value(self.app.options["tools_transform_scale_x"])
-        self.ui.scaley_entry.set_value(self.app.options["tools_transform_scale_y"])
-        self.ui.scale_link_cb.set_value(self.app.options["tools_transform_scale_link"])
+        self.ui.scalex_entry.set_value(self.app.options.tools_transform_scale_x)
+        self.ui.scaley_entry.set_value(self.app.options.tools_transform_scale_y)
+        self.ui.scale_link_cb.set_value(self.app.options.tools_transform_scale_link)
 
-        self.ui.offx_entry.set_value(self.app.options["tools_transform_offset_x"])
-        self.ui.offy_entry.set_value(self.app.options["tools_transform_offset_y"])
+        self.ui.offx_entry.set_value(self.app.options.tools_transform_offset_x)
+        self.ui.offy_entry.set_value(self.app.options.tools_transform_offset_y)
 
-        self.ui.buffer_entry.set_value(self.app.options["tools_transform_buffer_dis"])
-        self.ui.buffer_factor_entry.set_value(self.app.options["tools_transform_buffer_factor"])
-        self.ui.buffer_rounded_cb.set_value(self.app.options["tools_transform_buffer_corner"])
+        self.ui.buffer_entry.set_value(self.app.options.tools_transform_buffer_dis)
+        self.ui.buffer_factor_entry.set_value(self.app.options.tools_transform_buffer_factor)
+        self.ui.buffer_rounded_cb.set_value(self.app.options.tools_transform_buffer_corner)
 
         # initial state is hidden
         self.ui.point_label.hide()
@@ -496,7 +496,7 @@ class TransformEditorTool(AppToolEditor):
         val_box = FCInputDoubleSpinner(title=_("Rotate ..."),
                                        text='%s:' % _('Enter an Angle Value (degrees)'),
                                        min=-359.9999, max=360.0000, decimals=self.decimals,
-                                       init_val=float(self.app.options['tools_transform_rotate']),
+                                       init_val=float(self.app.options.tools_transform_rotate),
                                        parent=self.app.ui)
         val_box.set_icon(QtGui.QIcon(self.app.resource_location + '/rotate.png'))
 
@@ -514,7 +514,7 @@ class TransformEditorTool(AppToolEditor):
         val_box = FCInputDoubleSpinner(title=_("Offset on X axis ..."),
                                        text='%s: (%s)' % (_('Enter a distance Value'), str(units)),
                                        min=-10000.0000, max=10000.0000, decimals=self.decimals,
-                                       init_val=float(self.app.options['tools_transform_offset_x']),
+                                       init_val=float(self.app.options.tools_transform_offset_x),
                                        parent=self.app.ui)
         val_box.set_icon(QtGui.QIcon(self.app.resource_location + '/offsetx32.png'))
 
@@ -532,7 +532,7 @@ class TransformEditorTool(AppToolEditor):
         val_box = FCInputDoubleSpinner(title=_("Offset on Y axis ..."),
                                        text='%s: (%s)' % (_('Enter a distance Value'), str(units)),
                                        min=-10000.0000, max=10000.0000, decimals=self.decimals,
-                                       init_val=float(self.app.options['tools_transform_offset_y']),
+                                       init_val=float(self.app.options.tools_transform_offset_y),
                                        parent=self.app.ui)
         val_box.set_icon(QtGui.QIcon(self.app.resource_location + '/offsety32.png'))
 
@@ -548,7 +548,7 @@ class TransformEditorTool(AppToolEditor):
         val_box = FCInputDoubleSpinner(title=_("Skew on X axis ..."),
                                        text='%s:' % _('Enter an Angle Value (degrees)'),
                                        min=-359.9999, max=360.0000, decimals=self.decimals,
-                                       init_val=float(self.app.options['tools_transform_skew_x']),
+                                       init_val=float(self.app.options.tools_transform_skew_x),
                                        parent=self.app.ui)
         val_box.set_icon(QtGui.QIcon(self.app.resource_location + '/skewX.png'))
 
@@ -564,7 +564,7 @@ class TransformEditorTool(AppToolEditor):
         val_box = FCInputDoubleSpinner(title=_("Skew on Y axis ..."),
                                        text='%s:' % _('Enter an Angle Value (degrees)'),
                                        min=-359.9999, max=360.0000, decimals=self.decimals,
-                                       init_val=float(self.app.options['tools_transform_skew_y']),
+                                       init_val=float(self.app.options.tools_transform_skew_y),
                                        parent=self.app.ui)
         val_box.set_icon(QtGui.QIcon(self.app.resource_location + '/skewY.png'))
 

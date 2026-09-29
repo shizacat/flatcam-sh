@@ -137,12 +137,12 @@ class AppTool(QtWidgets.QWidget):
         if 'color' in kwargs:
             color = kwargs['color']
         else:
-            color = self.app.options['global_sel_line']
+            color = self.app.options.global_sel_line
 
         if 'face_color' in kwargs:
             face_color = kwargs['face_color']
         else:
-            face_color = self.app.options['global_sel_fill']
+            face_color = self.app.options.global_sel_fill
 
         if 'face_alpha' in kwargs:
             face_alpha = kwargs['face_alpha']
@@ -183,12 +183,12 @@ class AppTool(QtWidgets.QWidget):
         if 'color' in kwargs:
             color = kwargs['color']
         else:
-            color = self.app.options['global_sel_line']
+            color = self.app.options.global_sel_line
 
         if 'face_color' in kwargs:
             face_color = kwargs['face_color']
         else:
-            face_color = self.app.options['global_sel_fill']
+            face_color = self.app.options.global_sel_fill
 
         if 'face_alpha' in kwargs:
             face_alpha = kwargs['face_alpha']
@@ -241,12 +241,12 @@ class AppTool(QtWidgets.QWidget):
         if 'color' in kwargs:
             color = kwargs['color']
         else:
-            color = self.app.options['global_sel_line']
+            color = self.app.options.global_sel_line
 
         if 'face_color' in kwargs:
             face_color = kwargs['face_color']
         else:
-            face_color = self.app.options['global_sel_fill']
+            face_color = self.app.options.global_sel_fill
 
         if 'face_alpha' in kwargs:
             face_alpha = kwargs['face_alpha']
@@ -340,7 +340,7 @@ class AppToolEditor(AppTool):
         # TODO Hack, should find the root cause and fix
         # for whatever reason the stylesheet for dark mode is lost at some point here, so we should reapply it for the
         # QWidget
-        if self.app.options['global_theme'] not in ['default', 'light']:
+        if self.app.options.global_theme not in ['default', 'light']:
             super(AppTool, self).setStyleSheet(
                 '''
                 QWidget {

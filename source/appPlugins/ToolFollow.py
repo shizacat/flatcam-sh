@@ -41,7 +41,7 @@ class ToolFollow(Gerber, AppTool):
         self.decimals = self.app.decimals
 
         AppTool.__init__(self, app)
-        Gerber.__init__(self, steps_per_circle=self.app.options["gerber_circle_steps"], app=app)
+        Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 
         # #############################################################################
         # ######################### Tool GUI ##########################################
@@ -74,7 +74,7 @@ class ToolFollow(Gerber, AppTool):
         AppTool.install(self, icon, separator, shortcut='', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolFollow()")
+        self.app.settings.report_usage("ToolFollow()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -156,12 +156,12 @@ class ToolFollow(Gerber, AppTool):
             self.ui.object_combo.set_value(obj_name)
 
         # Set UI
-        self.ui.simplify_cb.set_value(self.app.options["tools_follow_simplification"])
-        self.ui.tol_entry.set_value(self.app.options["tools_follow_tolerance"])
-        self.ui.union_cb.set_value(self.app.options["tools_follow_union"])
+        self.ui.simplify_cb.set_value(self.app.options.tools_follow_simplification)
+        self.ui.tol_entry.set_value(self.app.options.tools_follow_tolerance)
+        self.ui.union_cb.set_value(self.app.options.tools_follow_union)
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
         # SIGNALS
@@ -170,13 +170,13 @@ class ToolFollow(Gerber, AppTool):
         self.ui.union_cb.stateChanged.connect(self.on_union_changed)
 
     def on_simplify_changed(self, checked):
-        self.app.options["tools_follow_simplification"] = checked
+        self.app.options.tools_follow_simplification = checked
 
     def on_tolerance_changed(self, value):
-        self.app.options["tools_follow_tolerance"] = value
+        self.app.options.tools_follow_tolerance = value
 
     def on_union_changed(self, checked):
-        self.app.options["tools_follow_union"] = checked
+        self.app.options.tools_follow_union = checked
 
     def change_level(self, level):
         """
@@ -323,12 +323,12 @@ class ToolFollow(Gerber, AppTool):
             # store here the default data for Geometry Data
             new_data = {}
 
-            for opt_key in app_obj.options:
+            for opt_key in type(app_obj.options).model_fields:
                 if opt_key.find('geometry' + "_") == 0:
                     oname = opt_key[len('geometry') + 1:]
-                    new_data[oname] = app_obj.options[opt_key]
+                    new_data[oname] = getattr(app_obj.options, opt_key)
                 if opt_key.find('tools_') == 0:
-                    new_data[opt_key] = app_obj.options[opt_key]
+                    new_data[opt_key] = getattr(app_obj.options, opt_key)
 
             flattened_follow_geometry = flatten_shapely_geometry(followed_obj.follow_geometry)
             cleaned_flat_follow_geometry = [
@@ -407,12 +407,12 @@ class ToolFollow(Gerber, AppTool):
             # store here the default data for Geometry Data
             new_data = {}
 
-            for opt_key, opt_val in app_obj.options.items():
+            for opt_key, opt_val in ((name, getattr(app_obj.options, name)) for name in type(app_obj.options).model_fields):
                 if opt_key.find('geometry' + "_") == 0:
                     oname = opt_key[len('geometry') + 1:]
-                    new_data[oname] = app_obj.options[opt_key]
+                    new_data[oname] = getattr(app_obj.options, opt_key)
                 if opt_key.find('tools_') == 0:
-                    new_data[opt_key] = app_obj.options[opt_key]
+                    new_data[opt_key] = getattr(app_obj.options, opt_key)
 
             # Propagate options
             new_obj.obj_options["tools_mill_tooldia"] = app_obj.defaults["tools_mill_tooldia"]
@@ -614,8 +614,8 @@ class ToolFollow(Gerber, AppTool):
 
             self.app.app_cursor.set_data(np.asarray([(curr_pos[0], curr_pos[1])]),
                                          symbol='++', edge_color=self.app.plotcanvas.cursor_color,
-                                         edge_width=self.app.options["global_cursor_width"],
-                                         size=self.app.options["global_cursor_size"])
+                                         edge_width=self.app.options.global_cursor_width,
+                                         size=self.app.options.global_cursor_size)
 
         if self.cursor_pos is None:
             self.cursor_pos = (0, 0)

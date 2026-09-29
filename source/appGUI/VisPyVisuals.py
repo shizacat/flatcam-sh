@@ -6,6 +6,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from collections.abc import Mapping
+
 from vispy.visuals import CompoundVisual, LineVisual, MeshVisual, TextVisual, MarkersVisual
 from vispy.scene.visuals import VisualNode, generate_docstring, visuals
 from vispy.gloo import set_state
@@ -14,6 +16,22 @@ from shapely import Polygon, LineString, LinearRing
 import threading
 import numpy as np
 from appGUI.VisPyTesselators import GLUTess
+
+
+def _option_value(storage, name: str, default=None):
+    """
+    Reads one session option from a mapping or from the options object.
+
+    :param storage: session options, or a mapping used by tests
+    :param name:    field name
+    :param default: value used when the name is absent
+    :return:        option value
+    """
+    if storage is None:
+        return default
+    if isinstance(storage, Mapping):
+        return storage.get(name, default)
+    return getattr(storage, name, default)
 
 
 # class FlatCAMLineVisual(LineVisual):
@@ -294,7 +312,7 @@ class ShapeCollectionVisual(CompoundVisual):
             # Backface culling - safe with CCW winding enforcement in tessellator
             cull = True
             if self.fc_options:
-                cull = self.fc_options.get("global_backface_culling", True)
+                cull = _option_value(self.fc_options, "global_backface_culling", True)
             m.set_gl_state(polygon_offset_fill=True, polygon_offset=(1, 1), cull_face=cull)
 
         for lne in self._lines:
@@ -409,7 +427,7 @@ class ShapeCollectionVisual(CompoundVisual):
             data_list.append(self.data[key])
         self.key_lock.release()
 
-        if self.fc_options and self.fc_options.get("global_graphic_engine_3d_no_mp") is True:
+        if self.fc_options and _option_value(self.fc_options, "global_graphic_engine_3d_no_mp") is True:
             # Synchronous mode
             for k, d in zip(keys, data_list):
                 self.data[k] = _update_shape_buffers(d)

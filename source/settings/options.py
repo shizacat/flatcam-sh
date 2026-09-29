@@ -8,12 +8,13 @@ from typing import TYPE_CHECKING, Self
 from pydantic import ConfigDict
 
 from .shared import SHARED
+from .tracking import BaseModelChangeTrack
 
 if TYPE_CHECKING:
     from settings import Settings
 
 
-class Options(*SHARED):
+class Options(BaseModelChangeTrack, *SHARED):
     """
     Store the session values used by tools and by the open project.
 

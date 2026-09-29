@@ -52,7 +52,7 @@ class ToolImage(AppTool):
         self.connect_signals_at_init()
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolImage()")
+        self.app.settings.report_usage("ToolImage()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -253,7 +253,7 @@ class ToolImage(AppTool):
         :return:
         """
 
-        self.app.defaults.report_usage("import_image()")
+        self.app.settings.report_usage("import_image()")
         if not os.path.exists(filename):
             if silent:
                 self.app.log.debug("File no longer available.")
@@ -298,10 +298,10 @@ class ToolImage(AppTool):
             geo_obj.solid_geometry = [p for p in geo_obj.solid_geometry if p and p.is_valid and p.area >= min_area]
 
             if obj_type == 'geometry':
-                tooldia = float(self.app.options["tools_mill_tooldia"])
+                tooldia = float(self.app.options.tools_mill_tooldia)
                 tooldia = float('%.*f' % (self.decimals, tooldia))
 
-                new_data = {k: v for k, v in self.app.options.items()}
+                new_data = {k: v for k, v in ((name, getattr(self.app.options, name)) for name in type(self.app.options).model_fields)}
 
                 geo_obj.tools.update({
                     1: {
@@ -467,7 +467,7 @@ class ToolImage(AppTool):
             self.app.log.error("ToolImage.import_image_as_trace_handler(). SVG units not supported: %s" % svg_units)
             return "fail"
 
-        res = self.app.options['geometry_circle_steps']
+        res = self.app.options.geometry_circle_steps
         factor = svgparse_viewbox(svg_root)
 
         if svg_units in svg_unit_to_mm:
