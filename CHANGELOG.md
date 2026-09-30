@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an `Options` model for session values that start from saved settings and do not write the settings file; shared preference groups are defined once and reused by both objects
 - Added `FlatCAMError` as the project base exception; settings errors inherit from it
 
+### Removed
+
+- Removed the unused `AppDefaults` and `AppOptions` classes; saved settings and session values live on `Settings` and `Options`
+
 ### Changed
 
 - Changed New Project to refresh session options from the settings already in memory

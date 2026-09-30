@@ -40,7 +40,7 @@ ezdxf>=0.16.0,<2.0.0
 
 reportlab>=3.5
 pyserial>=3.4
-# pikepdf>=2.0  # Optional - for enhanced PDF support. Set pdf_python_parser=false in defaults.py to enable.
+# pikepdf>=2.0  # Optional - for enhanced PDF support. Set pdf_python_parser to false in application settings to enable.
 pyppeteer
 
 matplotlib>=3.5.0

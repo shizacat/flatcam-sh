@@ -36,7 +36,7 @@ Options do not repeat the settings schema. Shared preference groups are defined 
 
 `App` creates this in `App.__init__` (`source/appMain.py`).
 
-`AppDefaults` (`source/defaults.py`) wraps a `LoudDict`. `app.defaults["key"]` is that dictionary. The class attribute `factory_defaults` is the built-in starting set. On construction the dictionary is filled from `factory_defaults`. Then `defaults.load()` overlays `current_defaults_<version>.FlatConfig` from the data folder.
+Saved settings are a `Settings` model on `app.settings` (`source/settings`). Field defaults are the built-in starting set. `App.load_settings()` reads `current_defaults_<version>.FlatConfig` from the data folder and keeps a field default when a key is absent.
 
 Data folder:
 
@@ -48,28 +48,21 @@ The settings file name uses the application version, `App.version`, as in `curre
 
 `PreferencesUIManager.current_defaults` is an in-memory `Settings` snapshot used to undo an unsaved Preferences edit. It is not the file.
 
-Startup no longer writes `factory_defaults_<version>.FlatConfig`. Built-in defaults live on `Settings`. Restore through the old preferences code still uses the in-memory `factory_defaults`.
+Startup no longer writes `factory_defaults_<version>.FlatConfig`. Built-in defaults are the field defaults on `Settings`.
 
 ## `app.options`
 
-`AppOptions` is a second `LoudDict`, created empty immediately after `defaults` is loaded. Startup then copies every key:
+Session options are an `Options` model. Startup builds them with `Options.from_settings(self.settings)`, which copies the shared fields.
 
-```python
-for def_key, def_val in self.defaults.items():
-    self.options[def_key] = deepcopy(def_val)
-```
-
-Tools, editors, and objects read and write `app.options["key"]`. That value lives for this process. It is not the Preferences file.
+Tools, editors, and objects read and write `app.options`. That value lives for this process. It is not the Preferences file.
 
 A new object copies the keys it needs into its own `obj_options`. That dictionary belongs to the object. Changing it does not change `app.options` or the file.
-
-`AppOptions.load()` exists for New Project and Import Preferences. The normal startup path does not call it.
 
 ## When the two dictionaries are copied
 
 They are copied only at these points.
 
-**Startup.** `factory_defaults`, then the FlatConfig file, then a full `deepcopy` into `app.options`.
+**Startup.** `App.load_settings()` reads the FlatConfig file into `Settings`, then `Options.from_settings()` copies the shared fields into `app.options`.
 
 **Apply in Preferences** (`PreferencesUIManager.on_save_button`):
 
@@ -93,7 +86,7 @@ Opening Preferences fills the form from `app.defaults` (`defaults_write_form`). 
 
 Some color controls write `app.options` as the color changes, before Apply. That updates the session immediately. The file still changes only when Apply or Save Defaults runs.
 
-`AppDefaults.propagate_defaults()` copies a few keys (`excellon_*`, `gerber_use_buffer_for_union`, `geometry_multidepth`) onto the class-level defaults of the Gerber, Excellon, and Geometry parsers. That path is separate from `app.options`.
+`propagate_settings()` copies a few keys (`excellon_*`, `gerber_use_buffer_for_union`, `geometry_multidepth`) onto the class-level defaults of the Gerber, Excellon, and Geometry parsers. That path is separate from `app.options`.
 
 ## `QSettings`
 
@@ -115,6 +108,6 @@ On the first run, `app.options["first_run"]` clears every key in this `QSettings
 
 Use `app.options` when the running tool or object needs the value now.
 
-Also add it to `factory_defaults` and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.defaults`, into `app.options`, and into the FlatConfig file.
+Also add it as a field on the shared preference model and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.settings`, into `app.options`, and into the FlatConfig file.
 
 Use `QSettings("Open Source", "FlatCAM_EVO")` for window chrome, theme, language, and font sizes. Those keys are not part of `app.defaults`.

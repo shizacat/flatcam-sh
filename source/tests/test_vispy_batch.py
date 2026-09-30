@@ -19,7 +19,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import unittest
 from unittest.mock import Mock, MagicMock, patch
+
 from shapely.geometry import Polygon, LineString, MultiPolygon
+
+from settings import Settings
 
 
 class MockAsyncResult:
@@ -438,16 +441,12 @@ class TestCollectElements(unittest.TestCase):
 
 
 class TestDefaultsConfiguration(unittest.TestCase):
-    """Tests for defaults.py configuration."""
-    
+    """Tests for the built-in backface culling setting."""
+
     def test_global_backface_culling_default(self):
         """Test global_backface_culling is True by default."""
-        from defaults import AppDefaults
-        
-        defaults = AppDefaults()
-        # Access the defaults dict directly
-        self.assertIn("global_backface_culling", defaults.defaults)
-        self.assertTrue(defaults.defaults["global_backface_culling"])
+        settings = Settings()
+        self.assertTrue(settings.global_backface_culling)
 
 
 if __name__ == '__main__':

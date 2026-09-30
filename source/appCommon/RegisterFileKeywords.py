@@ -298,7 +298,7 @@ class RegisterFK(QtCore.QObject):
     def __init__(self,
                  ui: 'appMain.MainGUI',
                  inform_sig: pyqtSignal,
-                 options_dict: 'appMain.AppOptions',
+                 options_dict: 'settings.Options',
                  shell: 'appMain.FCShell',
                  log: ('appMain.AppLogging', 'appMain.logging'),
                  keywords: KeyWords,
