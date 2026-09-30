@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Self
 from pydantic import ConfigDict
 
 from .shared import SHARED
-from .tracking import BaseModelChangeTrack
+from ..tracking import BaseModelChangeTrack
 
 if TYPE_CHECKING:
-    from settings import Settings
+    from .settings import Settings
 
 
 class Options(BaseModelChangeTrack, *SHARED):

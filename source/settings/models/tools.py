@@ -2,8 +2,8 @@
 
 from pydantic import BaseModel, Field
 
-from .st_types import ToolDiameters, XYPair
-from .support import _
+from ..st_types import ToolDiameters, XYPair
+from ..support import _
 
 
 class TwoSidedTool(BaseModel):

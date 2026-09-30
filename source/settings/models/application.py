@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from .support import _default_process_number, _default_worker_number
+from ..support import _default_process_number, _default_worker_number
 
 
 class Application(BaseModel):
