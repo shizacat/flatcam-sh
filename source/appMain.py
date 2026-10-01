@@ -1618,19 +1618,19 @@ class App(QtCore.QObject):
         except OSError as error:
             self.log.info("Could not remove settings file %s: %s" % (filename, error))
 
-    def settings_path(self):
+    def settings_path(self) -> str:
         return str(self.data_path / ("current_defaults_%s.FlatConfig" % self.version))
 
-    def recent_files_path(self):
+    def recent_files_path(self) -> str:
         return str(self.data_path / "recent.json")
 
-    def recent_projects_path(self):
+    def recent_projects_path(self) -> str:
         return str(self.data_path / "recent_projects.json")
 
-    def preprocessors_path(self):
+    def preprocessors_path(self) -> str:
         return str(self.data_path / "preprocessors")
 
-    def log_path(self):
+    def log_path(self) -> str:
         return str(self.data_path / "log.txt")
 
     def on_options_value_changed(self, key_changed):
