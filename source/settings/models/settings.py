@@ -48,7 +48,11 @@ class Settings(BaseModelChangeTrack, *SHARED):
                 loaded = json.loads(settings_file.read())
             if not isinstance(loaded, dict):
                 raise SettingsError(f"Could not load settings from {filename}.")
-            known = {name: value for name, value in loaded.items() if name in cls.model_fields}
+            known = {
+                name: value
+                for name, value in loaded.items()
+                if name in cls.model_fields
+            }
             return cls.model_validate(known)
         except SettingsError:
             raise

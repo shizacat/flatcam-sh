@@ -39,7 +39,7 @@ def propagate_settings(settings: Settings) -> None:
             continue
         prefix = parser.__name__.lower() + "_"
         if name.startswith(prefix):
-            short_name = name[len(prefix):]
+            short_name = name[len(prefix) :]
             if short_name in parser.defaults:
                 parser.defaults[short_name] = value
 
