@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Removed `global_language_current` from saved settings; the Preferences language list reads the Qt `language` key
+
+### Fixed
+
+- Fixed Preferences showing English after another language was applied; the language list follows the language stored by Qt
+
 ## [1.9.8] - 2026-10-01
 
 This is a developer update. Switched application settings to typed Pydantic models. Saved preferences live on `Settings`, the session copy lives on `Options`, and both share one field schema.

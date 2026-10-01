@@ -723,8 +723,6 @@ class App(QtCore.QObject):
             self.inform.emit('[ERROR] %s' % _("Could not find the Language files. The App strings are missing."))
             self.log.debug("Could not find the Language files. The App strings are missing.")
         else:
-            # make the current language the current selection on the language combobox
-            self.options.global_language_current = ret_val
             self.log.debug("App.__init__() --> Applied %s language." % str(ret_val).capitalize())
 
         # ###########################################################################################################
