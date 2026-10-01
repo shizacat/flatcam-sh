@@ -12,7 +12,7 @@ Session values used by tools, editors, and the open project. `Options.from_setti
 
 Options do not repeat the settings schema. Shared preference groups are defined once and inherited by both objects:
 
-- application behavior: units, language, workers, autosave
+- application behavior: units, workers, autosave
 - interface: theme, canvas, grid, cursor, layout
 - Gerber, Excellon, geometry, and CNC job
 - each tool
@@ -92,7 +92,13 @@ Some color controls write `app.options` as the color changes, before Apply. That
 
 `QSettings("Open Source", "FlatCAM_EVO")` has no shared object with the two dictionaries. Call sites open it, read or write a key, and drop it.
 
-Stored there, and not in the FlatConfig file:
+Qt stores this outside the FlatConfig file:
+
+- Windows: registry key `HKEY_CURRENT_USER\Software\Open Source\FlatCAM_EVO`
+- macOS: `~/Library/Preferences/com.open-source.FlatCAM_EVO.plist`
+- Linux: `~/.config/Open Source/FlatCAM_EVO.conf`
+
+Keys stored there:
 
 - window geometry, splitter, saved GUI state, layout, toolbar lock, menu text
 - theme and appearance (`theme`, `appearance`, `dark_canvas`, `style`)

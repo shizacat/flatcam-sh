@@ -67,8 +67,6 @@ class PreferencesUIManager(QtCore.QObject):
             "global_log_verbose": self.ui.general_pref_form.general_app_group.verbose_combo,
             "global_portable": self.ui.general_pref_form.general_app_group.portability_cb,
 
-            "global_language_current": self.ui.general_pref_form.general_app_group.language_combo,
-
             "global_systray_icon": self.ui.general_pref_form.general_app_group.systray_cb,
             "global_shell_at_startup": self.ui.general_pref_form.general_app_group.shell_startup_cb,
             "global_project_at_startup": self.ui.general_pref_form.general_app_group.project_startup_cb,
@@ -828,6 +826,17 @@ class PreferencesUIManager(QtCore.QObject):
             else:
                 self.defaults_write_form_field(option, factor=factor, units=fl_units)
 
+        self._select_language_from_qt()
+
+    def _select_language_from_qt(self) -> None:
+        """Selects the Preferences language stored in the Qt ``language`` key."""
+        settings = QSettings("Open Source", "FlatCAM_EVO")
+        if settings.contains("language"):
+            name = settings.value("language", type=str)
+        else:
+            name = "English"
+        self.ui.general_pref_form.general_app_group.language_combo.set_value(name)
+
     def defaults_write_form_field(self, field, factor=None, units=None, defaults_dict=None):
         """
         Basically it is the worker in the self.defaults_write_form()
@@ -864,6 +873,7 @@ class PreferencesUIManager(QtCore.QObject):
         :return: None
         """
         self.init_preferences_gui()
+        self._select_language_from_qt()
 
         self.pref_connect()
 

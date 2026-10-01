@@ -86,9 +86,6 @@ class Application(BaseModel):
         default_factory=lambda: ["English"],
         description="Available application languages values.",
     )
-    global_language_current: str = Field(
-        default="English", description="Default application language current."
-    )
     global_systray_icon: bool = Field(
         default=True, description="Whether the application displays a system-tray icon."
     )
