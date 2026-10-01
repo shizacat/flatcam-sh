@@ -94,7 +94,7 @@ class ToolSub(AppTool):
         AppTool.install(self, icon, separator, shortcut='Alt+W', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolSub()")
+        self.app.settings.report_usage("ToolSub()")
 
         # if toggle:
         #     # if the splitter is hidden, display it, else hide it but only if the current widget is the same
@@ -210,8 +210,8 @@ class ToolSub(AppTool):
         self.connect_signals_at_init()
 
         self.ui.tools_frame.show()
-        self.ui.close_paths_cb.setChecked(self.app.options["tools_sub_close_paths"])
-        self.ui.delete_sources_cb.setChecked(self.app.options["tools_sub_delete_sources"])
+        self.ui.close_paths_cb.setChecked(self.app.options.tools_sub_close_paths)
+        self.ui.delete_sources_cb.setChecked(self.app.options.tools_sub_delete_sources)
 
         # SELECT THE CURRENT OBJECT
         obj = self.app.collection.get_active()
@@ -220,7 +220,7 @@ class ToolSub(AppTool):
             self.ui.target_gerber_combo.set_value(obj_name)
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
     def change_level(self, level):

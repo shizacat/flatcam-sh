@@ -108,7 +108,7 @@ class Gerber(Geometry):
 
         # How to approximate a circle with lines.
         if steps_per_circle is None:
-            self.steps_per_circle = int(self.app.options.get("gerber_circle_steps", 64))
+            self.steps_per_circle = int(getattr(self.app.options, "gerber_circle_steps", 64))
         else:
             self.steps_per_circle = steps_per_circle
         self.decimals = self.app.decimals
@@ -123,7 +123,7 @@ class Gerber(Geometry):
         self.frac_digits = 4
         """Number of fraction digits in Gerber numbers. Used during parsing."""
 
-        self.gerber_zeros = self.app.options['gerber_def_zeros']
+        self.gerber_zeros = self.app.options.gerber_def_zeros
         """Zeros in Gerber numbers. If 'L' then remove leading zeros, if 'T' remove trailing zeros. Used during parsing.
         """
 
@@ -147,7 +147,7 @@ class Gerber(Geometry):
         '''
 
         # store the file units here:
-        self.units = self.app.options['gerber_def_units']
+        self.units = self.app.options.gerber_def_units
 
         # aperture storage
         self.tools = {}
@@ -266,7 +266,7 @@ class Gerber(Geometry):
         # Flag to detect if an aperture is used without definition
         self.defective_aperture_detected = False
 
-        self.use_buffer_for_union = self.app.options["gerber_use_buffer_for_union"]
+        self.use_buffer_for_union = self.app.options.gerber_use_buffer_for_union
 
         # Attributes to be included in serialization
         # Always append to it because it carries contents
@@ -527,13 +527,13 @@ class Gerber(Geometry):
         line_num = 0
         gline = ""
 
-        s_tol = float(self.app.options["gerber_simp_tolerance"])
+        s_tol = float(self.app.options.gerber_simp_tolerance)
 
         # Cache options lookups for performance
-        use_simplification = self.app.options['gerber_simplification']
-        use_buffering = self.app.options["gerber_buffering"]
-        extra_buffering = self.app.options['gerber_extra_buffering']
-        clean_apertures = self.app.options['gerber_clean_apertures']
+        use_simplification = self.app.options.gerber_simplification
+        use_buffering = self.app.options.gerber_buffering
+        extra_buffering = self.app.options.gerber_extra_buffering
+        clean_apertures = self.app.options.gerber_clean_apertures
 
         # Cache steps_per_circle conversion
         steps = int(self.steps_per_circle)
@@ -668,7 +668,7 @@ class Gerber(Geometry):
                     self.app.log.debug("Gerber units found = %s" % self.units)
                     # Changed for issue #80
                     # self.convert_units(match.group(1))
-                    s_tol = float(self.app.options["gerber_simp_tolerance"]) / 25.4 if self.units == 'IN' else s_tol
+                    s_tol = float(self.app.options.gerber_simp_tolerance) / 25.4 if self.units == 'IN' else s_tol
 
                     self.conversion_done = True
                     continue
@@ -690,7 +690,7 @@ class Gerber(Geometry):
                     self.app.log.debug("Gerber format found. Coordinates type = %s (Absolute or Relative)" % absolute)
 
                     self.units = match.group(5)
-                    s_tol = float(self.app.options["gerber_simp_tolerance"]) / 25.4 if self.units == 'IN' else s_tol
+                    s_tol = float(self.app.options.gerber_simp_tolerance) / 25.4 if self.units == 'IN' else s_tol
 
                     self.app.log.debug("Gerber units found = %s" % self.units)
                     # Changed for issue #80
@@ -723,7 +723,7 @@ class Gerber(Geometry):
 
                         self.units = match.group(1)
                         s_tol = float(
-                            self.app.options["gerber_simp_tolerance"]) / 25.4 if self.units == 'IN' else s_tol
+                            self.app.options.gerber_simp_tolerance) / 25.4 if self.units == 'IN' else s_tol
 
                         self.app.log.debug("Gerber units found = %s" % self.units)
                         # Changed for issue #80
@@ -738,7 +738,7 @@ class Gerber(Geometry):
                 if match:
                     obs_gerber_units = {'0': 'IN', '1': 'MM'}[match.group(1)]
                     self.units = obs_gerber_units
-                    s_tol = float(self.app.options["gerber_simp_tolerance"]) / 25.4 if self.units == 'IN' else s_tol
+                    s_tol = float(self.app.options.gerber_simp_tolerance) / 25.4 if self.units == 'IN' else s_tol
 
                     self.app.log.warning("Gerber obsolete units found = %s" % obs_gerber_units)
                     # Changed for issue #80
@@ -2085,7 +2085,7 @@ class Gerber(Geometry):
             return 'fail'
 
         units = self.app.app_units if units is None else units
-        res = self.app.options['gerber_circle_steps']
+        res = self.app.options.gerber_circle_steps
         factor = svgparse_viewbox(svg_root)
 
         if svg_units in svg_unit_to_mm:
@@ -2673,7 +2673,7 @@ class Gerber(Geometry):
         if distance == 0:
             return
 
-        steps = self.app.options.get("gerber_circle_steps", 64)
+        steps = getattr(self.app.options, "gerber_circle_steps", 64)
 
         # variables to display the percentage of work done
         self.geo_len = 0

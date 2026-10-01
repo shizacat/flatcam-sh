@@ -42,7 +42,7 @@ class CopyEditorTool(AppToolEditor):
             pass
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor CopyTool()")
+        self.app.settings.report_usage("Geo Editor CopyTool()")
         AppToolEditor.run(self)
 
         # if the splitter us hidden, display it

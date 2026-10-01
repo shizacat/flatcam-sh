@@ -15,6 +15,8 @@ from PyQt6 import QtWidgets, QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QSettings
 
+from settings.utils import copy_shared
+
 import gettext
 import builtins
 
@@ -233,7 +235,7 @@ def restart_program(app, ask=None):
         if response == bt_yes:
             app.f_handlers.on_file_save_project_as(use_thread=True, quit_action=True)
 
-    app.defaults.update(app.options)
+    copy_shared(app.settings, app.options)
     app.preferencesUiManager.save_defaults()
 
     try:

@@ -39,7 +39,7 @@ class RectangleEditorTool(AppToolEditor):
         self.ui.add_button.clicked.connect(self.on_execute)
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor RectangleTool()")
+        self.app.settings.report_usage("Geo Editor RectangleTool()")
         super().run()
 
         # if the splitter us hidden, display it
@@ -142,11 +142,11 @@ class RectangleEditorTool(AppToolEditor):
         if corner_type == 'r':
             geo = box(minx, miny, maxx, maxy).buffer(
                 corner_radius, join_style=base.JOIN_STYLE.round,
-                resolution=self.draw_app.app.options["geometry_circle_steps"]).exterior
+                resolution=self.draw_app.app.options.geometry_circle_steps).exterior
         elif corner_type == 'b':
             geo = box(minx, miny, maxx, maxy).buffer(
                 corner_radius, join_style=base.JOIN_STYLE.bevel,
-                resolution=self.draw_app.app.options["geometry_circle_steps"]).exterior
+                resolution=self.draw_app.app.options.geometry_circle_steps).exterior
         else:   # 's' - square
             geo = box(minx, miny, maxx, maxy).exterior
 

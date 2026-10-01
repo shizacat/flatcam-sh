@@ -78,7 +78,7 @@ class AlignObjects(AppTool):
         self.ui.reset_button.clicked.connect(self.set_tool_ui)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolAlignObjects()")
+        self.app.settings.report_usage("ToolAlignObjects()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -154,7 +154,7 @@ class AlignObjects(AppTool):
         self.aligned_old_fill_color = None
         self.aligned_old_line_color = None
 
-        self.ui.a_type_radio.set_value(self.app.options["tools_align_objects_align_type"])
+        self.ui.a_type_radio.set_value(self.app.options.tools_align_objects_align_type)
         self.ui.type_obj_radio.set_value('grb')
         self.ui.type_aligner_obj_radio.set_value('grb')
 

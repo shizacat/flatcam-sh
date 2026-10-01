@@ -43,7 +43,7 @@ class ExcCopyEditorTool(AppToolEditor):
             pass
 
     def run(self):
-        self.app.defaults.report_usage("Geo Editor CopyTool()")
+        self.app.settings.report_usage("Geo Editor CopyTool()")
         super().run()
 
         # if the splitter us hidden, display it

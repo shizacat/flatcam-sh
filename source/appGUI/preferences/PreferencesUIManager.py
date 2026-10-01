@@ -3,13 +3,17 @@ from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QSettings
 
 import os
+from collections.abc import Mapping
 
-from defaults import AppDefaults
 from appGUI.GUIElements import FCMessageBox
+from pydantic import BaseModel
+from settings import Settings
+from settings.utils import propagate_settings
 
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.utils import copy_shared
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -18,15 +22,15 @@ if '_' not in builtins.__dict__:
 
 class PreferencesUIManager(QtCore.QObject):
 
-    def __init__(self, defaults: AppDefaults, data_path: str, ui, inform, options):
+    def __init__(self, settings: Settings, data_path: str, ui, inform, options):
         """
         Class that control the Preferences Tab
 
-        :param defaults:    a dictionary storage where all the application settings are stored
+        :param settings:    saved application settings
         :param data_path:   a path to the file where all the preferences are stored for persistence
         :param ui:          reference to the MainGUI class which constructs the UI
         :param inform:      a pyqtSignal used to display information's in the StatusBar of the GUI
-        :param options:     a dict holding the current defaults loaded in the application
+        :param options:     session options loaded in the application
         """
         super(PreferencesUIManager, self).__init__()
 
@@ -40,7 +44,8 @@ class PreferencesUIManager(QtCore.QObject):
         self.plugins2_displayed = False
         self.util_displayed = False
 
-        self.defaults = defaults
+        self.settings = settings
+        self.current_defaults = self.settings.model_copy(deep=True)
         self.data_path = data_path
         self.ui = ui
         self.inform = inform
@@ -53,7 +58,7 @@ class PreferencesUIManager(QtCore.QObject):
 
         # when adding entries here read the comments in the  method found below named:
         # def app_obj.new_object(self, kind, name, initialize, active=True, fit=True, plot=True)
-        self.defaults_form_fields = {
+        self.settings_from_fields = {
             # General App
             "units_precision": self.ui.general_pref_form.general_app_group.precision_metric_entry,
             "global_graphic_engine": self.ui.general_pref_form.general_app_group.ge_radio,
@@ -748,32 +753,76 @@ class PreferencesUIManager(QtCore.QObject):
         # set the colors of the tab text's to default and the color of the first tab is 'green'
         self.ui.on_pref_tabbar_clicked(0)
 
+    def _setting_names(self, storage: BaseModel | Mapping[str, object]) -> Mapping[str, object]:
+        """
+        Returns the names stored in a settings object or a dictionary.
+
+        :param storage: settings object or dictionary
+        :return:        field or key names
+        """
+        fields = getattr(type(storage), "model_fields", None)
+        if fields is not None and not isinstance(storage, dict):
+            return fields
+        return storage
+
+    def _setting_value(self, storage: BaseModel | Mapping[str, object], name: str) -> object:
+        """
+        Returns one stored value.
+
+        :param storage: settings object or dictionary
+        :param name:    field or key name
+        :return:        stored value
+        """
+        fields = getattr(type(storage), "model_fields", None)
+        if fields is not None and not isinstance(storage, dict):
+            return getattr(storage, name)
+        return storage[name]
+
     def defaults_read_form(self):
         """
         Will read all the values in the Preferences GUI and update the defaults dictionary.
 
         :return: None
         """
-        for option in self.defaults_form_fields:
+        for option in self.settings_from_fields:
             try:
-                self.defaults[option] = self.defaults_form_fields[option].get_value()
+                value = self._form_value(option, self.settings_from_fields[option].get_value())
+                setattr(self.settings, option, value)
             except Exception as e:
                 self.ui.app.log.error("App.defaults_read_form() --> %s" % str(e))
+
+    def _form_value(self, name: str, value: object) -> object:
+        """
+        Turns a widget value into the type stored for that setting.
+
+        A text field stores a comma-separated pair as text. A combo that reports its
+        index keeps that index when the setting accepts an integer.
+
+        :param name:  setting name
+        :param value: value returned by the widget
+        :return:      value to assign
+        """
+        annotation = type(self.settings).model_fields[name].annotation
+        if annotation is not str or isinstance(value, str) or value is None:
+            return value
+        if isinstance(value, (tuple, list)):
+            return ", ".join(str(item) for item in value)
+        return str(value)
 
     def defaults_write_form(self, factor=None, fl_units=None, source_dict=None):
         """
         Will set the values for all the GUI elements in Preferences GUI based on the values found in the
-        self.defaults dictionary.
+        self.settings dictionary.
 
         :param factor:          will apply a factor to the values that written in the GUI elements
         :param fl_units:        current measuring units in FlatCAM: Metric or Inch
-        :param source_dict:     the repository of options, usually is the self.defaults
+        :param source_dict:     the repository of options, usually is the self.settings
         :return: None
         """
 
-        options_storage = self.defaults if source_dict is None else source_dict
+        options_storage = self.settings if source_dict is None else source_dict
 
-        for option in options_storage:
+        for option in self._setting_names(options_storage):
             if source_dict:
                 self.defaults_write_form_field(option, factor=factor, units=fl_units, defaults_dict=source_dict)
             else:
@@ -790,15 +839,15 @@ class PreferencesUIManager(QtCore.QObject):
         :return:                None, it updates GUI elements
         """
 
-        def_dict = self.defaults if defaults_dict is None else defaults_dict
+        def_dict = self.settings if defaults_dict is None else defaults_dict
 
         try:
-            value = def_dict[field]
+            value = self._setting_value(def_dict, field)
             # log.debug("value is " + str(value) + " and factor is "+str(factor))
             if factor is not None and not isinstance(value, str):
                 value *= factor
 
-            form_field = self.defaults_form_fields[field]
+            form_field = self.settings_from_fields[field]
             if units is None:
                 form_field.set_value(value)
             elif (units == 'IN' or units == 'MM') and (field == 'global_gridx' or field == 'global_gridy'):
@@ -1020,98 +1069,98 @@ class PreferencesUIManager(QtCore.QObject):
 
     def __init_color_pickers(self):
         # Init Gerber Plot Colors
-        self.ui.gerber_pref_form.gerber_gen_group.fill_color_entry.set_value(self.defaults['gerber_plot_fill'])
-        self.ui.gerber_pref_form.gerber_gen_group.line_color_entry.set_value(self.defaults['gerber_plot_line'])
+        self.ui.gerber_pref_form.gerber_gen_group.fill_color_entry.set_value(self.settings.gerber_plot_fill)
+        self.ui.gerber_pref_form.gerber_gen_group.line_color_entry.set_value(self.settings.gerber_plot_line)
 
         self.ui.gerber_pref_form.gerber_gen_group.gerber_alpha_entry.set_value(
-            int(self.defaults['gerber_plot_fill'][7:9], 16))    # alpha
+            int(self.settings.gerber_plot_fill[7:9], 16))    # alpha
 
         # Init Excellon Plot Colors
         self.ui.excellon_pref_form.excellon_gen_group.fill_color_entry.set_value(
-            self.defaults['excellon_plot_fill'])
+            self.settings.excellon_plot_fill)
         self.ui.excellon_pref_form.excellon_gen_group.line_color_entry.set_value(
-            self.defaults['excellon_plot_line'])
+            self.settings.excellon_plot_line)
 
         self.ui.excellon_pref_form.excellon_gen_group.excellon_alpha_entry.set_value(
-            int(self.defaults['excellon_plot_fill'][7:9], 16))
+            int(self.settings.excellon_plot_fill[7:9], 16))
 
         # Init Geometry Plot Colors
         self.ui.geo_pref_form.geometry_gen_group.line_color_entry.set_value(
-            self.defaults['geometry_plot_line'])
+            self.settings.geometry_plot_line)
 
         # Init CNCJob Travel Line Colors
         self.ui.cncjob_pref_form.cncjob_gen_group.tfill_color_entry.set_value(
-            self.defaults['cncjob_travel_fill'])
+            self.settings.cncjob_travel_fill)
         self.ui.cncjob_pref_form.cncjob_gen_group.tline_color_entry.set_value(
-            self.defaults['cncjob_travel_line'])
+            self.settings.cncjob_travel_line)
 
         self.ui.cncjob_pref_form.cncjob_gen_group.cncjob_alpha_entry.set_value(
-            int(self.defaults['cncjob_travel_fill'][7:9], 16))      # alpha
+            int(self.settings.cncjob_travel_fill[7:9], 16))      # alpha
 
         # Init CNCJob Plot Colors
         self.ui.cncjob_pref_form.cncjob_gen_group.fill_color_entry.set_value(
-            self.defaults['cncjob_plot_fill'])
+            self.settings.cncjob_plot_fill)
 
         self.ui.cncjob_pref_form.cncjob_gen_group.line_color_entry.set_value(
-            self.defaults['cncjob_plot_line'])
+            self.settings.cncjob_plot_line)
 
         # Init Left-Right Selection colors
-        self.ui.general_pref_form.general_gui_group.sf_color_entry.set_value(self.defaults['global_sel_fill'])
-        self.ui.general_pref_form.general_gui_group.sl_color_entry.set_value(self.defaults['global_sel_line'])
+        self.ui.general_pref_form.general_gui_group.sf_color_entry.set_value(self.settings.global_sel_fill)
+        self.ui.general_pref_form.general_gui_group.sl_color_entry.set_value(self.settings.global_sel_line)
 
         self.ui.general_pref_form.general_gui_group.left_right_alpha_entry.set_value(
-            int(self.defaults['global_sel_fill'][7:9], 16))
+            int(self.settings.global_sel_fill[7:9], 16))
 
         # Init Right-Left Selection colors
         self.ui.general_pref_form.general_gui_group.alt_sf_color_entry.set_value(
-            self.defaults['global_alt_sel_fill'])
+            self.settings.global_alt_sel_fill)
         self.ui.general_pref_form.general_gui_group.alt_sl_color_entry.set_value(
-            self.defaults['global_alt_sel_line'])
+            self.settings.global_alt_sel_line)
 
         self.ui.general_pref_form.general_gui_group.right_left_alpha_entry.set_value(
-            int(self.defaults['global_sel_fill'][7:9], 16))
+            int(self.settings.global_sel_fill[7:9], 16))
 
         # Init Draw color and Selection Draw Color
         self.ui.general_pref_form.general_gui_group.draw_color_entry.set_value(
-            self.defaults['global_draw_color'])
+            self.settings.global_draw_color)
 
         self.ui.general_pref_form.general_gui_group.sel_draw_color_entry.set_value(
-            self.defaults['global_sel_draw_color'])
+            self.settings.global_sel_draw_color)
 
         # Init Project Items color - Light Theme
         self.ui.general_pref_form.general_gui_group.proj_color_light_entry.set_value(
-            self.defaults['global_proj_item_color_light'])
+            self.settings.global_proj_item_color_light)
 
         # Init Project Disabled Items color - Light Theme
         self.ui.general_pref_form.general_gui_group.proj_color_dis_light_entry.set_value(
-            self.defaults['global_proj_item_dis_color_light'])
+            self.settings.global_proj_item_dis_color_light)
 
         # Init Project Items color - Dark Theme
         self.ui.general_pref_form.general_gui_group.proj_color_dark_entry.set_value(
-            self.defaults['global_proj_item_color_dark'])
+            self.settings.global_proj_item_color_dark)
 
         # Init Project Disabled Items color - Dark Theme
         self.ui.general_pref_form.general_gui_group.proj_color_dis_dark_entry.set_value(
-            self.defaults['global_proj_item_dis_color_dark'])
+            self.settings.global_proj_item_dis_color_dark)
 
         # Init Mouse Cursor color
         self.ui.general_pref_form.general_app_set_group.mouse_cursor_entry.set_value(
-            self.defaults['global_cursor_color'])
+            self.settings.global_cursor_color)
 
         # Init the Annotation CNC Job color
         self.ui.cncjob_pref_form.cncjob_adv_opt_group.annotation_fontcolor_entry.set_value(
-            self.defaults['cncjob_annotation_fontcolor'])
+            self.settings.cncjob_annotation_fontcolor)
 
         # Init the Tool Film color
         self.ui.plugin_pref_form.tools_film_group.film_color_entry.set_value(
-            self.defaults['tools_film_color'])
+            self.settings.tools_film_color)
 
         # Init the Tool QRCode colors
         self.ui.plugin2_pref_form.tools2_qrcode_group.fill_color_entry.set_value(
-            self.defaults['tools_qrcode_fill_color'])
+            self.settings.tools_qrcode_fill_color)
 
         self.ui.plugin2_pref_form.tools2_qrcode_group.back_color_entry.set_value(
-            self.defaults['tools_qrcode_back_color'])
+            self.settings.tools_qrcode_back_color)
 
     def on_save_button(self, save_to_file=True):
         self.ui.app.log.debug("on_save_button() --> Applying preferences to file.")
@@ -1130,8 +1179,8 @@ class PreferencesUIManager(QtCore.QObject):
 
         self.inform.emit('%s' % _("Preferences applied."))  # noqa
 
-        # make sure we update the self.current_defaults dict used to undo changes to self.defaults
-        self.defaults.current_defaults.update(self.defaults)
+        # Snapshot the settings from before this form is applied, so Close can undo it.
+        self.current_defaults = self.settings.model_copy(deep=True)
 
         # deal with appearance change
         appearance_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
@@ -1149,7 +1198,7 @@ class PreferencesUIManager(QtCore.QObject):
         appearance_new_val = self.ui.general_pref_form.general_gui_group.appearance_radio.get_value()
         dark_canvas_new_val = self.ui.general_pref_form.general_gui_group.dark_canvas_cb.get_value()
 
-        ge = self.defaults["global_graphic_engine"]
+        ge = self.settings.global_graphic_engine
         ge_val = self.ui.general_pref_form.general_app_group.ge_radio.get_value()
 
         if appearance_new_val != appearance or ge != ge_val or dark_canvas_new_val != dark_canvas:
@@ -1188,7 +1237,7 @@ class PreferencesUIManager(QtCore.QObject):
 
             if ge != ge_val:
                 if response == bt_yes:
-                    self.defaults["global_graphic_engine"] = ge_val
+                    self.settings.global_graphic_engine = ge_val
                     should_restart = True
                 else:
                     self.ui.general_pref_form.general_app_group.ge_radio.set_value(ge)
@@ -1199,14 +1248,12 @@ class PreferencesUIManager(QtCore.QObject):
         # update the `defaults` dict from the Preferences UI form
         self.defaults_read_form()
         # Apply the `defaults` dict to project options
-        self.ui.app.options.update(self.defaults)
+        copy_shared(self.ui.app.options, self.settings)
         # #############################################################################################################
 
         if save_to_file or should_restart is True:
             self.save_defaults(silent=False)
-            # load the defaults so they are updated into the app
-            saved_filename_path = os.path.join(self.data_path, 'current_defaults_%s.FlatConfig' % self.defaults.version)
-            self.defaults.load(filename=saved_filename_path, inform=self.inform)
+            self.current_defaults = self.settings.model_copy(deep=True)
 
         settgs = QSettings("Open Source", "FlatCAM_EVO")
 
@@ -1242,12 +1289,13 @@ class PreferencesUIManager(QtCore.QObject):
 
     def on_restore_defaults_preferences(self):
         """
-        Loads the application's factory default settings into ``self.defaults``.
+        Loads the application's factory default settings into ``self.settings``.
 
         :return: None
         """
         self.ui.app.log.debug("on_restore_defaults_preferences()")
-        self.defaults.reset_to_factory_defaults()
+        copy_shared(self.settings, Settings())
+        self.current_defaults = self.settings.model_copy(deep=True)
         self.defaults_write_form()
         self.on_preferences_edited()
         self.ui.units_label.setText("[mm]")
@@ -1256,7 +1304,7 @@ class PreferencesUIManager(QtCore.QObject):
     def save_defaults(self, silent=False, data_path=None, first_time=False):
         """
         Saves application default options
-        ``self.defaults`` to current_defaults.FlatConfig file.
+        ``self.settings`` to current_defaults.FlatConfig file.
         Save the toolbars visibility status to the preferences file (current_defaults.FlatConfig) to be
         used at the next launch of the application.
 
@@ -1271,13 +1319,13 @@ class PreferencesUIManager(QtCore.QObject):
         if data_path is None:
             data_path = self.data_path
 
-        self.defaults.propagate_defaults()
+        propagate_settings(self.settings)
 
         # Save the options to disk
-        filename = os.path.join(data_path, "current_defaults_%s.FlatConfig" % self.defaults.version)
+        filename = os.path.join(data_path, "current_defaults_%s.FlatConfig" % self.ui.app.version)
 
         try:
-            self.defaults.write(filename=filename)
+            self.settings.write(filename=filename)
         except Exception as e:
             self.ui.app.log.error("save_defaults() --> Failed to write defaults to file %s" % str(e))
             self.inform.emit('[ERROR_NOTCL] %s %s' % (_("Failed to write defaults to file."), str(filename)))
@@ -1384,9 +1432,9 @@ class PreferencesUIManager(QtCore.QObject):
         # restore stylesheet to default for the statusBar icon
         self.ui.pref_status_label.setStyleSheet("")
 
-        self.defaults_write_form(source_dict=self.defaults.current_defaults)
+        self.defaults_write_form(source_dict=self.current_defaults)
 
-        self.defaults.update(self.defaults.current_defaults)
+        copy_shared(self.settings, self.current_defaults)
 
         # Preferences save, update the color of the Preferences Tab text
         for idx in range(self.ui.plot_tab_area.count()):

@@ -195,7 +195,7 @@ class GeneralAppPrefGroupUI(OptionsGroupUI):
         grid3_frame.setLayout(grid3)
 
         self.language_combo = FCComboBox()
-        self.language_combo.addItems(self.app.options["global_languages"])
+        self.language_combo.addItems(self.app.options.global_languages)
         grid3.addWidget(self.language_combo, 0, 0, 1, 2)
 
         self.language_apply_btn = FCButton(_("Apply Language"))

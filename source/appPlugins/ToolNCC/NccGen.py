@@ -99,22 +99,22 @@ class NccGen:
         :return: None
         """
 
-        self.app.defaults.report_usage("on_ncc_click")
+        self.app.settings.report_usage("on_ncc_click")
 
         self.first_click = False
         self.cursor_pos = None
         self.mouse_is_dragging = False
         should_check_validity = self.ui.valid_cb.get_value()
 
-        prog_plot = True if self.app.options["tools_ncc_plotting"] == 'progressive' else False
+        prog_plot = True if self.app.options.tools_ncc_plotting == 'progressive' else False
         if prog_plot:
             self.temp_shapes.clear(update=True)
 
         self.areas_to_clear_list = []
 
         obj_type = self.ui.type_obj_radio.get_value
-        geo_steps = self.app.options.get("geometry_circle_steps", 64)
-        gerber_steps = self.app.options.get("gerber_circle_steps", 64)
+        geo_steps = getattr(self.app.options, "geometry_circle_steps", 64)
+        gerber_steps = getattr(self.app.options, "gerber_circle_steps", 64)
         self.circle_steps = int(gerber_steps) if obj_type == 'gerber' else int(geo_steps)
         self.obj_name = self.ui.obj_combo.currentText()
 
@@ -457,7 +457,7 @@ class NccGen:
             # unfortunately for this function to work time efficient,
             # if the Gerber was loaded without buffering then it require the buffering now.
             fused_solid_geometry = unary_union(cleared_object.solid_geometry)
-            if self.app.options.get("gerber_buffering", "no") == 'no':
+            if getattr(self.app.options, "gerber_buffering", "no") == 'no':
                 clip_geo = fused_solid_geometry.buffer(0.000000001)
             else:
                 clip_geo = fused_solid_geometry
@@ -489,7 +489,7 @@ class NccGen:
             # if the Gerber was loaded without buffering then it require the buffering now.
             fused_solid_geometry = unary_union(cleared_object.solid_geometry)
             # TODO 'buffering status' should be a property of the object not the project property
-            if self.app.options['gerber_buffering'] == 'no':
+            if self.app.options.gerber_buffering == 'no':
                 self.solid_geometry = fused_solid_geometry.buffer(0)
             else:
                 self.solid_geometry = fused_solid_geometry
@@ -777,7 +777,7 @@ class NccGen:
             rest_machining_choice=self.ui.rest_cb.get_value(),
             simplification_value=0.01,  # TODO this should be in preferences and in the UI
             # determine if to use the progressive plotting
-            prog_plot=self.app.options.get("tools_ncc_plotting") == 'progressive',
+            prog_plot=getattr(self.app.options, "tools_ncc_plotting", None) == 'progressive',
             tools_storage=tools_storage if tools_storage is not None else self.ncc_tools,
             sorted_clear_tools=clear_tooldia_list,
             areas_to_clear_list=areas_to_clear,
@@ -1008,7 +1008,7 @@ class NccGen:
             # ----------------------------------------------------
             # clean the progressive plotted shapes if it was used
             # ----------------------------------------------------
-            if self.app.options["tools_ncc_plotting"] == 'progressive':
+            if self.app.options.tools_ncc_plotting == 'progressive':
                 self.temp_shapes.clear(update=True)
 
             # ----------------------------------------------------
@@ -1039,7 +1039,7 @@ class NccGen:
 
             # make sure to use the default tool cut depth from the NCC parameters as milling tool cut depth
             for k, v in output_geo_object.tools.items():
-                v["data"]["tools_mill_cutz"] = app_obj.options["tools_ncc_cutz"]
+                v["data"]["tools_mill_cutz"] = app_obj.options.tools_ncc_cutz
 
             # -------------------------------------------------------------------------------------------------
             # test if at least one tool has solid_geometry. If no tool has solid_geometry we raise an Exception
@@ -1154,8 +1154,8 @@ class NccGen:
 
             # for testing purposes ----------------------------------
             # for po in area.geoms:
-            #     self.app.tool_shapes.add(po, color=self.app.options['global_sel_line'],
-            #                              face_color=self.app.options['global_sel_line'],
+            #     self.app.tool_shapes.add(po, color=self.app.options.global_sel_line,
+            #                              face_color=self.app.options.global_sel_line,
             #                              update=True, layer=0, tolerance=None)
             # -------------------------------------------------------
 
@@ -1231,10 +1231,10 @@ class NccGen:
 
                             # if self.app.dec_format(float(tool), self.decimals) == 0.15:
                             #     # for testing purposes ----------------------------------
-                            #     self.app.tool_shapes.add(p, color=self.app.options['global_sel_line'],
+                            #     self.app.tool_shapes.add(p, color=self.app.options.global_sel_line,
                             #                              face_color=random_color(),
                             #                              update=True, layer=0, tolerance=None)
-                            #     self.app.tool_shapes.add(check_buff, color=self.app.options['global_sel_line'],
+                            #     self.app.tool_shapes.add(check_buff, color=self.app.options.global_sel_line,
                             #                              face_color='#FFFFFFFF',
                             #                              update=True, layer=0, tolerance=None)
                             #     # -------------------------------------------------------
@@ -1354,10 +1354,10 @@ class NccGen:
 
             # make sure to use the default tool cut depth from the NCC parameters as milling tool cut depth
             for k, v in output_geo_object.tools.items():
-                v["data"]["tools_mill_cutz"] = app_obj.options["tools_ncc_cutz"]
+                v["data"]["tools_mill_cutz"] = app_obj.options.tools_ncc_cutz
 
             # clean the progressive plotted shapes if it was used
-            if self.app.options["tools_ncc_plotting"] == 'progressive':
+            if self.app.options.tools_ncc_plotting == 'progressive':
                 self.temp_shapes.clear(update=True)
 
             # check to see if output_geo_object.tools is empty
@@ -1644,9 +1644,9 @@ class NccGen:
             offset_a = sum(sorted_tools)
             current_uid = int(1)
             # try:
-            #     tool = eval(self.app.options["tools_ncc_tools"])[0]
+            #     tool = eval(self.app.options.tools_ncc_tools)[0]
             # except TypeError:
-            #     tool = eval(self.app.options["tools_ncc_tools"])
+            #     tool = eval(self.app.options.tools_ncc_tools)
 
             # ###################################################################################################
             # Calculate the empty area by subtracting the solid_geometry from the object bounding box geometry ##
@@ -1657,7 +1657,7 @@ class NccGen:
             if ncc_obj.kind == 'gerber' and not iso_tooldia:
                 # unfortunately for this function to work time efficient,
                 # if the Gerber was loaded without buffering then it require the buffering now.
-                if self.app.options['gerber_buffering'] == 'no':
+                if self.app.options.gerber_buffering == 'no':
                     sol_geo = ncc_obj.solid_geometry.buffer(0)
                 else:
                     sol_geo = ncc_obj.solid_geometry
@@ -1682,13 +1682,13 @@ class NccGen:
 
                 # unfortunately for this function to work time efficient,
                 # if the Gerber was loaded without buffering then it require the buffering now.
-                if self.app.options['gerber_buffering'] == 'no':
+                if self.app.options.gerber_buffering == 'no':
                     self.solid_geometry = ncc_obj.solid_geometry.buffer(0)
                 else:
                     self.solid_geometry = ncc_obj.solid_geometry
 
                 # if milling type is climb then the move is counter-clockwise around features
-                milling_type = self.app.options["tools_ncc_milling_type"]
+                milling_type = self.app.options.tools_ncc_milling_type
 
                 for tool_iso in iso_tooldia:
                     new_geometry = []
@@ -2030,9 +2030,9 @@ class NccGen:
             rest_geo = []
             current_uid = 1
             try:
-                tool = eval(str(self.app.options["tools_ncc_tools"]))[0]
+                tool = eval(str(self.app.options.tools_ncc_tools))[0]
             except TypeError:
-                tool = eval(self.app.options["tools_ncc_tools"])
+                tool = eval(self.app.options.tools_ncc_tools)
 
             # repurposed flag for final object, geometry_obj_output. True if it has any solid_geometry, False if not.
             app_obj.poly_not_cleared = True
@@ -2061,7 +2061,7 @@ class NccGen:
                 self.solid_geometry = ncc_obj.solid_geometry
 
                 # if milling type is climb then the move is counter-clockwise around features
-                milling_type = self.app.options["tools_ncc_milling_type"]
+                milling_type = self.app.options.tools_ncc_milling_type
 
                 for tool_iso in iso_tooldia:
                     new_geometry = []

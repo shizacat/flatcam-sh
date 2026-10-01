@@ -42,7 +42,7 @@ class PadEditorTool(AppToolEditor):
             pass
 
     def run(self):
-        self.app.defaults.report_usage("Gerber Editor PadEditorTool()")
+        self.app.settings.report_usage("Gerber Editor PadEditorTool()")
         super().run()
 
         # if the splitter us hidden, display it

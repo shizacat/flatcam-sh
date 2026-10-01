@@ -61,7 +61,7 @@ class ToolMove(AppTool):
         AppTool.install(self, icon, separator, shortcut='M', **kwargs)
 
     def run(self, toggle):
-        self.app.defaults.report_usage("ToolMove()")
+        self.app.settings.report_usage("ToolMove()")
 
         if self.app.plugin_tab_locked is True:
             return
@@ -345,7 +345,7 @@ class ToolMove(AppTool):
         # face = Color('blue')
         # face.alpha = 0.2
 
-        if self.app.options['global_selection_shape_as_line'] is True:
+        if self.app.options.global_selection_shape_as_line is True:
             proc_shape = proc_shape.exterior
 
         face = '#0000FF' + str(hex(int(0.2 * 255)))[2:]

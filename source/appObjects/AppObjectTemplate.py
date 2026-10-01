@@ -109,8 +109,8 @@ class FlatCAMObj(QtCore.QObject):
         self.deleted = False
 
         try:
-            self._drawing_tolerance = float(self.app.options["global_tolerance"]) if \
-                self.app.options["global_tolerance"] else 0.001
+            self._drawing_tolerance = float(self.app.options.global_tolerance) if \
+                self.app.options.global_tolerance else 0.001
         except ValueError:
             self._drawing_tolerance = 0.001
 
@@ -360,7 +360,7 @@ class FlatCAMObj(QtCore.QObject):
                                      )
 
     def on_offset_button_click(self):
-        self.app.defaults.report_usage("obj_on_offset_button")
+        self.app.settings.report_usage("obj_on_offset_button")
 
         self.read_form()
         vector_val = self.ui.offsetvector_entry.get_value()
@@ -407,7 +407,7 @@ class FlatCAMObj(QtCore.QObject):
         self.app.worker_task.emit({'fcn': worker_task, 'params': []})
 
     def on_skew_button_click(self):
-        self.app.defaults.report_usage("obj_on_skew_button")
+        self.app.settings.report_usage("obj_on_skew_button")
         self.read_form()
         x_angle = self.ui.xangle_entry.get_value()
         y_angle = self.ui.yangle_entry.get_value()
@@ -504,12 +504,12 @@ class FlatCAMObj(QtCore.QObject):
         used file extension as the first one in the special string
 
         :param last_ext:        The file extension that was last used to save a file
-        :param filter_string:   A key in self.app.options that holds a string with the filter from QFileDialog
+        :param filter_string:   A key in type(self.app.options).model_fields that holds a string with the filter from QFileDialog
         used when saving a file
         :return:                None
         """
 
-        filters = copy(self.app.options[filter_string])
+        filters = copy(getattr(self.app.options, filter_string))
         filter_list = filters.split(';;')
         filter_list_enum_1 = enumerate(filter_list)
 
@@ -532,7 +532,7 @@ class FlatCAMObj(QtCore.QObject):
                 # add back the element that should always be the last (All Files)
                 filter_list.append(last_elem)
 
-                self.app.options[filter_string] = ';;'.join(filter_list)
+                setattr(self.app.options, filter_string, ';;'.join(filter_list))
                 return
 
     def add_properties_items(self, obj, treeWidget):
@@ -547,7 +547,7 @@ class FlatCAMObj(QtCore.QObject):
         font = QtGui.QFont()
         font.setBold(True)
 
-        p_color = QtGui.QColor("#000000") if self.app.options['global_theme'] in ['default', 'light'] \
+        p_color = QtGui.QColor("#000000") if self.app.options.global_theme in ['default', 'light'] \
             else QtGui.QColor("#FFFFFF")
 
         # main Items categories

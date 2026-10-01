@@ -60,7 +60,7 @@ class ToolOptimal(AppTool):
         AppTool.install(self, icon, separator, shortcut='Alt+O', **kwargs)
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolOptimal()")
+        self.app.settings.report_usage("ToolOptimal()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -184,7 +184,7 @@ class ToolOptimal(AppTool):
         self.ui.result_entry.set_value(0.0)
         self.ui.freq_entry.set_value(0)
 
-        self.ui.precision_spinner.set_value(int(self.app.options["tools_opt_precision"]))
+        self.ui.precision_spinner.set_value(int(self.app.options.tools_opt_precision))
         self.ui.locations_textb.clear()
         # new cursor - select all document
         cursor = self.ui.locations_textb.textCursor()

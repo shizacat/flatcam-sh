@@ -1,0 +1,12 @@
+---
+description: Read the project documentation before working with the development environment
+alwaysApply: true
+---
+
+# Development Environment
+
+- Treat `docs/index.md` as the documentation entry point and read the relevant linked pages before changing the development environment, dependencies, launch scripts, or packaging.
+- Read `docs/01.install.md` for the supported Python version, Conda/Mamba setup, environment activation, source launch, and developer-mode instructions.
+- The development environment specification is `environment.yml` in the repository root.
+- Read `docs/02.build.md` before changing packaging or build environments.
+- Keep the documentation consistent with any environment or workflow changes.

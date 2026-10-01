@@ -30,7 +30,7 @@ class PluginsPreferencesUI(QtWidgets.QWidget):
 
     def __init__(self, app, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
-        if app.defaults['global_gui_layout'] == 0:
+        if app.settings.global_gui_layout == 0:
             self.layout = QtWidgets.QHBoxLayout()
         else:
             self.layout = ColumnarFlowLayout()

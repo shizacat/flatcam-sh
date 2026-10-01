@@ -6,14 +6,14 @@ Provides pluggable PDF content stream extraction with multiple backends:
 - PurePythonPdfParser: Uses only standard library (zlib + re, default)
 - PikePdfParser: Uses pikepdf library (optional, lazy import when enabled)
 
-Configuration (via defaults.py):
+Configuration (`pdf_python_parser` on application settings):
     pdf_python_parser: True   -> Use pure-python parser (default, recommended)
     pdf_python_parser: False  -> Use pikepdf parser (requires pikepdf installation)
 
 Usage:
     from appParsers.PdfStreamParser import get_pdf_parser
     
-    # Get parser based on defaults.py configuration
+    # Get parser based on the pdf_python_parser setting
     parser = get_pdf_parser(app.defaults)
     content = parser.extract_content_streams("file.pdf")
     
@@ -321,7 +321,7 @@ class PikePdfParser(PdfStreamParserBase):
             raise PdfParserError(
                 "pikepdf is not available. "
                 "Install with: pip install pikepdf>=2.0, "
-                "or set pdf_python_parser=True in defaults.py to use pure-python parser"
+                "or set pdf_python_parser=True in application settings to use pure-python parser"
             )
         
         try:
@@ -360,7 +360,7 @@ def get_pdf_parser(app_defaults: Optional[Dict[str, Any]] = None) -> PdfStreamPa
     Factory function to get PDF parser based on configuration.
     
     Args:
-        app_defaults: Application defaults dict (from defaults.py).
+        app_defaults: Application defaults dict.
                      If None, uses pure-python parser as safe default.
     
     Returns:
@@ -388,7 +388,7 @@ def get_pdf_parser(app_defaults: Optional[Dict[str, Any]] = None) -> PdfStreamPa
             log.warning(
                 "pikepdf parser requested but not available. "
                 "Falling back to pure-python parser. "
-                "Set pdf_python_parser=True in defaults.py to suppress this warning."
+                "Set pdf_python_parser=True in application settings to suppress this warning."
             )
             return PurePythonPdfParser()
         

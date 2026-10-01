@@ -36,7 +36,7 @@ class ToolPunchGerber(Gerber, AppTool):
 
     def __init__(self, app):
         AppTool.__init__(self, app)
-        Geometry.__init__(self, geo_steps_per_circle=self.app.options["geometry_circle_steps"], app=app)
+        Geometry.__init__(self, geo_steps_per_circle=self.app.options.geometry_circle_steps, app=app)
 
         self.app = app
         self.decimals = self.app.decimals
@@ -112,7 +112,7 @@ class ToolPunchGerber(Gerber, AppTool):
         self.build_tool_ui()
 
     def run(self, toggle=True):
-        self.app.defaults.report_usage("ToolPunchGerber()")
+        self.app.settings.report_usage("ToolPunchGerber()")
 
         if toggle:
             # if the splitter is hidden, display it
@@ -227,24 +227,24 @@ class ToolPunchGerber(Gerber, AppTool):
 
         self.ui_disconnect()
         self.ui_connect()
-        self.ui.method_punch.set_value(self.app.options["tools_punch_hole_type"])
+        self.ui.method_punch.set_value(self.app.options.tools_punch_hole_type)
         self.ui.select_all_cb.set_value(False)
 
-        self.ui.dia_entry.set_value(float(self.app.options["tools_punch_hole_fixed_dia"]))
+        self.ui.dia_entry.set_value(float(self.app.options.tools_punch_hole_fixed_dia))
 
-        self.ui.circular_ring_entry.set_value(float(self.app.options["tools_punch_circular_ring"]))
-        self.ui.oblong_ring_entry.set_value(float(self.app.options["tools_punch_oblong_ring"]))
-        self.ui.square_ring_entry.set_value(float(self.app.options["tools_punch_square_ring"]))
-        self.ui.rectangular_ring_entry.set_value(float(self.app.options["tools_punch_rectangular_ring"]))
-        self.ui.other_ring_entry.set_value(float(self.app.options["tools_punch_others_ring"]))
+        self.ui.circular_ring_entry.set_value(float(self.app.options.tools_punch_circular_ring))
+        self.ui.oblong_ring_entry.set_value(float(self.app.options.tools_punch_oblong_ring))
+        self.ui.square_ring_entry.set_value(float(self.app.options.tools_punch_square_ring))
+        self.ui.rectangular_ring_entry.set_value(float(self.app.options.tools_punch_rectangular_ring))
+        self.ui.other_ring_entry.set_value(float(self.app.options.tools_punch_others_ring))
 
-        self.ui.circular_cb.set_value(self.app.options["tools_punch_circular"])
-        self.ui.oblong_cb.set_value(self.app.options["tools_punch_oblong"])
-        self.ui.square_cb.set_value(self.app.options["tools_punch_square"])
-        self.ui.rectangular_cb.set_value(self.app.options["tools_punch_rectangular"])
-        self.ui.other_cb.set_value(self.app.options["tools_punch_others"])
+        self.ui.circular_cb.set_value(self.app.options.tools_punch_circular)
+        self.ui.oblong_cb.set_value(self.app.options.tools_punch_oblong)
+        self.ui.square_cb.set_value(self.app.options.tools_punch_square)
+        self.ui.rectangular_cb.set_value(self.app.options.tools_punch_rectangular)
+        self.ui.other_cb.set_value(self.app.options.tools_punch_others)
 
-        self.ui.factor_entry.set_value(float(self.app.options["tools_punch_hole_prop_factor"]))
+        self.ui.factor_entry.set_value(float(self.app.options.tools_punch_hole_prop_factor))
 
         self.ui.punch_type_radio.set_value("a")
         self.old_selection_status = None
@@ -266,7 +266,7 @@ class ToolPunchGerber(Gerber, AppTool):
                 self.ui.gerber_object_combo.set_value(obj_name)
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
         self.app.ui.notebook.setTabText(2, _("Punch Gerber"))
@@ -603,8 +603,8 @@ class ToolPunchGerber(Gerber, AppTool):
             self.app.ui.notebook.setDisabled(True)
 
             # disable the canvas mouse dragging seelction shape
-            self.old_selection_status = deepcopy(self.app.options['global_selection_shape'])
-            self.app.options['global_selection_shape'] = False
+            self.old_selection_status = deepcopy(self.app.options.global_selection_shape)
+            self.app.options.global_selection_shape = False
 
     def on_excellon_method(self, grb_obj, outname):
         # get the Excellon file whose geometry will create the punch holes
@@ -1740,8 +1740,8 @@ class ToolPunchGerber(Gerber, AppTool):
                     if clicked_poly not in self.poly_dict.values():
                         shape_id = self.app.tool_shapes.add(
                             tolerance=self.grb_obj.drawing_tolerance, layer=0, shape=clicked_poly,
-                            color=self.app.options['global_sel_draw_color'] + 'FF',
-                            face_color=self.app.options['global_sel_draw_color'] + 'FF', visible=True)
+                            color=self.app.options.global_sel_draw_color + 'FF',
+                            face_color=self.app.options.global_sel_draw_color + 'FF', visible=True)
                         self.poly_dict[shape_id] = clicked_poly
                         self.app.inform.emit(
                             '%s: %d. %s' % (_("Added pad"), int(len(self.poly_dict)),
@@ -1786,7 +1786,7 @@ class ToolPunchGerber(Gerber, AppTool):
             self.poly_sel_disconnect_flag = False
 
             # restore the selection shape
-            self.app.options['global_selection_shape'] = self.old_selection_status
+            self.app.options.global_selection_shape = self.old_selection_status
 
             self.app.tool_shapes.clear(update=True)
 
@@ -1863,7 +1863,7 @@ class ToolPunchGerber(Gerber, AppTool):
                                                                       self.app.on_mouse_click_over_plot)
                 # restore the selection shape
                 if self.old_selection_status is not None:
-                    self.app.options['global_selection_shape'] = self.old_selection_status
+                    self.app.options.global_selection_shape = self.old_selection_status
 
             self.app.ui.notebook.setDisabled(False)
             self.poly_dict.clear()
@@ -1905,7 +1905,7 @@ class ToolPunchGerber(Gerber, AppTool):
         if wdg.isChecked():
             # self.plot_aperture(color='#2d4606bf', marked_aperture=aperture, visible=True)
             # color = '#e32b0760'
-            color = self.app.options['global_sel_draw_color']
+            color = self.app.options.global_sel_draw_color
             color = (color + 'AA') if len(color) == 7 else (color[:-2] + 'AA')
             grb_obj.plot_aperture(color=color,  marked_aperture=aperture, visible=True, run_thread=True)
         else:
@@ -1943,9 +1943,9 @@ class ToolPunchGerber(Gerber, AppTool):
                                 }
                                 self.manual_pads.append(deepcopy(new_elem))
 
-                                sel_color = self.app.options['global_sel_draw_color'] + 'FF' if \
-                                    len(self.app.options['global_sel_draw_color']) == 7 else \
-                                    self.app.options['global_sel_draw_color']
+                                sel_color = self.app.options.global_sel_draw_color + 'FF' if \
+                                    len(self.app.options.global_sel_draw_color) == 7 else \
+                                    self.app.options.global_sel_draw_color
                                 shape_id = self.app.tool_shapes.add(
                                     tolerance=self.grb_obj.drawing_tolerance, layer=0, shape=sol_geo,
                                     color=sel_color, face_color=sel_color, visible=True)

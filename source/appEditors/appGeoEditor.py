@@ -164,8 +164,8 @@ class AppGeoEditor(QtCore.QObject):
         self.editor_options.update(self.app.options)
 
         for option in self.editor_options:
-            if option in self.app.options:
-                self.editor_options[option] = self.app.options[option]
+            if option in type(self.app.options).model_fields:
+                self.editor_options[option] = getattr(self.app.options, option)
 
         self.app.ui.grid_gap_x_entry.setText(str(self.editor_options["global_gridx"]))
         self.app.ui.grid_gap_y_entry.setText(str(self.editor_options["global_gridy"]))
@@ -301,7 +301,7 @@ class AppGeoEditor(QtCore.QObject):
                 text_value = text_value.replace(',', '.')
             self.editor_options[opt] = float(text_value)
         except Exception as e:
-            entry.set_value(self.app.options[opt])
+            entry.set_value(getattr(self.app.options, opt))
             self.app.log.error("AppGeoEditor.__init__().entry2option() --> %s" % str(e))
             return
 
@@ -331,7 +331,7 @@ class AppGeoEditor(QtCore.QObject):
     def on_gridx_val_changed(self):
         self.grid_changed("global_gridx", self.app.ui.grid_gap_x_entry)
         # try:
-        #     self.app.options["global_gridx"] =  float(self.app.ui.grid_gap_x_entry.get_value())
+        #     self.app.options.global_gridx =  float(self.app.ui.grid_gap_x_entry.get_value())
         # except ValueError:
         #     return
 
@@ -352,7 +352,7 @@ class AppGeoEditor(QtCore.QObject):
         self.ui.geo_vertex_entry.set_value(0.0)
         self.ui.geo_zoom.set_value(False)
 
-        self.ui.param_button.setChecked(self.app.options['geometry_editor_parameters'])
+        self.ui.param_button.setChecked(self.app.options.geometry_editor_parameters)
 
         # Remove anything else in the GUI Selected Tab
         self.app.ui.properties_scroll_area.takeWidget()
@@ -362,7 +362,7 @@ class AppGeoEditor(QtCore.QObject):
         self.app.ui.notebook.setCurrentWidget(self.app.ui.properties_tab)
 
         # Show/Hide Advanced Options
-        app_mode = self.app.options["global_app_level"]
+        app_mode = self.app.options.global_app_level
         self.ui.change_level(app_mode)
 
     def build_ui(self):
@@ -1127,11 +1127,11 @@ class AppGeoEditor(QtCore.QObject):
 
         # make sure that the cursor shape is enabled/disabled, too
         if self.editor_options['grid_snap'] is True:
-            self.app.options['global_grid_snap'] = True
+            self.app.options.global_grid_snap = True
             self.app.inform[str, bool].emit(_("Grid Snap enabled."), False)
             self.app.app_cursor.enabled = True
         else:
-            self.app.options['global_grid_snap'] = False
+            self.app.options.global_grid_snap = False
             self.app.inform[str, bool].emit(_("Grid Snap disabled."), False)
             self.app.app_cursor.enabled = False
 
@@ -1170,7 +1170,7 @@ class AppGeoEditor(QtCore.QObject):
                         and self.active_tool.name != 'rectangle' \
                         and self.active_tool.name != 'path':
                     self.app.clipboard.setText(
-                        self.app.options["global_point_clipboard_format"] %
+                        self.app.options.global_point_clipboard_format %
                         (self.decimals, self.pos[0], self.decimals, self.pos[1])
                     )
                     return
@@ -1305,8 +1305,8 @@ class AppGeoEditor(QtCore.QObject):
 
             # Update cursor
             self.app.app_cursor.set_data(np.asarray([(x, y)]), symbol='++', edge_color=self.app.plotcanvas.cursor_color,
-                                         edge_width=self.app.options["global_cursor_width"],
-                                         size=self.app.options["global_cursor_size"])
+                                         edge_width=self.app.options.global_cursor_width,
+                                         size=self.app.options.global_cursor_size)
 
         self.snap_x = x
         self.snap_y = y
@@ -1361,8 +1361,8 @@ class AppGeoEditor(QtCore.QObject):
             self.app.delete_selection_shape()
             if dx < 0:
                 self.app.draw_moving_selection_shape((self.pos[0], self.pos[1]), (x, y),
-                                                     color=self.app.options["global_alt_sel_line"],
-                                                     face_color=self.app.options['global_alt_sel_fill'])
+                                                     color=self.app.options.global_alt_sel_line,
+                                                     face_color=self.app.options.global_alt_sel_fill)
                 self.app.selection_type = False
             else:
                 self.app.draw_moving_selection_shape((self.pos[0], self.pos[1]), (x, y))
@@ -1405,7 +1405,7 @@ class AppGeoEditor(QtCore.QObject):
                                                                            poly_selection.intersects(obj.geo)):
                 sel_objects_list.append(obj)
 
-        if mod_key == self.app.options["global_mselect_key"]:
+        if mod_key == self.app.options.global_mselect_key:
             for obj in sel_objects_list:
                 if obj in self.selected:
                     self.selected.remove(obj)
@@ -1500,9 +1500,9 @@ class AppGeoEditor(QtCore.QObject):
         self.tool_shape.redraw()
 
     def get_draw_color(self):
-        orig_color = self.app.options["global_draw_color"]
+        orig_color = self.app.options.global_draw_color
 
-        if self.app.options['global_theme'] in ['default', 'light']:
+        if self.app.options.global_theme in ['default', 'light']:
             return orig_color
 
         # in the "dark" theme we invert the color
@@ -1515,7 +1515,7 @@ class AppGeoEditor(QtCore.QObject):
         return new_color
 
     def get_sel_color(self):
-        return self.app.options['global_sel_draw_color']
+        return self.app.options.global_sel_draw_color
 
     def on_delete_btn(self):
         self.delete_selected()
@@ -1682,7 +1682,7 @@ class AppGeoEditor(QtCore.QObject):
         except TypeError:
             geom_list = [self.active_tool.geometry]
 
-        if self.app.options['geometry_editor_milling_type'] == 'cl':
+        if self.app.options.geometry_editor_milling_type == 'cl':
             # reverse the geometry coordinates direction to allow creation of Gcode for climb milling
             try:
                 for shp in geom_list:
@@ -1844,13 +1844,13 @@ class AppGeoEditor(QtCore.QObject):
 
         self.select_tool("select")
 
-        if self.app.options['tools_mill_spindledir'] == 'CW':
-            if self.app.options['geometry_editor_milling_type'] == 'cl':
+        if self.app.options.tools_mill_spindledir == 'CW':
+            if self.app.options.geometry_editor_milling_type == 'cl':
                 milling_type = 1  # CCW motion = climb milling (spindle is rotating CW)
             else:
                 milling_type = -1  # CW motion = conventional milling (spindle is rotating CW)
         else:
-            if self.app.options['geometry_editor_milling_type'] == 'cl':
+            if self.app.options.geometry_editor_milling_type == 'cl':
                 milling_type = -1  # CCW motion = climb milling (spindle is rotating CCW)
             else:
                 milling_type = 1  # CW motion = conventional milling (spindle is rotating CCW)
@@ -3011,7 +3011,7 @@ class FCCircle(FCShapeTool):
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
         self.draw_app.app.inform.emit(_("Click on Center point ..."))
-        self.steps_per_circ = self.draw_app.app.options["geometry_circle_steps"]
+        self.steps_per_circ = self.draw_app.app.options.geometry_circle_steps
 
     def click(self, point):
         try:
@@ -3303,7 +3303,7 @@ class FCArc(FCShapeTool):
 
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-        self.steps_per_circ = self.draw_app.app.options["geometry_circle_steps"]
+        self.steps_per_circ = self.draw_app.app.options.geometry_circle_steps
 
     def click(self, point):
         try:
@@ -3625,11 +3625,11 @@ class FCRectangle(FCShapeTool):
             if corner_type == 'r':
                 util_geo = box(minx, miny, maxx, maxy).buffer(
                     corner_radius, join_style=base.JOIN_STYLE.round,
-                    resolution=self.draw_app.app.options["geometry_circle_steps"]).exterior
+                    resolution=self.draw_app.app.options.geometry_circle_steps).exterior
             elif corner_type == 'b':
                 util_geo = box(minx, miny, maxx, maxy).buffer(
                     corner_radius, join_style=base.JOIN_STYLE.bevel,
-                    resolution=self.draw_app.app.options["geometry_circle_steps"]).exterior
+                    resolution=self.draw_app.app.options.geometry_circle_steps).exterior
             else:  # 's' - square
                 util_geo = base_util_geo.exterior
 
@@ -4398,7 +4398,7 @@ class FCSelect(DrawTool):
                 else:
                     mod_key = None
 
-                if mod_key == self.draw_app.app.options["global_mselect_key"]:
+                if mod_key == self.draw_app.app.options.global_mselect_key:
                     # if modifier key is pressed then we add to the selected list the current shape but if it's already
                     # in the selected list, we removed it. Therefore, first click selects, second deselects.
                     if obj_to_add in self.draw_app.selected:
@@ -4525,7 +4525,7 @@ class FCMove(FCShapeTool):
 
         self.origin = None
         self.destination = None
-        self.sel_limit = self.draw_app.app.options["geometry_editor_sel_limit"]
+        self.sel_limit = self.draw_app.app.options.geometry_editor_sel_limit
         self.selection_shape = self.selection_bbox()
 
         self.cursor_data_control = True
@@ -4704,7 +4704,7 @@ class FCMove(FCShapeTool):
                     return
 
                 key_modifier = QtWidgets.QApplication.keyboardModifiers()
-                if self.draw_app.app.options["global_mselect_key"] == 'Control':
+                if self.draw_app.app.options.global_mselect_key == 'Control':
                     # if CONTROL key is pressed then we add to the selected list the current shape but if it's
                     # already in the selected list, we removed it. Therefore, first click selects, second deselects.
                     if key_modifier == Qt.KeyboardModifier.ControlModifier:
@@ -4867,7 +4867,7 @@ class FCCopy(FCShapeTool):
 
         self.origin = None
         self.destination = None
-        self.sel_limit = self.draw_app.app.options["geometry_editor_sel_limit"]
+        self.sel_limit = self.draw_app.app.options.geometry_editor_sel_limit
         self.selection_shape = self.selection_bbox()
 
         # store here the utility geometry, so we can use it on the last step
@@ -5229,7 +5229,7 @@ class FCCopy(FCShapeTool):
                     return
 
                 key_modifier = QtWidgets.QApplication.keyboardModifiers()
-                if self.draw_app.app.options["global_mselect_key"] == 'Control':
+                if self.draw_app.app.options.global_mselect_key == 'Control':
                     # if CONTROL key is pressed then we add to the selected list the current shape but if it's
                     # already in the selected list, we removed it. Therefore, first click selects, second deselects.
                     if key_modifier == Qt.KeyboardModifier.ControlModifier:

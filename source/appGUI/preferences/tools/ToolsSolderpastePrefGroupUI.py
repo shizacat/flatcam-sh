@@ -270,7 +270,7 @@ class ToolsSolderpastePrefGroupUI(OptionsGroupUI):
         )
 
         self.pp_combo = FCComboBox()
-        self.pp_combo.addItems(self.options["tools_solderpaste_preprocessor_list"])
+        self.pp_combo.addItems(self.options.tools_solderpaste_preprocessor_list)
 
         # add ToolTips for the Preprocessor ComboBoxes in Preferences
         for it in range(self.pp_combo.count()):

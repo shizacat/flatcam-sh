@@ -1,6 +1,7 @@
 from tclCommands.TclCommand import TclCommand
 
 import collections
+from settings.utils import propagate_settings
 
 
 class TclCommandSetSys(TclCommand):
@@ -75,15 +76,15 @@ class TclCommandSetSys(TclCommand):
             "MM": "MM"
         }
 
-        if param in self.app.options:
+        if param in type(self.app.options).model_fields:
 
             try:
                 value = tcl2py[value]
             except KeyError:
                 pass
 
-            self.app.options[param] = value
-            self.app.options.propagate_defaults()
+            setattr(self.app.options, param, value)
+            propagate_settings(self.app.options)
 
         else:
             self.raise_tcl_error("No such system parameter \"{}\".".format(param))
