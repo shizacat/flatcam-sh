@@ -487,52 +487,13 @@ class App(QtCore.QObject):
         # ############################################################################################################
         # ########################################## OS-specific #####################################################
         # ############################################################################################################
-        portable = False
+        self.data_path = self.user_settings_folder()
+        if self.data_path is None:
+            return
 
-        # Folder for user settings.
         if sys.platform == 'win32':
-            # if platform.architecture()[0] == '32bit':
-            #     self.log.debug("Win32!")
-            # else:
-            #     self.log.debug("Win64!")
-
-            # #######################################################################################################
-            # ####### CONFIG FILE WITH PARAMETERS REGARDING PORTABILITY #############################################
-            # #######################################################################################################
-            app_dir = Path(__file__).resolve().parent
-            config_file = app_dir.parent / "config" / "configuration.txt"
-            if not config_file.is_file():
-                config_file = app_dir / "config" / "configuration.txt"
-
-            try:
-                with open(config_file, 'r') as f:
-                    try:
-                        for line in f:
-                            param = str(line).replace('\n', '').rpartition('=')
-
-                            if param[0] == 'portable':
-                                try:
-                                    portable = eval(param[2])
-                                except NameError:
-                                    portable = False
-                            if param[0] == 'headless':
-                                if param[2].lower() == 'true':
-                                    self.cmd_line_headless = 1
-                    except Exception as e:
-                        self.log.error('App.__init__() -->%s' % str(e))
-                        return
-            except FileNotFoundError as e:
-                self.log.error(str(e))
-                pass
-
-            if portable is False:
-                self.data_path = Path(os.getenv('appdata')) / "FlatCAM"
-            else:
-                self.data_path = Path(__file__).resolve().parent.parent / "config"
-
             self.os = 'windows'
         else:  # Linux/Unix/MacOS
-            self.data_path = Path.home() / ".FlatCAM"
             self.os = 'unix'
 
         # ############################################################################################################
@@ -1551,6 +1512,52 @@ class App(QtCore.QObject):
         #         continue
         #     else:
         #         sys.exit(2)
+
+    def user_settings_folder(self) -> Path | None:
+        """
+        Returns the folder that stores user settings.
+
+        On Windows a portable install keeps them in the ``config`` folder next to the application.
+        The portable flag is read from ``configuration.txt``. Other systems use ``~/.FlatCAM``.
+
+        :return: settings folder, or None when the Windows configuration file cannot be parsed
+
+        :raises OSError:   the Windows configuration file exists but could not be read
+        :raises TypeError: Windows has no APPDATA folder
+        """
+        # Linux / macOS
+        if sys.platform != 'win32':
+            return Path.home() / ".FlatCAM"
+
+        portable = False
+        app_dir = Path(__file__).resolve().parent
+        config_file = app_dir.parent / "config" / "configuration.txt"
+        if not config_file.is_file():
+            config_file = app_dir / "config" / "configuration.txt"
+
+        try:
+            with open(config_file, 'r') as f:
+                try:
+                    for line in f:
+                        param = str(line).replace('\n', '').rpartition('=')
+
+                        if param[0] == 'portable':
+                            try:
+                                portable = eval(param[2])
+                            except NameError:
+                                portable = False
+                        if param[0] == 'headless':
+                            if param[2].lower() == 'true':
+                                self.cmd_line_headless = 1
+                except Exception as e:
+                    self.log.error("App.user_settings_folder() --> %s" % str(e))
+                    return None
+        except FileNotFoundError as e:
+            self.log.error(str(e))
+
+        if portable is False:
+            return Path(os.getenv('appdata')) / "FlatCAM"
+        return Path(__file__).resolve().parent.parent / "config"
 
     def tools_database_path(self) -> str:
         return str(self.data_path / ("tools_db_%s.FlatDB" % self.version))
