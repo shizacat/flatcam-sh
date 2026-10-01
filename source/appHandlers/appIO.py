@@ -292,7 +292,7 @@ class appIO(QtCore.QObject):
         _filter_ = "FlatCAM Config (*.FlatConfig);;FlatCAM Config (*.json);;All Files (*.*)"
         try:
             filename, _f = QtWidgets.QFileDialog.getOpenFileName(caption=_("Open Configuration File"),
-                                                                 directory=self.app.data_path, filter=_filter_)
+                                                                 directory=str(self.app.data_path), filter=_filter_)
         except TypeError:
             filename, _f = QtWidgets.QFileDialog.getOpenFileName(caption=_("Open Configuration File"),
                                                                  filter=_filter_)
@@ -1499,7 +1499,7 @@ class appIO(QtCore.QObject):
         filter_ = "Config File (*.FlatConfig);;All Files (*.*)"
         try:
             filename, _f = QtWidgets.QFileDialog.getOpenFileName(caption=_("Import FlatCAM Preferences"),
-                                                                 directory=self.app.data_path,
+                                                                 directory=str(self.app.data_path),
                                                                  filter=filter_)
         except TypeError:
             filename, _f = QtWidgets.QFileDialog.getOpenFileName(caption=_("Import FlatCAM Preferences"),
@@ -1533,7 +1533,7 @@ class appIO(QtCore.QObject):
         try:
             filename, _f = FCFileSaveDialog.get_saved_filename(
                 caption=_("Export FlatCAM Preferences"),
-                directory=os.path.join(self.app.data_path, 'preferences_%s' % date),
+                directory=str(self.app.data_path / ("preferences_%s" % date)),
                 ext_filter=filter__
             )
         except TypeError:

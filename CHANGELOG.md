@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Changed application data paths to `pathlib.Path`; `App.data_path` is a `Path`, and files under it are built with `/`
+
 ### Removed
 
 - Removed `global_language_current` from saved settings; the Preferences language list reads the Qt `language` key

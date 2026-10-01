@@ -15,6 +15,7 @@ from PyQt6.QtGui import QAction
 import os
 import os.path
 import sys
+from pathlib import Path
 
 import urllib.request
 import urllib.parse
@@ -498,12 +499,10 @@ class App(QtCore.QObject):
             # #######################################################################################################
             # ####### CONFIG FILE WITH PARAMETERS REGARDING PORTABILITY #############################################
             # #######################################################################################################
-            config_file = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '\\config\\configuration.txt'
-            try:
-                with open(config_file, 'r'):
-                    pass
-            except FileNotFoundError:
-                config_file = os.path.dirname(os.path.realpath(__file__)) + '\\config\\configuration.txt'
+            app_dir = Path(__file__).resolve().parent
+            config_file = app_dir.parent / "config" / "configuration.txt"
+            if not config_file.is_file():
+                config_file = app_dir / "config" / "configuration.txt"
 
             try:
                 with open(config_file, 'r') as f:
@@ -527,26 +526,27 @@ class App(QtCore.QObject):
                 pass
 
             if portable is False:
-                self.data_path = os.path.join(os.getenv('appdata'), 'FlatCAM')
+                self.data_path = Path(os.getenv('appdata')) / "FlatCAM"
             else:
-                self.data_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '\\config'
+                self.data_path = Path(__file__).resolve().parent.parent / "config"
 
             self.os = 'windows'
         else:  # Linux/Unix/MacOS
-            self.data_path = os.path.expanduser('~') + '/.FlatCAM'
+            self.data_path = Path.home() / ".FlatCAM"
             self.os = 'unix'
 
         # ############################################################################################################
         # ################################# Setup folders and files ##################################################
         # ############################################################################################################
 
-        if not os.path.exists(self.data_path):
-            os.makedirs(self.data_path)
-            self.log.debug('Created data folder: ' + self.data_path)
+        if not self.data_path.exists():
+            self.data_path.mkdir(parents=True)
+            self.log.debug("Created data folder: %s" % self.data_path)
 
         self.preprocessorpaths = self.preprocessors_path()
-        if not os.path.exists(self.preprocessorpaths):
-            os.makedirs(self.preprocessorpaths)
+        preprocessors_path = Path(self.preprocessorpaths)
+        if not preprocessors_path.exists():
+            preprocessors_path.mkdir(parents=True)
             self.log.debug('Created preprocessors folder: ' + self.preprocessorpaths)
 
         # create tools_db.FlatDB file if there is none
@@ -585,13 +585,14 @@ class App(QtCore.QObject):
 
         # Application directory. CHDIR to it. Otherwise, trying to load GUI icons will fail as their path is relative.
         # This will fail under cx_freeze ...
-        self.app_home = os.path.dirname(os.path.realpath(__file__))
+        app_home = Path(__file__).resolve().parent
 
-        # cx_freeze workaround
-        if os.path.isfile(self.app_home):
-            self.app_home = os.path.dirname(self.app_home)
+        # cx_freeze workaround: the parent of a frozen module can be the library archive.
+        if app_home.is_file():
+            app_home = app_home.parent
 
-        os.chdir(self.app_home)
+        self.app_home = str(app_home)
+        os.chdir(app_home)
 
         # ############################################################################################################
         # ################################# DEFAULTS - PREFERENCES STORAGE ###########################################
@@ -1404,7 +1405,7 @@ class App(QtCore.QObject):
     # #################################################################################################################
 
     @staticmethod
-    def copy_and_overwrite(from_path, to_path):
+    def copy_and_overwrite(from_path: str | os.PathLike[str], to_path: str | os.PathLike[str]) -> None:
         """
         From here:
         https://stackoverflow.com/questions/12683834/how-to-copy-directory-recursively-in-python-and-overwrite-all
@@ -1413,12 +1414,12 @@ class App(QtCore.QObject):
         :param to_path: destination path
         :return: None
         """
-        if os.path.exists(to_path):
+        if Path(to_path).exists():
             shutil.rmtree(to_path)
         try:
             shutil.copytree(from_path, to_path)
         except FileNotFoundError:
-            from_new_path = os.path.dirname(os.path.realpath(__file__)) + '\\appGUI\\VisPyData\\data'
+            from_new_path = Path(__file__).resolve().parent / "appGUI" / "VisPyData" / "data"
             shutil.copytree(from_new_path, to_path)
 
     def connect_custom_signal(self, target, params):
@@ -1551,8 +1552,8 @@ class App(QtCore.QObject):
         #     else:
         #         sys.exit(2)
 
-    def tools_database_path(self):
-        return os.path.join(self.data_path, 'tools_db_%s.FlatDB' % str(self.version))
+    def tools_database_path(self) -> str:
+        return str(self.data_path / ("tools_db_%s.FlatDB" % self.version))
 
     def load_settings(self, filename: str | None = None) -> Settings:
         """
@@ -1569,7 +1570,7 @@ class App(QtCore.QObject):
         if filename is None:
             filename = self.settings_path()
 
-        if os.path.isfile(filename):
+        if Path(filename).is_file():
             try:
                 return Settings.load(filename)
             except SettingsError:
@@ -1611,19 +1612,19 @@ class App(QtCore.QObject):
             self.log.info("Could not remove settings file %s: %s" % (filename, error))
 
     def settings_path(self):
-        return os.path.join(self.data_path, 'current_defaults_%s.FlatConfig' % str(self.version))
+        return str(self.data_path / ("current_defaults_%s.FlatConfig" % self.version))
 
     def recent_files_path(self):
-        return os.path.join(self.data_path, 'recent.json')
+        return str(self.data_path / "recent.json")
 
     def recent_projects_path(self):
-        return os.path.join(self.data_path, 'recent_projects.json')
+        return str(self.data_path / "recent_projects.json")
 
     def preprocessors_path(self):
-        return os.path.join(self.data_path, 'preprocessors')
+        return str(self.data_path / "preprocessors")
 
     def log_path(self):
-        return os.path.join(self.data_path, 'log.txt')
+        return str(self.data_path / "log.txt")
 
     def on_options_value_changed(self, key_changed):
         # when changing those properties the associated keys change, so we get an updated Properties default Tab
@@ -2829,7 +2830,7 @@ class App(QtCore.QObject):
         if loc is None:
             loc = self.options.global_last_folder
         if loc is None:
-            loc = os.path.dirname(__file__)
+            loc = str(Path(__file__).resolve().parent)
         return loc
 
     @QtCore.pyqtSlot(str)
@@ -2917,7 +2918,7 @@ class App(QtCore.QObject):
         filter__ = "HTML File .html (*.html);;TXT File .txt (*.txt);;All Files (*.*)"
         path_to_save = self.options.global_last_save_folder if \
             self.options.global_last_save_folder is not None else self.data_path
-        final_path = os.path.join(path_to_save, 'file_%s' % str(date))
+        final_path = str(Path(path_to_save) / ("file_%s" % date))
 
         try:
             filename, _f = FCFileSaveDialog.get_saved_filename(
@@ -3001,7 +3002,7 @@ class App(QtCore.QObject):
             self.recent_projects.pop()
 
         try:
-            f = open(os.path.join(self.data_path, 'recent.json'), 'w')
+            f = open(self.recent_files_path(), 'w')
         except IOError:
             self.log.error("Failed to open recent items file for writing.")
             self.inform.emit('[ERROR_NOTCL] %s' %
@@ -3012,7 +3013,7 @@ class App(QtCore.QObject):
         f.close()
 
         try:
-            fp = open(os.path.join(self.data_path, 'recent_projects.json'), 'w')
+            fp = open(self.recent_projects_path(), 'w')
         except IOError:
             self.log.error("Failed to open recent items file for writing.")
             self.inform.emit('[ERROR_NOTCL] %s' %
@@ -4057,11 +4058,11 @@ class App(QtCore.QObject):
 
         # test if the app was frozen and choose the path for the configuration file
         if getattr(sys, "frozen", False) is True:
-            current_data_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '\\config'
+            current_data_path = Path(__file__).resolve().parent.parent / "config"
         else:
-            current_data_path = os.path.dirname(os.path.realpath(__file__)) + '\\config'
+            current_data_path = Path(__file__).resolve().parent / "config"
 
-        config_file = current_data_path + '\\configuration.txt'
+        config_file = current_data_path / "configuration.txt"
         try:
             with open(config_file, 'r') as f:
                 try:
@@ -4084,39 +4085,39 @@ class App(QtCore.QObject):
             # create the new defaults files
             # create current_defaults.FlatConfig file if there is none
             try:
-                f = open(current_data_path + '/current_defaults.FlatConfig')
+                f = open(current_data_path / "current_defaults.FlatConfig")
                 f.close()
             except IOError:
                 self.log.debug('Creating empty current_defaults.FlatConfig')
-                f = open(current_data_path + '/current_defaults.FlatConfig', 'w')
+                f = open(current_data_path / "current_defaults.FlatConfig", "w")
                 json.dump({}, f)
                 f.close()
 
             # create factory_defaults.FlatConfig file if there is none
             try:
-                f = open(current_data_path + '/factory_defaults.FlatConfig')
+                f = open(current_data_path / "factory_defaults.FlatConfig")
                 f.close()
             except IOError:
                 self.log.debug('Creating empty factory_defaults.FlatConfig')
-                f = open(current_data_path + '/factory_defaults.FlatConfig', 'w')
+                f = open(current_data_path / "factory_defaults.FlatConfig", "w")
                 json.dump({}, f)
                 f.close()
 
             try:
-                f = open(current_data_path + '/recent.json')
+                f = open(current_data_path / "recent.json")
                 f.close()
             except IOError:
                 self.log.debug('Creating empty recent.json')
-                f = open(current_data_path + '/recent.json', 'w')
+                f = open(current_data_path / "recent.json", "w")
                 json.dump([], f)
                 f.close()
 
             try:
-                fp = open(current_data_path + '/recent_projects.json')
+                fp = open(current_data_path / "recent_projects.json")
                 fp.close()
             except IOError:
                 self.log.debug('Creating empty recent_projects.json')
-                fp = open(current_data_path + '/recent_projects.json', 'w')
+                fp = open(current_data_path / "recent_projects.json", "w")
                 json.dump([], fp)
                 fp.close()
 
@@ -6883,7 +6884,7 @@ class App(QtCore.QObject):
 
                 for ob in sel_objects:
                     ob.read_form()
-                    fname = os.path.join(path, '%s.%s' % (ob.obj_options['name'], file_extension))
+                    fname = str(Path(path) / ("%s.%s" % (ob.obj_options['name'], file_extension)))
                     ob.export_gcode_handler(fname, is_gcode=True, rename_object=False)
                 return
 
@@ -7159,7 +7160,7 @@ class App(QtCore.QObject):
 
         # Open recent file for files
         try:
-            f = open(os.path.join(self.data_path, 'recent.json'))
+            f = open(self.recent_files_path())
         except IOError:
             self.log.error("Failed to load recent item list.")
             self.inform.emit('[ERROR_NOTCL] %s' % _("Failed to load recent item list."))
@@ -7176,7 +7177,7 @@ class App(QtCore.QObject):
 
         # Open recent file for projects
         try:
-            fp = open(os.path.join(self.data_path, 'recent_projects.json'))
+            fp = open(self.recent_projects_path())
         except IOError:
             self.log.error("Failed to load recent project item list.")
             self.inform.emit('[ERROR_NOTCL] %s' % _("Failed to load recent projects item list."))
@@ -7204,7 +7205,7 @@ class App(QtCore.QObject):
             self.ui.recent.clear()
             self.recent = []
             try:
-                ff = open(os.path.join(self.data_path, 'recent.json'), 'w')
+                ff = open(self.recent_files_path(), 'w')
             except IOError:
                 self.log.error("Failed to open recent items file for writing.")
                 return
@@ -7218,7 +7219,7 @@ class App(QtCore.QObject):
             self.recent_projects = []
 
             try:
-                frp = open(os.path.join(self.data_path, 'recent_projects.json'), 'w')
+                frp = open(self.recent_projects_path(), 'w')
             except IOError:
                 self.log.error("Failed to open recent projects items file for writing.")
                 return

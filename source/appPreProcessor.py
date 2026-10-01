@@ -147,7 +147,7 @@ class AppPreProcTools(object, metaclass=ABCPreProcRegister):
 
 def load_preprocessors(app):
     preprocessors_path_search = [
-        os.path.join(app.data_path, 'preprocessors', '*.py'),
+        str(app.data_path / "preprocessors" / "*.py"),
         os.path.join('preprocessors', '*.py')
     ]
     import glob

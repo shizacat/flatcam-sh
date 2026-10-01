@@ -2334,7 +2334,7 @@ class MainGUI(QtWidgets.QMainWindow):
         elif sys.platform == 'darwin':
             os.system('open "%s"' % self.app.data_path)
         else:
-            subprocess.Popen(['xdg-open', self.app.data_path])
+            subprocess.Popen(['xdg-open', str(self.app.data_path)])
         self.app.inform.emit('[success] %s' % _("FlatCAM Preferences Folder opened."))
 
     def on_gui_clear(self, forced_clear=False):

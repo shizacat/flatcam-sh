@@ -2,8 +2,8 @@
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QSettings
 
-import os
 from collections.abc import Mapping
+from pathlib import Path
 
 from appGUI.GUIElements import FCMessageBox
 from pydantic import BaseModel
@@ -22,7 +22,7 @@ if '_' not in builtins.__dict__:
 
 class PreferencesUIManager(QtCore.QObject):
 
-    def __init__(self, settings: Settings, data_path: str, ui, inform, options):
+    def __init__(self, settings: Settings, data_path: Path, ui, inform, options):
         """
         Class that control the Preferences Tab
 
@@ -1311,7 +1311,7 @@ class PreferencesUIManager(QtCore.QObject):
         self.ui.units_label.setText("[mm]")
         self.inform.emit('[success] %s' % _("Preferences default values are restored."))
 
-    def save_defaults(self, silent=False, data_path=None, first_time=False):
+    def save_defaults(self, silent=False, data_path: Path | None = None, first_time=False):
         """
         Saves application default options
         ``self.settings`` to current_defaults.FlatConfig file.
@@ -1332,7 +1332,7 @@ class PreferencesUIManager(QtCore.QObject):
         propagate_settings(self.settings)
 
         # Save the options to disk
-        filename = os.path.join(data_path, "current_defaults_%s.FlatConfig" % self.ui.app.version)
+        filename = data_path / ("current_defaults_%s.FlatConfig" % self.ui.app.version)
 
         try:
             self.settings.write(filename=filename)
