@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 This is a developer update. Switched application settings to typed Pydantic models. Saved preferences live on `Settings`, the session copy lives on `Options`, and both share one field schema.
+## [1.9.7] - 2026-09-28
 
 ### Added
 
@@ -60,7 +61,7 @@ This is a developer update. Switched application settings to typed Pydantic mode
 - Fixed the tab close icon filename typo `inselected`, which made Qt warn about a missing SVG in the light and dark themes
 - Fixed a bus error on quit with no project open: on macOS the process exits after saving state and releasing multiprocessing semaphores, before Qt destroys the OpenGL canvas
 
-## [1.10.0] - 2026-09-22
+## [1.9.6] - 2026-09-22
 
 ### Added
 
