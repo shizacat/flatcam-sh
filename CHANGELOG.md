@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.8] - 2026-10-01
+
 This is a developer update. Switched application settings to typed Pydantic models. Saved preferences live on `Settings`, the session copy lives on `Options`, and both share one field schema.
-## [1.9.7] - 2026-09-28
+
+### Removed
+
+- Removed the unused `AppDefaults` and `AppOptions` classes; saved settings and session values live on `Settings` and `Options`
 
 ### Added
 
-- Added a Getting started page that lists where Qt settings and the application data folder are stored on Windows, macOS, and Linux
 - Added a typed Pydantic settings model containing all current factory defaults as the first stage of settings migration
 - Added JSON loading and writing for the typed settings model; a failed read or write raises `SettingsError`
 - Added `bind` and `unbind` so a callback can observe changes to settings and options
@@ -20,10 +24,6 @@ This is a developer update. Switched application settings to typed Pydantic mode
 - Added `Settings.report_usage` to count how often a tool or action is used
 - Added an `Options` model for session values that start from saved settings and do not write the settings file; shared preference groups are defined once and reused by both objects
 - Added `FlatCAMError` as the project base exception; settings errors inherit from it
-
-### Removed
-
-- Removed the unused `AppDefaults` and `AppOptions` classes; saved settings and session values live on `Settings` and `Options`
 
 ### Changed
 
@@ -51,6 +51,16 @@ This is a developer update. Switched application settings to typed Pydantic mode
 - Fixed tools crashing on launch because usage counters were still read from the removed defaults object
 - Fixed the levelling and milling forms crashing because session options iterate as name and value pairs
 - Fixed applying a language crashing on restart because session options were copied through the removed defaults object
+
+
+## [1.9.7] - 2026-09-28
+
+### Added
+
+- Added a Getting started page that lists where Qt settings and the application data folder are stored on Windows, macOS, and Linux
+
+### Fixed
+
 - Fixed opening a project hanging when the legacy-project confirmation was built on a worker thread
 - Fixed the Project tree using a hardcoded Segoe UI font, so it follows the system UI font and no longer warns about a missing font at startup
 - Fixed the canvas HUD requesting the missing Times font; coordinate labels use Georgia when that family is installed
