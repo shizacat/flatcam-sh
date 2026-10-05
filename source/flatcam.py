@@ -6,7 +6,7 @@ from datetime import datetime
 
 from PyQt6 import QtWidgets, QtGui
 from PyQt6.QtCore import QSettings, QTimer
-from appMain import App
+from appMain import App, parse_command_line
 from appGUI import VisPyPatches
 
 from appGUI.GUIElements import FCMessageBox
@@ -33,6 +33,7 @@ if __name__ == '__main__':
     # QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_X11InitThreads)
     # NOTE: Never talk to the GUI from threads! This is why I commented the above.
     freeze_support()
+    command_line = parse_command_line(sys.argv[1:])
 
     portable = False
     # Folder for user settings.
@@ -171,7 +172,13 @@ if __name__ == '__main__':
         font.setPointSize(font_size)
         app.setFont(font)
 
-    fc = App(qapp=app)
+    fc = App(
+        qapp=app,
+        shellfile=command_line.shellfile,
+        shellvar=command_line.shellvar,
+        headless=command_line.headless,
+        startup_args=command_line.args,
+    )
 
     # interrupt the Qt loop such that Python events have a chance to be responsive
     timer = QTimer()

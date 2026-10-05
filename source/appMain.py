@@ -25,7 +25,7 @@ from datetime import datetime as dt
 from copy import deepcopy, copy
 import numpy as np
 
-import getopt
+import argparse
 import random
 import simplejson as json
 import shutil
@@ -150,6 +150,42 @@ if '_' not in builtins.__dict__:
     _ = gettext.gettext
 
 
+def parse_command_line(argv: list[str] | None = None) -> argparse.Namespace:
+    """
+    Reads the application command-line options.
+
+    :param argv: arguments without the program name; ``sys.argv[1:]`` when omitted
+    :return: parsed options; ``args`` holds the files to open
+    """
+    if argv is None:
+        argv = sys.argv[1:]
+
+    def eval_command_line_value(value: str):
+        try:
+            return eval(value)
+        except NameError:
+            return None
+
+    parser = argparse.ArgumentParser(
+        prog="FlatCam.py",
+        description="FlatCam.py --shellfile=<cmd_line_shellfile>\n"
+                    "FlatCam.py --shellvar=<1,'C:\\path',23>\n"
+                    "FlatCam.py --headless=1",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--shellfile", default="", metavar="<file>")
+    parser.add_argument("--shellvar", default="", metavar="<values>")
+    parser.add_argument("--headless", default=None, type=eval_command_line_value, metavar="<value>")
+    # Multiprocessing pool will spawn additional processes with 'multiprocessing-fork' flag
+    parser.add_argument("--multiprocessing-fork", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+
+    parsed = parser.parse_args(argv)
+    if parsed.args[:1] == ["--"]:
+        parsed.args = parsed.args[1:]
+    return parsed
+
+
 class App(QtCore.QObject):
     """
     The main application class. The constructor starts the GUI and all other classes used by the program.
@@ -158,40 +194,6 @@ class App(QtCore.QObject):
     # ###############################################################################################################
     # ########################################## App ################################################################
     # ###############################################################################################################
-
-    # ###############################################################################################################
-    # #################################### Get Cmd Line Options #####################################################
-    # ###############################################################################################################
-    cmd_line_shellfile = ''
-    cmd_line_shellvar = ''
-    cmd_line_headless = None
-
-    cmd_line_help = "FlatCam.py --shellfile=<cmd_line_shellfile>\n" \
-                    "FlatCam.py --shellvar=<1,'C:\\path',23>\n" \
-                    "FlatCam.py --headless=1"
-    try:
-        # Multiprocessing pool will spawn additional processes with 'multiprocessing-fork' flag
-        cmd_line_options, args = getopt.getopt(sys.argv[1:], "h:", ["shellfile=",
-                                                                    "shellvar=",
-                                                                    "headless=",
-                                                                    "multiprocessing-fork="])
-    except getopt.GetoptError:
-        print(cmd_line_help)
-        sys.exit(2)
-
-    for opt, arg in cmd_line_options:
-        if opt == '-h':
-            print(cmd_line_help)
-            sys.exit()
-        elif opt == '--shellfile':
-            cmd_line_shellfile = arg
-        elif opt == '--shellvar':
-            cmd_line_shellvar = arg
-        elif opt == '--headless':
-            try:
-                cmd_line_headless = eval(arg)
-            except NameError:
-                pass
 
     # ###############################################################################################################
     # ################################### Version and VERSION DATE ##################################################
@@ -306,18 +308,36 @@ class App(QtCore.QObject):
     custom_signal = pyqtSignal(object)
 
     # noinspection PyUnresolvedReferences
-    def __init__(self, qapp, user_defaults=True):
+    def __init__(
+        self,
+        qapp,
+        user_defaults=True,
+        *,
+        shellfile: str = "",
+        shellvar: str = "",
+        headless: object = None,
+        startup_args: list[str] | None = None,
+    ):
         """
         Starts the application.
 
         :param qapp:            Qt application
         :param user_defaults:   when True, load the settings file; when False, use the built-in defaults
+        :param shellfile:       Tcl script to run at startup
+        :param shellvar:        comma-separated values exposed to the Tcl shell
+        :param headless:        ``1`` runs without showing the main window
+        :param startup_args:    files to open at startup
 
         :return:                the application
         :rtype:                 QtCore.QObject
         """
 
         super().__init__()
+
+        self.cmd_line_shellfile = shellfile
+        self.cmd_line_shellvar = shellvar
+        self.cmd_line_headless = headless
+        self.startup_args = [] if startup_args is None else startup_args
 
         # #############################################################################################################
         # ######################################### LOGGING ###########################################################
@@ -1355,8 +1375,8 @@ class App(QtCore.QObject):
 
         # accept some type file as command line parameter: FlatCAM project, FlatCAM preferences or scripts
         # the path/file_name must be enclosed in quotes, if it contains spaces
-        if App.args:    # noqa
-            self.args_at_startup.emit(App.args)     # noqa
+        if self.startup_args:
+            self.args_at_startup.emit(self.startup_args)
 
     # ######################################### INIT FINISHED  #######################################################
     # #################################################################################################################
@@ -1404,7 +1424,7 @@ class App(QtCore.QObject):
         if args is not None:
             args_to_process = args
         else:
-            args_to_process = App.args      # noqa
+            args_to_process = self.startup_args
 
         self.log.debug("Application was started with arguments: %s. Processing ..." % str(args_to_process))
         for argument in args_to_process:
