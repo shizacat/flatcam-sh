@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtGui
 
 from appTool import AppToolEditor
@@ -8,6 +10,10 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, NumericalE
 import gettext
 import appTranslation as fcTranslate
 import builtins
+
+if TYPE_CHECKING:
+    from appMain import App
+    from appEditors.appExcEditor import AppExcEditor
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -19,7 +25,7 @@ class ExcCopyEditorTool(AppToolEditor):
     Copy Plugin
     """
 
-    def __init__(self, app, draw_app, plugin_name):
+    def __init__(self, app: "App", draw_app: "AppExcEditor", plugin_name: str) -> None:
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app

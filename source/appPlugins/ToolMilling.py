@@ -5,6 +5,8 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
@@ -30,6 +32,9 @@ from appPlugins.mill_tool_shape import fill_missing_mill_fields, milling_tool_di
 from settings.utils import option_items
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -83,7 +88,7 @@ class ToolMilling(Excellon, AppTool):
     build_ui_sig = QtCore.pyqtSignal()
     launch_job = QtCore.pyqtSignal()
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Excellon.__init__(self, excellon_circle_steps=self.app.options.excellon_circle_steps, app=app)
 

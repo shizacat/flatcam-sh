@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets
 from appTool import AppToolEditor
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCFrame, FCButton, GLay, FCDoubleSpinner, FCComboBox, \
@@ -12,6 +14,10 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+    from appEditors.appGeoEditor import AppGeoEditor
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -22,7 +28,7 @@ class PaintOptionsTool(AppToolEditor):
     Inputs to specify how to paint the selected polygons.
     """
 
-    def __init__(self, app, fcdraw):
+    def __init__(self, app: "App", fcdraw: "AppGeoEditor") -> None:
         AppToolEditor.__init__(self, app)
 
         self.fcdraw = fcdraw

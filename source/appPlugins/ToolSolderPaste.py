@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCFileSaveDialog, \
@@ -30,6 +32,9 @@ from appEditors.appTextEditor import AppTextEditor
 
 from io import StringIO
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -37,7 +42,7 @@ if '_' not in builtins.__dict__:
 
 class SolderPaste(AppTool):
     
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
 
         # #############################################################################

@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 
 from appPlugins.ToolNCC.NccUI import NccUI
@@ -40,6 +42,9 @@ from appParsers.ParseGerber import Gerber
 from camlib import grace, flatten_shapely_geometry
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -51,7 +56,7 @@ class ToolNcc(Gerber, AppTool):
 
     optimal_found_sig = QtCore.pyqtSignal(float)
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 

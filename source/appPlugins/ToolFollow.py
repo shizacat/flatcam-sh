@@ -5,6 +5,8 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import (VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, RadioSet,
@@ -25,6 +27,9 @@ from appParsers.ParseGerber import Gerber
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import flatten_shapely_geometry
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -36,7 +41,7 @@ class ToolFollow(Gerber, AppTool):
 
     optimal_found_sig = QtCore.pyqtSignal(float)
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 

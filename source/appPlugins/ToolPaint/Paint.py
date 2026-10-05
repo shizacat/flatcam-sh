@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 from PyQt6.QtCore import Qt     # noqa
 
@@ -45,6 +47,9 @@ from camlib import (
     flatten_shapely_geometry,
 )
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -54,7 +59,7 @@ log = logging.getLogger('base')
 
 class ToolPaint(Gerber, AppTool):
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         self.circle_steps = int(getattr(app.options, "geometry_circle_steps", 64))
 
         AppTool.__init__(self, app)

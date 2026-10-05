@@ -13,7 +13,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 
 import logging
 from copy import deepcopy
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 import simplejson as json
@@ -31,6 +31,9 @@ from appParsers.ParseGerber import Gerber
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace, flatten_shapely_geometry
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -41,7 +44,7 @@ log = logging.getLogger('base')
 class ToolIsolation(Gerber, AppTool):
     optimal_found_sig = QtCore.pyqtSignal(float)
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 

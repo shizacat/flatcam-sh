@@ -5,6 +5,8 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import Qt
 from appTool import AppTool
@@ -58,6 +60,9 @@ try:
 except Exception:
     VORONOI_ENABLED = False
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -68,7 +73,7 @@ log = logging.getLogger('base')
 class ToolLevelling(CNCjob, AppTool):
     build_al_table_sig = QtCore.pyqtSignal()
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         CNCjob.__init__(self, steps_per_circle=self.app.options.cncjob_steps_per_circle, app=app)
 

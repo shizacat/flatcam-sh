@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtGui, QtWidgets, QtCore
 from appTool import AppToolEditor
 from appGUI.GUIElements import VerticalScrollArea, GLay, FCLabel, FCButton, FCFrame, FCTextEdit, FCEntry, \
@@ -10,6 +12,10 @@ from copy import deepcopy
 import gettext
 import appTranslation as fcTranslate
 import builtins
+
+if TYPE_CHECKING:
+    from appMain import App
+    from appEditors.appGeoEditor import AppGeoEditor
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -23,7 +29,7 @@ class SimplificationTool(AppToolEditor):
 
     update_ui = QtCore.pyqtSignal(object, int)
 
-    def __init__(self, app, draw_app):
+    def __init__(self, app: "App", draw_app: "AppGeoEditor") -> None:
         AppToolEditor.__init__(self, app)
 
         self.geo_editor = draw_app
