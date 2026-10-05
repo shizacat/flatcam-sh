@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore     # noqa
 from appTool import AppTool
 
@@ -29,6 +31,9 @@ from appParsers.PdfStreamParser import (
 )
 from camlib import grace, flatten_shapely_geometry
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -44,10 +49,8 @@ class ToolPDF(AppTool):
     """
     pluginName = _("PDF Import Tool")
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
-        self.app = app
-        self.decimals = self.app.decimals
 
         self.stream_re = re.compile(b'.*?FlateDecode.*?stream(.*?)endstream', re.S)
 

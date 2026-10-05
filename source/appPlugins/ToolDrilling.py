@@ -5,6 +5,8 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
@@ -28,6 +30,9 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -38,9 +43,8 @@ log = logging.getLogger('base')
 class ToolDrilling(Excellon, AppTool):
     build_ui_sig = QtCore.pyqtSignal()
 
-    def __init__(self, app):
-        self.app = app
-        self.dec_format = self.app.dec_format
+    def __init__(self, app: "App") -> None:
+        self.dec_format = app.dec_format
 
         AppTool.__init__(self, app)
         Excellon.__init__(self, excellon_circle_steps=self.app.options.excellon_circle_steps, app=app)

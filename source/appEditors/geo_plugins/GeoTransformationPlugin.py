@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtGui, QtWidgets
 from appTool import AppToolEditor, AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCDoubleSpinner, \
@@ -10,6 +12,10 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+    from appEditors.appGeoEditor import AppGeoEditor
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -20,12 +26,10 @@ class TransformEditorTool(AppToolEditor):
     Inputs to specify how to paint the selected polygons.
     """
 
-    def __init__(self, app, draw_app):
+    def __init__(self, app: "App", draw_app: "AppGeoEditor") -> None:
         AppToolEditor.__init__(self, app)
 
-        self.app = app
         self.draw_app = draw_app
-        self.decimals = self.app.decimals
 
         self.ui = TransformationEditorUI(layout=self.layout, transform_class=self)
 

@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from appEditors.grb_plugins.GrbCommon import DrawToolUtilityShape, DrawToolShape, DrawTool, ShapeToolEditorGrb
 
 from camlib import distance, arc, three_point_circle, flatten_shapely_geometry
@@ -39,6 +41,9 @@ from shapely.affinity import translate, scale, skew, rotate
 import gettext
 import appTranslation as fcTranslate
 import builtins
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -6979,12 +6984,10 @@ class TransformEditorTool(AppTool):
     offsetName = _("Offset")
     bufferName = _("Buffer")
 
-    def __init__(self, app, draw_app):
+    def __init__(self, app: "App", draw_app: "AppGerberEditor") -> None:
         AppTool.__init__(self, app)
 
-        self.app = app
         self.draw_app = draw_app
-        self.decimals = self.app.decimals
 
         # ## Title
         title_label = FCLabel("%s" % self.pluginName, size=16, bold=True)

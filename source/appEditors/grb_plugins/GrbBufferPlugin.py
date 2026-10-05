@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets
 from appTool import AppToolEditor
 from appEditors.grb_plugins.GrbCommon import DrawToolShape
@@ -11,6 +13,10 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+    from appEditors.appGerberEditor import AppGerberEditor
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -21,11 +27,10 @@ class BufferEditorTool(AppToolEditor):
     Simple input for buffer distance.
     """
 
-    def __init__(self, app, draw_app):
+    def __init__(self, app: "App", draw_app: "AppGerberEditor") -> None:
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
 
         self.ui = BufferEditorUI(layout=self.layout, buffer_class=self)
 

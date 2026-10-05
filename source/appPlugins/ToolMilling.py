@@ -5,6 +5,8 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
@@ -26,9 +28,14 @@ import appTranslation as fcTranslate
 import builtins
 
 from appParsers.ParseExcellon import Excellon
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, fill_missing_mill_fields, milling_tool_diameter
 from settings.utils import option_items
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace
+
+if TYPE_CHECKING:
+    from appMain import App
+    from appObjects.GeometryObject import GeometryObject
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -82,10 +89,7 @@ class ToolMilling(Excellon, AppTool):
     build_ui_sig = QtCore.pyqtSignal()
     launch_job = QtCore.pyqtSignal()
 
-    def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Excellon.__init__(self, excellon_circle_steps=self.app.options.excellon_circle_steps, app=app)
 
@@ -2179,6 +2183,7 @@ class ToolMilling(Excellon, AppTool):
                 'solid_geometry':   self.target_obj.solid_geometry
             }
         })
+        self.target_obj.tools[tooluid]['data']['tools_mill_tooldia'] = new_tdia
         self.ui_connect()
         self.build_ui()
         self.target_obj.build_ui()
@@ -2245,6 +2250,7 @@ class ToolMilling(Excellon, AppTool):
             })
 
         self.target_obj.tools[self.tooluid]['data']['name'] = deepcopy(self.target_obj.obj_options['name'])
+        self.target_obj.tools[self.tooluid]['data']['tools_mill_tooldia'] = tooldia
 
         # we do this HACK to make sure the tools attribute to be serialized is updated in the self.ser_attrs list
         try:
@@ -2320,6 +2326,7 @@ class ToolMilling(Excellon, AppTool):
         })
 
         self.target_obj.tools[self.tooluid]['data']['name'] = deepcopy(self.target_obj.obj_options['name'])
+        self.target_obj.tools[self.tooluid]['data']['tools_mill_tooldia'] = tooldia
 
         # we do this HACK to make sure the tools attribute to be serialized is updated in the self.ser_attrs list
         try:
@@ -2576,7 +2583,7 @@ class ToolMilling(Excellon, AppTool):
                 self.app.inform.emit(mseg)
                 return False, "Error: Milling tool is larger than hole."
 
-        def geo_init(geo_obj, app_obj):
+        def geo_init(geo_obj: "GeometryObject", app_obj: "App") -> str | None:
             """
 
             :param geo_obj:     New object
@@ -3112,19 +3119,25 @@ class ToolMilling(Excellon, AppTool):
             for tool_uid_key in used_tools:
                 tool_cnt += 1
 
-                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
                 tooldia_val = app_obj.dec_format(
-                    float(tools_dict[tool_uid_key]['data']['tools_mill_tooldia']), self.decimals)
-                dia_cnc_dict['data']['tools_mill_tooldia'] = tooldia_val
+                    float(milling_tool_diameter(
+                        tools_dict[tool_uid_key],
+                        fallback=geo_obj.obj_options.get('tools_mill_tooldia'),
+                    )),
+                    self.decimals,
+                )
+                tools_dict[tool_uid_key]['data']['tools_mill_tooldia'] = tooldia_val
+                fill_missing_mill_fields(tools_dict[tool_uid_key]['data'], self.app.options)
+                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
 
                 if "optimization_type" not in tools_dict[tool_uid_key]['data']:
                     def_optimization_type = geo_obj.obj_options["tools_mill_optimization_type"]
                     tools_dict[tool_uid_key]['data']["tools_mill_optimization_type"] = def_optimization_type
 
                 if dia_cnc_dict['data']['tools_mill_offset_type'] == 1:  # 'in'
-                    tool_offset = -dia_cnc_dict['tools_mill_tooldia'] / 2
+                    tool_offset = -tooldia_val / 2
                 elif dia_cnc_dict['data']['tools_mill_offset_type'] == 2:  # 'out'
-                    tool_offset = dia_cnc_dict['tools_mill_tooldia'] / 2
+                    tool_offset = tooldia_val / 2
                 elif dia_cnc_dict['data']['tools_mill_offset_type'] == 3:  # 'custom'
                     try:
                         offset_value = float(self.ui.offset_entry.get_value())
@@ -3281,12 +3294,16 @@ class ToolMilling(Excellon, AppTool):
             total_gcode = ''
             for tool_uid_key in used_tools:
                 tool_cnt += 1
-                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
-
-                # Tooldia update
                 tooldia_val = app_obj.dec_format(
-                    float(tools_dict[tool_uid_key]['data']['tools_mill_tooldia']), self.decimals)
-                dia_cnc_dict['data']['tools_mill_tooldia'] = deepcopy(tooldia_val)
+                    float(milling_tool_diameter(
+                        tools_dict[tool_uid_key],
+                        fallback=geo_obj.obj_options.get('tools_mill_tooldia'),
+                    )),
+                    self.decimals,
+                )
+                tools_dict[tool_uid_key]['data']['tools_mill_tooldia'] = tooldia_val
+                fill_missing_mill_fields(tools_dict[tool_uid_key]['data'], self.app.options)
+                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
 
                 # Path optimizations
                 if "optimization_type" not in tools_dict[tool_uid_key]['data']:
@@ -4472,7 +4489,7 @@ class MillingUI:
 
         self.tool_shape_combo = FCComboBox2(policy=False)
         self.tool_shape_combo.setObjectName('mill_tool_shape')
-        self.tool_shape_combo.addItems(["C1", "C2", "C3", "C4", "B", "V", "L"])
+        self.tool_shape_combo.addItems(MILL_TOOL_SHAPES)
 
         idx = int(self.app.options.tools_mill_tool_shape)
         # protection against having this translated or loading a project with translated values

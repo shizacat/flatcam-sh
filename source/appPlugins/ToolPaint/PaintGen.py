@@ -82,7 +82,6 @@ class PaintGen:
         self.contour = tool.contour
 
         self.tooldia_list = tool.tooldia_list
-        self.tool_type_item_options = tool.tool_type_item_options
         self.tooldia = tool.tooldia
 
         self.units = tool.units

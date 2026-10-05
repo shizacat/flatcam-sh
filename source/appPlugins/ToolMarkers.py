@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
@@ -23,6 +25,9 @@ import builtins
 from appCommon.Common import LoudDict
 from camlib import flatten_shapely_geometry
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -32,17 +37,15 @@ log = logging.getLogger('base')
 
 class ToolMarkers(AppTool):
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = self.app.plotcanvas
 
         self.cursor_color_memory = None
         # store the current cursor type to be restored after manual geo
         self.old_cursor_type = self.app.options.global_cursor_type
 
-        self.decimals = self.app.decimals
         self.units = ''
 
         # here we store the locations of the selected locations

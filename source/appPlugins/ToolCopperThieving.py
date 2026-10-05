@@ -17,7 +17,7 @@ from camlib import flatten_shapely_geometry
 import logging
 from copy import deepcopy
 import numpy as np
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import shapely.geometry.base as base
 from shapely import Polygon, MultiPolygon, box, Point, LineString
@@ -27,6 +27,9 @@ from shapely.affinity import translate
 import gettext
 import appTranslation as fcTranslate
 import builtins
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -38,13 +41,11 @@ log = logging.getLogger('base')
 class ToolCopperThieving(AppTool):
     work_finished = QtCore.pyqtSignal()
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = self.app.plotcanvas
 
-        self.decimals = self.app.decimals
         self.units = self.app.app_units
 
         # #############################################################################

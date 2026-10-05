@@ -17,6 +17,7 @@ from appObjects.AppObjectTemplate import FlatCAMObj, ObjectDeleted
 from appGUI.GUIElements import FCFileSaveDialog, FCCheckBox
 from appGUI.ObjectUI import CNCObjectUI
 from camlib import CNCjob
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 
 import os
 import sys
@@ -268,7 +269,7 @@ class CNCJobObject(FlatCAMObj, CNCjob):
                 offset_item = QtWidgets.QTableWidgetItem(''.join(offset_txt))
 
                 job_item_options = [_('Roughing'), _('Finishing'), _('Isolation'), _('Polishing')]
-                tool_shape_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
+                tool_shape_options = MILL_TOOL_SHAPES
 
                 try:
                     job_item_txt = job_item_options[dia_value['data']['tools_mill_job_type']]

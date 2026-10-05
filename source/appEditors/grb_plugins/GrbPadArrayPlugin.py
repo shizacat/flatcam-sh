@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtGui
 from appTool import AppToolEditor
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, NumericalEvalEntry, \
@@ -6,6 +8,10 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 import gettext
 import appTranslation as fcTranslate
 import builtins
+
+if TYPE_CHECKING:
+    from appMain import App
+    from appEditors.appGerberEditor import AppGerberEditor
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -17,11 +23,10 @@ class GrbPadArrayEditorTool(AppToolEditor):
     Create an array of drill holes
     """
 
-    def __init__(self, app, draw_app, plugin_name):
+    def __init__(self, app: "App", draw_app: "AppGerberEditor", plugin_name: str) -> None:
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self.plugin_name = plugin_name
 
         self.ui = GrbPadArrayEditorUI(layout=self.layout, parray_class=self, plugin_name=plugin_name)

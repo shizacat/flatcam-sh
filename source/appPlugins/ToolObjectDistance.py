@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCEntry, FCComboBox2
@@ -20,6 +22,9 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -29,13 +34,11 @@ log = logging.getLogger('base')
 
 class ObjectDistance(AppTool):
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = self.app.plotcanvas
         self.units = self.app.app_units.lower()
-        self.decimals = self.app.decimals
 
         self.active = False
         self.original_call_source = None

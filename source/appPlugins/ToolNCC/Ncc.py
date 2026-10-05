@@ -5,9 +5,12 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 
 from appPlugins.ToolNCC.NccUI import NccUI
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, mill_tool_shape_index
 from appTool import AppTool
 from appGUI.GUIElements import (
     VerticalScrollArea,
@@ -39,6 +42,9 @@ from appParsers.ParseGerber import Gerber
 from camlib import grace, flatten_shapely_geometry
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -50,10 +56,7 @@ class ToolNcc(Gerber, AppTool):
 
     optimal_found_sig = QtCore.pyqtSignal(float)
 
-    def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 
@@ -119,7 +122,6 @@ class ToolNcc(Gerber, AppTool):
         self.solid_geometry = []
 
         self.select_method = None
-        self.tool_type_item_options = []
 
         self.circle_steps = int(self.app.options.gerber_circle_steps)
 
@@ -472,7 +474,6 @@ class ToolNcc(Gerber, AppTool):
         self.bound_obj_name = ""
         self.bound_obj = None
 
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
         self.units = self.app.app_units.upper()
 
         self.first_click = False
@@ -557,16 +558,16 @@ class ToolNcc(Gerber, AppTool):
 
             # Tool parameters section
             if self.ncc_tools:
-                app_defaults = self.app.options
+                options = self.app.options
                 for tool in self.ncc_tools:
                     tool_data = self.ncc_tools[tool]['data']
 
-                    tool_data['tools_ncc_operation'] = app_defaults['tools_ncc_operation']
-                    tool_data['tools_ncc_milling_type'] = app_defaults['tools_ncc_milling_type']
+                    tool_data['tools_ncc_operation'] = options.tools_ncc_operation
+                    tool_data['tools_ncc_milling_type'] = options.tools_ncc_milling_type
 
-                    tool_data['tools_ncc_offset_choice'] = app_defaults['tools_ncc_offset_choice']
-                    tool_data['tools_ncc_offset_value'] = app_defaults['tools_ncc_offset_value']
-                    tool_data['tools_ncc_rest'] = app_defaults['tools_ncc_rest']
+                    tool_data['tools_ncc_offset_choice'] = options.tools_ncc_offset_choice
+                    tool_data['tools_ncc_offset_value'] = options.tools_ncc_offset_value
+                    tool_data['tools_ncc_rest'] = options.tools_ncc_rest
 
             self.ui.op_label.show()
             self.ui.op_radio.show()
@@ -891,8 +892,11 @@ class ToolNcc(Gerber, AppTool):
 
                     # ------------------------ Tool Shape -------------------------------------------------------------
                     tool_type_item = FCComboBox()
-                    tool_type_item.addItems(self.tool_type_item_options)
-                    idx = int(tooluid_value['data']['tools_mill_tool_shape'])
+                    tool_type_item.addItems(MILL_TOOL_SHAPES)
+                    idx = mill_tool_shape_index(
+                        tooluid_value['data']['tools_mill_tool_shape'],
+                        MILL_TOOL_SHAPES,
+                    )
                     tool_type_item.setCurrentIndex(idx)
                     self.ui.tools_table.setCellWidget(row_no, 2, tool_type_item)
 
@@ -1973,9 +1977,10 @@ class ToolNcc(Gerber, AppTool):
 
     def on_ncc_tool_from_db_inserted(self, tool):
         """
-        Called from the Tools DB object through an App method when adding a tool from Tools Database
+        Adds a tool from the Tools Database into the NCC tool table.
+
         :param tool: a dict with the tool data
-        :return: None
+        :return:     the new tool uid, or ``'fail'`` when the tool is already in the table
         """
 
         self.ui_disconnect()
@@ -2018,9 +2023,11 @@ class ToolNcc(Gerber, AppTool):
 
         # select the tool just added
         for row in range(self.ui.tools_table.rowCount()):
-            if int(self.ui.tools_table.item(row, 3).text()) == self.tooluid:
+            if int(self.ui.tools_table.item(row, 3).text()) == tooluid:
                 self.ui.tools_table.selectRow(row)
                 break
+
+        return tooluid
 
     def on_ncc_tool_add_from_db_clicked(self):
         """

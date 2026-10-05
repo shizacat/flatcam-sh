@@ -6,6 +6,7 @@
 # ##########################################################
 
 from PyQt6 import QtWidgets, QtCore, QtGui
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
     FCComboBox2, RadioSet, FCDoubleSpinner, FCSpinner, FCInputDialogSpinnerButton, FCTable, \
@@ -13,7 +14,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 
 import logging
 from copy import deepcopy
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 import simplejson as json
@@ -31,6 +32,9 @@ from appParsers.ParseGerber import Gerber
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace, flatten_shapely_geometry
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -41,10 +45,7 @@ log = logging.getLogger('base')
 class ToolIsolation(Gerber, AppTool):
     optimal_found_sig = QtCore.pyqtSignal(float)
 
-    def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 
@@ -449,7 +450,7 @@ class ToolIsolation(Gerber, AppTool):
 
         self.sel_rect = []
 
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
+        self.tool_type_item_options = MILL_TOOL_SHAPES
 
         self.on_rest_machining_check(state=self.app.options.tools_iso_rest)
 
@@ -540,30 +541,30 @@ class ToolIsolation(Gerber, AppTool):
             self.ui.add_tool_frame.show()
 
             # Tool parameters section
-            app_defaults = self.app.options
+            options = self.app.options
             if self.iso_tools:
                 for tool in self.iso_tools:
                     tool_data = self.iso_tools[tool]['data']
-                    tool_data['tools_iso_isotype'] = app_defaults['tools_iso_isotype']
-                    tool_data['tools_iso_rest'] = app_defaults['tools_iso_rest']
-                    tool_data['tools_iso_isoexcept'] = app_defaults['tools_iso_isoexcept']
+                    tool_data['tools_iso_isotype'] = options.tools_iso_isotype
+                    tool_data['tools_iso_rest'] = options.tools_iso_rest
+                    tool_data['tools_iso_isoexcept'] = options.tools_iso_isoexcept
 
             self.ui.milling_type_label.show()
             self.ui.milling_type_radio.show()
 
             self.ui.iso_type_label.show()
-            self.ui.iso_type_radio.set_value(app_defaults['tools_iso_isotype'])
+            self.ui.iso_type_radio.set_value(options.tools_iso_isotype)
             self.ui.iso_type_radio.show()
 
             # All param section
             self.ui.apply_param_to_all.show()
 
             # Common Parameters
-            self.ui.rest_cb.set_value(app_defaults['tools_iso_rest'])
+            self.ui.rest_cb.set_value(options.tools_iso_rest)
             self.ui.rest_cb.show()
             self.ui.forced_rest_iso_cb.show()
 
-            self.ui.except_cb.set_value(app_defaults['tools_iso_isoexcept'])
+            self.ui.except_cb.set_value(options.tools_iso_isoexcept)
             self.ui.except_cb.show()
 
             self.ui.type_excobj_radio.show()
@@ -3559,7 +3560,7 @@ class IsoUI:
 
         self.tool_shape_combo = FCComboBox2(policy=False)
         self.tool_shape_combo.setObjectName('i_tool_shape')
-        self.tool_shape_combo.addItems(["C1", "C2", "C3", "C4", "B", "V", "L"])
+        self.tool_shape_combo.addItems(MILL_TOOL_SHAPES)
 
         idx = int(self.app.options.tools_iso_tool_shape)
         # protection against having this translated or loading a project with translated values

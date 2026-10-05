@@ -8177,7 +8177,7 @@ class App(QtCore.QObject):
         # self.ui.fcinfo.lock_pmaps = False
         self.shell.close_processing()
 
-    def dec_format(self, val, dec=None):
+    def dec_format(self, val: float | int | str, dec: int | None = None) -> float:
         """
         Returns a formatted float value with a certain number of decimals
         """

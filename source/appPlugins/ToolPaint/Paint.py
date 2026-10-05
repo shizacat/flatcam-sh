@@ -5,11 +5,14 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 from PyQt6.QtCore import Qt     # noqa
 
 from appPlugins.ToolPaint.PaintUI import PaintUI
 from appPlugins.ToolPaint.PaintGen import PaintGen
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, mill_tool_shape_index
 from appTool import AppTool
 from appGUI.GUIElements import (
     VerticalScrollArea,
@@ -44,6 +47,9 @@ from camlib import (
     flatten_shapely_geometry,
 )
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -53,10 +59,8 @@ log = logging.getLogger('base')
 
 class ToolPaint(Gerber, AppTool):
 
-    def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-        self.circle_steps = int(getattr(self.app.options, "geometry_circle_steps", 64))
+    def __init__(self, app: "App") -> None:
+        self.circle_steps = int(getattr(app.options, "geometry_circle_steps", 64))
 
         AppTool.__init__(self, app)
         Geometry.__init__(self, geo_steps_per_circle=self.circle_steps, app=app)
@@ -106,8 +110,6 @@ class ToolPaint(Gerber, AppTool):
 
         # store here the default data for Geometry Data
         self.default_data = {}
-
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
 
         # store here the points for the "Polygon" area selection shape
         self.points = []
@@ -556,11 +558,11 @@ class ToolPaint(Gerber, AppTool):
 
             # Tool parameters section
             if self.paint_tools:
-                app_defaults = self.app.options
+                options = self.app.options
                 for tool in self.paint_tools:
                     tool_data = self.paint_tools[tool]['data']
 
-                    tool_data['tools_paint_rest'] = app_defaults['tools_paint_rest']
+                    tool_data['tools_paint_rest'] = options.tools_paint_rest
 
             self.ui.rest_cb.show()
 
@@ -851,10 +853,13 @@ class ToolPaint(Gerber, AppTool):
                     self.ui.tools_table.setItem(row_no, 1, dia)  # Diameter
 
                     tool_type_item = FCComboBox()
-                    for item in self.tool_type_item_options:
+                    for item in MILL_TOOL_SHAPES:
                         tool_type_item.addItem(item)
                         # tool_type_item.setStyleSheet('background-color: rgb(255,255,255)')
-                    idx = int(tooluid_value['data']['tools_mill_tool_shape'])
+                    idx = mill_tool_shape_index(
+                        tooluid_value['data']['tools_mill_tool_shape'],
+                        MILL_TOOL_SHAPES,
+                    )
                     tool_type_item.setCurrentIndex(idx)
 
                     tool_uid_item = QtWidgets.QTableWidgetItem(str(int(tooluid_key)))

@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
@@ -31,6 +33,9 @@ from lxml import etree as ET
 
 from appParsers.ParseSVG import svgparselength, svgparse_viewbox, getsvggeo, getsvgtext
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -38,11 +43,8 @@ if '_' not in builtins.__dict__:
 
 class ToolImage(AppTool):
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
-
-        self.app = app
-        self.decimals = self.app.decimals
 
         # #############################################################################
         # ######################### Tool GUI ##########################################

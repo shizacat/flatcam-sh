@@ -15,7 +15,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 import logging
 from copy import deepcopy
 from io import StringIO, BytesIO
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 import math
 
 from shapely import MultiPolygon, box, Polygon
@@ -32,6 +32,9 @@ import qrcode.image.svg
 import qrcode.image.pil
 from lxml import etree as ET
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -41,13 +44,11 @@ log = logging.getLogger('base')
 
 class QRCode(AppTool):
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = self.app.plotcanvas
 
-        self.decimals = self.app.decimals
         self.units = ''
 
         # #############################################################################

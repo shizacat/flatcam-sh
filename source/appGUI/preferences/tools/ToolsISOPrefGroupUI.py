@@ -4,6 +4,7 @@ from PyQt6 import QtWidgets
 from appGUI.GUIElements import RadioSet, FCDoubleSpinner, FCComboBox2, FCCheckBox, FCSpinner, NumericalEvalTupleEntry, \
     FCLabel, GLay, FCFrame
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 
 import gettext
 import appTranslation as fcTranslate
@@ -157,7 +158,7 @@ class ToolsISOPrefGroupUI(OptionsGroupUI):
         )
 
         self.tool_shape_combo = FCComboBox2(policy=False)
-        self.tool_shape_combo.addItems(["C1", "C2", "C3", "C4", "B", "V", "L"])
+        self.tool_shape_combo.addItems(MILL_TOOL_SHAPES)
 
         tool_grid.addWidget(tool_shape_label, 0, 0)
         tool_grid.addWidget(self.tool_shape_combo, 0, 1, 1, 2)
