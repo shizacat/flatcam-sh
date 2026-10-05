@@ -23,7 +23,6 @@ class SimplificationTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self.app = self.draw_app.app
 
         self.ui = SimplificationEditorUI(layout=self.layout, simp_class=self)

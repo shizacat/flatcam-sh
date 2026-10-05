@@ -31,9 +31,6 @@ class ToolExtract(AppTool):
     def __init__(self, app):
         AppTool.__init__(self, app)
 
-        self.app = app
-        self.decimals = self.app.decimals
-
         # store here the old object name
         self.old_name = ''
 

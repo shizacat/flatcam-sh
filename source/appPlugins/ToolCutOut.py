@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtGui, QtCore
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, RadioSet, \
@@ -31,6 +33,9 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -40,12 +45,10 @@ log = logging.getLogger('base')
 
 class CutOut(AppTool):
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = app.plotcanvas
-        self.decimals = self.app.decimals
 
         # #############################################################################
         # ######################### Tool GUI ##########################################
@@ -361,11 +364,11 @@ class CutOut(AppTool):
 
             # Tool parameters section
             if self.cut_tool_dict:
-                app_defaults = self.app.options
+                options = self.app.options
                 tool_data = self.cut_tool_dict['data']
 
-                tool_data['tools_cutout_convexshape'] = app_defaults['tools_cutout_convexshape']
-                tool_data['tools_cutout_gap_type'] = app_defaults['tools_cutout_gap_type']
+                tool_data['tools_cutout_convexshape'] = options.tools_cutout_convexshape
+                tool_data['tools_cutout_gap_type'] = options.tools_cutout_gap_type
 
             self.ui.gaptype_label.show()
             self.ui.gaptype_combo.show()

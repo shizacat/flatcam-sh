@@ -46,8 +46,6 @@ class ToolPDF(AppTool):
 
     def __init__(self, app):
         AppTool.__init__(self, app)
-        self.app = app
-        self.decimals = self.app.decimals
 
         self.stream_re = re.compile(b'.*?FlateDecode.*?stream(.*?)endstream', re.S)
 

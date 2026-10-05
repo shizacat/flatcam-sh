@@ -36,8 +36,6 @@ class Panelize(AppTool):
 
     def __init__(self, app):
         AppTool.__init__(self, app)
-        self.decimals = app.decimals
-        self.app = app
 
         # #############################################################################
         # ######################### Tool GUI ##########################################

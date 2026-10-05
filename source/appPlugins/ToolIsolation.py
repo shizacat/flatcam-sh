@@ -42,9 +42,6 @@ class ToolIsolation(Gerber, AppTool):
     optimal_found_sig = QtCore.pyqtSignal(float)
 
     def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 
@@ -540,30 +537,30 @@ class ToolIsolation(Gerber, AppTool):
             self.ui.add_tool_frame.show()
 
             # Tool parameters section
-            app_defaults = self.app.options
+            options = self.app.options
             if self.iso_tools:
                 for tool in self.iso_tools:
                     tool_data = self.iso_tools[tool]['data']
-                    tool_data['tools_iso_isotype'] = app_defaults['tools_iso_isotype']
-                    tool_data['tools_iso_rest'] = app_defaults['tools_iso_rest']
-                    tool_data['tools_iso_isoexcept'] = app_defaults['tools_iso_isoexcept']
+                    tool_data['tools_iso_isotype'] = options.tools_iso_isotype
+                    tool_data['tools_iso_rest'] = options.tools_iso_rest
+                    tool_data['tools_iso_isoexcept'] = options.tools_iso_isoexcept
 
             self.ui.milling_type_label.show()
             self.ui.milling_type_radio.show()
 
             self.ui.iso_type_label.show()
-            self.ui.iso_type_radio.set_value(app_defaults['tools_iso_isotype'])
+            self.ui.iso_type_radio.set_value(options.tools_iso_isotype)
             self.ui.iso_type_radio.show()
 
             # All param section
             self.ui.apply_param_to_all.show()
 
             # Common Parameters
-            self.ui.rest_cb.set_value(app_defaults['tools_iso_rest'])
+            self.ui.rest_cb.set_value(options.tools_iso_rest)
             self.ui.rest_cb.show()
             self.ui.forced_rest_iso_cb.show()
 
-            self.ui.except_cb.set_value(app_defaults['tools_iso_isoexcept'])
+            self.ui.except_cb.set_value(options.tools_iso_isoexcept)
             self.ui.except_cb.show()
 
             self.ui.type_excobj_radio.show()

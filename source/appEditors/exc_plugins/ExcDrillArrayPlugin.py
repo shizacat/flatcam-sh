@@ -22,7 +22,6 @@ class ExcDrillArrayEditorTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self.plugin_name = plugin_name
 
         self.ui = ExcDrillArrayEditorUI(layout=self.layout, darray_class=self, plugin_name=plugin_name)

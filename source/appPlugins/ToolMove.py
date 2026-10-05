@@ -32,8 +32,6 @@ class ToolMove(AppTool):
 
     def __init__(self, app):
         AppTool.__init__(self, app)
-        self.app = app
-        self.decimals = self.app.decimals
 
         self.layout.setContentsMargins(0, 0, 3, 0)
         self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Maximum)

@@ -23,7 +23,6 @@ class BufferSelectionTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
 
         self.ui = BufferEditorUI(layout=self.layout, buffer_class=self)
 

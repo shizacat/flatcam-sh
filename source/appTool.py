@@ -6,12 +6,17 @@
 # MIT Licence                                              #
 # ########################################################## ##
 
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtGui, QtWidgets, QtCore
 from shapely import Polygon, LineString
 
 import gettext
 import appTranslation as fcTranslate
 import builtins
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -22,7 +27,7 @@ class AppTool(QtWidgets.QWidget):
 
     pluginName = "FlatCAM Generic Tool"
 
-    def __init__(self, app, parent=None):
+    def __init__(self, app: "App", parent: QtWidgets.QWidget | None = None) -> None:
         """
 
         :param app:         The application this tool will run in.

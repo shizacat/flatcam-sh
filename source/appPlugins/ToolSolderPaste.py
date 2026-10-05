@@ -39,10 +39,6 @@ class SolderPaste(AppTool):
     
     def __init__(self, app):
         AppTool.__init__(self, app)
-        self.app = app
-        
-        # Number of decimals to be used for tools/nozzles in this FlatCAM Tool
-        self.decimals = self.app.decimals
 
         # #############################################################################
         # ######################### Tool GUI ##########################################

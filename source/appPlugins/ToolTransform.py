@@ -28,7 +28,6 @@ class ToolTransform(AppTool):
 
     def __init__(self, app):
         AppTool.__init__(self, app)
-        self.decimals = self.app.decimals
 
         # #############################################################################
         # ######################### Tool GUI ##########################################

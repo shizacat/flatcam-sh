@@ -84,9 +84,6 @@ class ToolMilling(Excellon, AppTool):
     launch_job = QtCore.pyqtSignal()
 
     def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
         AppTool.__init__(self, app)
         Excellon.__init__(self, excellon_circle_steps=self.app.options.excellon_circle_steps, app=app)
 

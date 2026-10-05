@@ -39,8 +39,7 @@ class ToolDrilling(Excellon, AppTool):
     build_ui_sig = QtCore.pyqtSignal()
 
     def __init__(self, app):
-        self.app = app
-        self.dec_format = self.app.dec_format
+        self.dec_format = app.dec_format
 
         AppTool.__init__(self, app)
         Excellon.__init__(self, excellon_circle_steps=self.app.options.excellon_circle_steps, app=app)

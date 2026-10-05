@@ -29,7 +29,6 @@ class DblSidedTool(AppTool):
 
     def __init__(self, app):
         AppTool.__init__(self, app)
-        self.decimals = self.app.decimals
 
         self.canvas = self.app.plotcanvas
 

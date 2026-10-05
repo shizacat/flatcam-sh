@@ -37,9 +37,6 @@ class ToolFollow(Gerber, AppTool):
     optimal_found_sig = QtCore.pyqtSignal(float)
 
     def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 

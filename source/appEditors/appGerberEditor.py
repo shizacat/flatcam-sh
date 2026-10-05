@@ -6982,9 +6982,7 @@ class TransformEditorTool(AppTool):
     def __init__(self, app, draw_app):
         AppTool.__init__(self, app)
 
-        self.app = app
         self.draw_app = draw_app
-        self.decimals = self.app.decimals
 
         # ## Title
         title_label = FCLabel("%s" % self.pluginName, size=16, bold=True)

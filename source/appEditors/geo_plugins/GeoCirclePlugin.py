@@ -24,7 +24,6 @@ class CircleEditorTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self._mode = 'add'
 
         self.ui = CircleEditorUI(layout=self.layout, circle_class=self)

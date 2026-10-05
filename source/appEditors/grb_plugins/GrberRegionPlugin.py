@@ -21,7 +21,6 @@ class GrbRegionEditorTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self.plugin_name = plugin_name
 
         self.ui = GrbRegionEditorUI(layout=self.layout, reg_class=self, plugin_name=plugin_name)

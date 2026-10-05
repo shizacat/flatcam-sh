@@ -37,7 +37,6 @@ class ToolOptimal(AppTool):
         AppTool.__init__(self, app)
 
         self.units = self.app.app_units.upper()
-        self.decimals = self.app.decimals
 
         # #############################################################################
         # ######################### Tool GUI ##########################################

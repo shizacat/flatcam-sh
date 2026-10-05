@@ -21,7 +21,6 @@ class GrbPadArrayEditorTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self.plugin_name = plugin_name
 
         self.ui = GrbPadArrayEditorUI(layout=self.layout, parray_class=self, plugin_name=plugin_name)

@@ -36,7 +36,6 @@ class ObjectReport(AppTool):
 
         # self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Ignored)
 
-        self.decimals = self.app.decimals
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         # this way I can hide/show the frame

@@ -27,7 +27,6 @@ class SimplificationTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.geo_editor = draw_app
-        self.decimals = app.decimals
         self.app = self.geo_editor.app
 
         self.ui = SimplificationEditorUI(layout=self.layout, simp_class=self)

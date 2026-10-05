@@ -25,7 +25,6 @@ class RectangleEditorTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self._mode = 'add'
 
         self.ui = RectangleEditorUI(layout=self.layout, rect_class=self)

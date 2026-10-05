@@ -55,9 +55,7 @@ log = logging.getLogger('base')
 class ToolPaint(Gerber, AppTool):
 
     def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-        self.circle_steps = int(getattr(self.app.options, "geometry_circle_steps", 64))
+        self.circle_steps = int(getattr(app.options, "geometry_circle_steps", 64))
 
         AppTool.__init__(self, app)
         Geometry.__init__(self, geo_steps_per_circle=self.circle_steps, app=app)
@@ -557,11 +555,11 @@ class ToolPaint(Gerber, AppTool):
 
             # Tool parameters section
             if self.paint_tools:
-                app_defaults = self.app.options
+                options = self.app.options
                 for tool in self.paint_tools:
                     tool_data = self.paint_tools[tool]['data']
 
-                    tool_data['tools_paint_rest'] = app_defaults['tools_paint_rest']
+                    tool_data['tools_paint_rest'] = options.tools_paint_rest
 
             self.ui.rest_cb.show()
 

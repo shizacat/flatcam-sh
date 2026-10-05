@@ -52,9 +52,6 @@ class ToolNcc(Gerber, AppTool):
     optimal_found_sig = QtCore.pyqtSignal(float)
 
     def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
         AppTool.__init__(self, app)
         Gerber.__init__(self, steps_per_circle=self.app.options.gerber_circle_steps, app=app)
 
@@ -558,16 +555,16 @@ class ToolNcc(Gerber, AppTool):
 
             # Tool parameters section
             if self.ncc_tools:
-                app_defaults = self.app.options
+                options = self.app.options
                 for tool in self.ncc_tools:
                     tool_data = self.ncc_tools[tool]['data']
 
-                    tool_data['tools_ncc_operation'] = app_defaults['tools_ncc_operation']
-                    tool_data['tools_ncc_milling_type'] = app_defaults['tools_ncc_milling_type']
+                    tool_data['tools_ncc_operation'] = options.tools_ncc_operation
+                    tool_data['tools_ncc_milling_type'] = options.tools_ncc_milling_type
 
-                    tool_data['tools_ncc_offset_choice'] = app_defaults['tools_ncc_offset_choice']
-                    tool_data['tools_ncc_offset_value'] = app_defaults['tools_ncc_offset_value']
-                    tool_data['tools_ncc_rest'] = app_defaults['tools_ncc_rest']
+                    tool_data['tools_ncc_offset_choice'] = options.tools_ncc_offset_choice
+                    tool_data['tools_ncc_offset_value'] = options.tools_ncc_offset_value
+                    tool_data['tools_ncc_rest'] = options.tools_ncc_rest
 
             self.ui.op_label.show()
             self.ui.op_radio.show()

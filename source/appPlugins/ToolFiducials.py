@@ -37,14 +37,12 @@ class ToolFiducials(AppTool):
     def __init__(self, app):
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = self.app.plotcanvas
 
         self.cursor_color_memory = None
         # store the current cursor type to be restored after manual geo
         self.old_cursor_type = self.app.options.global_cursor_type
 
-        self.decimals = self.app.decimals
         self.units = ''
 
         # #############################################################################

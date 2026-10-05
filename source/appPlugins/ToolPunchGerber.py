@@ -38,8 +38,6 @@ class ToolPunchGerber(Gerber, AppTool):
         AppTool.__init__(self, app)
         Geometry.__init__(self, geo_steps_per_circle=self.app.options.geometry_circle_steps, app=app)
 
-        self.app = app
-        self.decimals = self.app.decimals
         self.units = self.app.app_units
 
         # store here the old object name

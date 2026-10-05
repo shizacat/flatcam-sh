@@ -41,10 +41,8 @@ class ToolCopperThieving(AppTool):
     def __init__(self, app):
         AppTool.__init__(self, app)
 
-        self.app = app
         self.canvas = self.app.plotcanvas
 
-        self.decimals = self.app.decimals
         self.units = self.app.app_units
 
         # #############################################################################

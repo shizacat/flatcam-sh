@@ -69,9 +69,6 @@ class ToolLevelling(CNCjob, AppTool):
     build_al_table_sig = QtCore.pyqtSignal()
 
     def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
-
         AppTool.__init__(self, app)
         CNCjob.__init__(self, steps_per_circle=self.app.options.cncjob_steps_per_circle, app=app)
 

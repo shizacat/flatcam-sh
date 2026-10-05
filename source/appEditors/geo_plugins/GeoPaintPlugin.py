@@ -25,9 +25,7 @@ class PaintOptionsTool(AppToolEditor):
     def __init__(self, app, fcdraw):
         AppToolEditor.__init__(self, app)
 
-        self.app = app
         self.fcdraw = fcdraw
-        self.decimals = self.app.decimals
 
         self.ui = PaintEditorUI(layout=self.layout, paint_class=self)
 

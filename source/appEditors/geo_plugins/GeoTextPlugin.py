@@ -23,10 +23,8 @@ class TextInputTool(AppToolEditor):
     def __init__(self, app, draw_app):
         AppToolEditor.__init__(self, app)
 
-        self.app = app
         self.draw_app = draw_app
         self.text_path = []
-        self.decimals = self.app.decimals
 
         self.f_parse = ParseFont(self.app)
         self.f_parse.get_fonts_by_types()

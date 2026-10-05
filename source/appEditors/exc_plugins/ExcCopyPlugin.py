@@ -23,7 +23,6 @@ class ExcCopyEditorTool(AppToolEditor):
         AppToolEditor.__init__(self, app)
 
         self.draw_app = draw_app
-        self.decimals = app.decimals
         self.plugin_name = plugin_name
 
         self.ui = ExcCopyEditorUI(layout=self.layout, copy_class=self, plugin_name=plugin_name)

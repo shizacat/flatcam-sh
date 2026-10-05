@@ -23,9 +23,7 @@ class TransformEditorTool(AppToolEditor):
     def __init__(self, app, draw_app):
         AppToolEditor.__init__(self, app)
 
-        self.app = app
         self.draw_app = draw_app
-        self.decimals = self.app.decimals
 
         self.ui = TransformationEditorUI(layout=self.layout, transform_class=self)
 
