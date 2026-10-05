@@ -166,19 +166,34 @@ def parse_command_line(argv: list[str] | None = None) -> argparse.Namespace:
         except NameError:
             return None
 
-    parser = argparse.ArgumentParser(
-        prog="FlatCam.py",
-        description="FlatCam.py --shellfile=<cmd_line_shellfile>\n"
-                    "FlatCam.py --shellvar=<1,'C:\\path',23>\n"
-                    "FlatCam.py --headless=1",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+    parser = argparse.ArgumentParser(prog="FlatCam.py")
+    parser.add_argument(
+        "--shellfile",
+        default="",
+        metavar="file",
+        help="Tcl script to run at startup",
     )
-    parser.add_argument("--shellfile", default="", metavar="<file>")
-    parser.add_argument("--shellvar", default="", metavar="<values>")
-    parser.add_argument("--headless", default=None, type=eval_command_line_value, metavar="<value>")
+    parser.add_argument(
+        "--shellvar",
+        default="",
+        metavar="values",
+        help="comma-separated values exposed to the Tcl shell as shellvar_0, shellvar_1, ...",
+    )
+    parser.add_argument(
+        "--headless",
+        default=None,
+        type=eval_command_line_value,
+        metavar="value",
+        help="1 runs without showing the main window",
+    )
     # Multiprocessing pool will spawn additional processes with 'multiprocessing-fork' flag
     parser.add_argument("--multiprocessing-fork", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "args",
+        nargs=argparse.REMAINDER,
+        metavar="file",
+        help="project, preferences, or script files to open",
+    )
 
     parsed = parser.parse_args(argv)
     if parsed.args[:1] == ["--"]:
@@ -334,10 +349,10 @@ class App(QtCore.QObject):
 
         super().__init__()
 
-        self.cmd_line_shellfile = shellfile
-        self.cmd_line_shellvar = shellvar
-        self.cmd_line_headless = headless
-        self.startup_args = [] if startup_args is None else startup_args
+        self.cmd_line_shellfile: str = shellfile
+        self.cmd_line_shellvar: str = shellvar
+        self.cmd_line_headless: object = headless
+        self.startup_args: list[str] = [] if startup_args is None else startup_args
 
         # #############################################################################################################
         # ######################################### LOGGING ###########################################################

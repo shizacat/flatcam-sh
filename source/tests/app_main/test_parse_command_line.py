@@ -56,7 +56,12 @@ def test_parse_command_line_help_exits(capsys: pytest.CaptureFixture[str]) -> No
         parse_command_line(["-h"])
 
     assert caught.value.code == 0
-    assert "--shellfile" in capsys.readouterr().out
+    help_text = capsys.readouterr().out
+    assert "Tcl script to run at startup" in help_text
+    assert "shellvar_0" in help_text
+    assert "without showing the main window" in help_text
+    assert "files to open" in help_text
+    assert "cmd_line_shellfile" not in help_text
 
 
 def test_parse_command_line_rejects_an_unknown_option() -> None:
