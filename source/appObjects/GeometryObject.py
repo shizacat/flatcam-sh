@@ -20,6 +20,7 @@ from shapely.affinity import scale, translate
 from shapely.ops import unary_union
 
 from camlib import Geometry, flatten_shapely_geometry, translate_geometry
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 
 import shapely
 
@@ -131,7 +132,7 @@ class GeometryObject(FlatCAMObj, Geometry):
 
         self.offset_item_options = ["Path", "In", "Out", "Custom"]
         self.job_item_options = [_('Roughing'), _('Finishing'), _('Isolation'), _('Polishing')]
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
+        self.tool_type_item_options = MILL_TOOL_SHAPES
 
         # flag to store if the V-Shape tool is selected in self.ui.geo_tools_table
         self.v_tool_type = None

@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt
 from appEditors.appTextEditor import AppTextEditor
 from appObjects.CNCJobObject import CNCJobObject
 from appGUI.GUIElements import FCTextArea, FCEntry, FCButton, FCTable, GLay, FCLabel
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 
 # from io import StringIO
 
@@ -199,7 +200,7 @@ class AppGCodeEditor(QtCore.QObject):
             job_item = QtWidgets.QTableWidgetItem(job_item_txt)
 
             # -------------------- TOOL SHAPE ------------------------------------- #
-            tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
+            tool_type_item_options = MILL_TOOL_SHAPES
             try:
                 tool_shape_item_txt = tool_type_item_options[dia_value['data']['tools_mill_tool_shape']]
             except TypeError:

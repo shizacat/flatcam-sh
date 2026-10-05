@@ -28,13 +28,14 @@ import appTranslation as fcTranslate
 import builtins
 
 from appParsers.ParseExcellon import Excellon
-from appPlugins.mill_tool_shape import fill_missing_mill_fields, milling_tool_diameter
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, fill_missing_mill_fields, milling_tool_diameter
 from settings.utils import option_items
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace
 
 if TYPE_CHECKING:
     from appMain import App
+    from appObjects.GeometryObject import GeometryObject
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -2582,7 +2583,7 @@ class ToolMilling(Excellon, AppTool):
                 self.app.inform.emit(mseg)
                 return False, "Error: Milling tool is larger than hole."
 
-        def geo_init(geo_obj, app_obj):
+        def geo_init(geo_obj: "GeometryObject", app_obj: "App") -> str | None:
             """
 
             :param geo_obj:     New object
@@ -4488,7 +4489,7 @@ class MillingUI:
 
         self.tool_shape_combo = FCComboBox2(policy=False)
         self.tool_shape_combo.setObjectName('mill_tool_shape')
-        self.tool_shape_combo.addItems(["C1", "C2", "C3", "C4", "B", "V", "L"])
+        self.tool_shape_combo.addItems(MILL_TOOL_SHAPES)
 
         idx = int(self.app.options.tools_mill_tool_shape)
         # protection against having this translated or loading a project with translated values

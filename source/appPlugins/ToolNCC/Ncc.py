@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 
 from appPlugins.ToolNCC.NccUI import NccUI
-from appPlugins.mill_tool_shape import mill_tool_shape_index
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, mill_tool_shape_index
 from appTool import AppTool
 from appGUI.GUIElements import (
     VerticalScrollArea,
@@ -122,7 +122,6 @@ class ToolNcc(Gerber, AppTool):
         self.solid_geometry = []
 
         self.select_method = None
-        self.tool_type_item_options = []
 
         self.circle_steps = int(self.app.options.gerber_circle_steps)
 
@@ -475,7 +474,6 @@ class ToolNcc(Gerber, AppTool):
         self.bound_obj_name = ""
         self.bound_obj = None
 
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
         self.units = self.app.app_units.upper()
 
         self.first_click = False
@@ -894,10 +892,10 @@ class ToolNcc(Gerber, AppTool):
 
                     # ------------------------ Tool Shape -------------------------------------------------------------
                     tool_type_item = FCComboBox()
-                    tool_type_item.addItems(self.tool_type_item_options)
+                    tool_type_item.addItems(MILL_TOOL_SHAPES)
                     idx = mill_tool_shape_index(
                         tooluid_value['data']['tools_mill_tool_shape'],
-                        self.tool_type_item_options,
+                        MILL_TOOL_SHAPES,
                     )
                     tool_type_item.setCurrentIndex(idx)
                     self.ui.tools_table.setCellWidget(row_no, 2, tool_type_item)

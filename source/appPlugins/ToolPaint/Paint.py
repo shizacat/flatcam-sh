@@ -12,7 +12,7 @@ from PyQt6.QtCore import Qt     # noqa
 
 from appPlugins.ToolPaint.PaintUI import PaintUI
 from appPlugins.ToolPaint.PaintGen import PaintGen
-from appPlugins.mill_tool_shape import mill_tool_shape_index
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, mill_tool_shape_index
 from appTool import AppTool
 from appGUI.GUIElements import (
     VerticalScrollArea,
@@ -110,8 +110,6 @@ class ToolPaint(Gerber, AppTool):
 
         # store here the default data for Geometry Data
         self.default_data = {}
-
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
 
         # store here the points for the "Polygon" area selection shape
         self.points = []
@@ -855,12 +853,12 @@ class ToolPaint(Gerber, AppTool):
                     self.ui.tools_table.setItem(row_no, 1, dia)  # Diameter
 
                     tool_type_item = FCComboBox()
-                    for item in self.tool_type_item_options:
+                    for item in MILL_TOOL_SHAPES:
                         tool_type_item.addItem(item)
                         # tool_type_item.setStyleSheet('background-color: rgb(255,255,255)')
                     idx = mill_tool_shape_index(
                         tooluid_value['data']['tools_mill_tool_shape'],
-                        self.tool_type_item_options,
+                        MILL_TOOL_SHAPES,
                     )
                     tool_type_item.setCurrentIndex(idx)
 

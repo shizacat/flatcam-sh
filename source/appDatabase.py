@@ -3,6 +3,7 @@ from PyQt6 import QtGui, QtCore, QtWidgets
 from appGUI.GUIElements import FCEntry, FCButton, FCDoubleSpinner, FCComboBox, FCCheckBox, FCSpinner, \
     FCTree, RadioSet, FCFileSaveDialog, FCLabel, FCComboBox2, GLay
 from camlib import to_dict
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 
 import sys
 import simplejson as json
@@ -28,7 +29,7 @@ class ToolsDB2UI:
 
         self.offset_item_options = [_("Path"), _("In"), _("Out"), _("Custom")]
         self.job_item_options = [_('Roughing'), _('Finishing'), _('Isolation'), _('Polishing')]
-        self.tool_job_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
+        self.tool_job_options = MILL_TOOL_SHAPES
 
         self.g_lay = grid_layout
 

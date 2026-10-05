@@ -6,6 +6,7 @@
 # ##########################################################
 
 from PyQt6 import QtWidgets, QtCore, QtGui
+from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, FCCheckBox, \
     FCComboBox2, RadioSet, FCDoubleSpinner, FCSpinner, FCInputDialogSpinnerButton, FCTable, \
@@ -449,7 +450,7 @@ class ToolIsolation(Gerber, AppTool):
 
         self.sel_rect = []
 
-        self.tool_type_item_options = ["C1", "C2", "C3", "C4", "B", "V", "L"]
+        self.tool_type_item_options = MILL_TOOL_SHAPES
 
         self.on_rest_machining_check(state=self.app.options.tools_iso_rest)
 
@@ -3559,7 +3560,7 @@ class IsoUI:
 
         self.tool_shape_combo = FCComboBox2(policy=False)
         self.tool_shape_combo.setObjectName('i_tool_shape')
-        self.tool_shape_combo.addItems(["C1", "C2", "C3", "C4", "B", "V", "L"])
+        self.tool_shape_combo.addItems(MILL_TOOL_SHAPES)
 
         idx = int(self.app.options.tools_iso_tool_shape)
         # protection against having this translated or loading a project with translated values
