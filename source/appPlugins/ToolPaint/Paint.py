@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt     # noqa
 
 from appPlugins.ToolPaint.PaintUI import PaintUI
 from appPlugins.ToolPaint.PaintGen import PaintGen
+from appPlugins.mill_tool_shape import mill_tool_shape_index
 from appTool import AppTool
 from appGUI.GUIElements import (
     VerticalScrollArea,
@@ -854,7 +855,10 @@ class ToolPaint(Gerber, AppTool):
                     for item in self.tool_type_item_options:
                         tool_type_item.addItem(item)
                         # tool_type_item.setStyleSheet('background-color: rgb(255,255,255)')
-                    idx = int(tooluid_value['data']['tools_mill_tool_shape'])
+                    idx = mill_tool_shape_index(
+                        tooluid_value['data']['tools_mill_tool_shape'],
+                        self.tool_type_item_options,
+                    )
                     tool_type_item.setCurrentIndex(idx)
 
                     tool_uid_item = QtWidgets.QTableWidgetItem(str(int(tooluid_key)))

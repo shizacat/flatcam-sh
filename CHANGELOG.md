@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed Preferences showing English after another language was applied; the language list follows the language stored by Qt
+- Fixed Non-Copper Clear and Paint crashing when a Tools Database tool shape was a label such as `V` instead of a combo index
+- Fixed CNC job creation crashing when a tool was missing milling fields such as the diameter or laser minimum power
 
 ## [1.9.8] - 2026-10-01
 

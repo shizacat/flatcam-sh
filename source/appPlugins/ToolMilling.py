@@ -26,6 +26,7 @@ import appTranslation as fcTranslate
 import builtins
 
 from appParsers.ParseExcellon import Excellon
+from appPlugins.mill_tool_shape import fill_missing_mill_fields, milling_tool_diameter
 from settings.utils import option_items
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace
@@ -2179,6 +2180,7 @@ class ToolMilling(Excellon, AppTool):
                 'solid_geometry':   self.target_obj.solid_geometry
             }
         })
+        self.target_obj.tools[tooluid]['data']['tools_mill_tooldia'] = new_tdia
         self.ui_connect()
         self.build_ui()
         self.target_obj.build_ui()
@@ -2245,6 +2247,7 @@ class ToolMilling(Excellon, AppTool):
             })
 
         self.target_obj.tools[self.tooluid]['data']['name'] = deepcopy(self.target_obj.obj_options['name'])
+        self.target_obj.tools[self.tooluid]['data']['tools_mill_tooldia'] = tooldia
 
         # we do this HACK to make sure the tools attribute to be serialized is updated in the self.ser_attrs list
         try:
@@ -2320,6 +2323,7 @@ class ToolMilling(Excellon, AppTool):
         })
 
         self.target_obj.tools[self.tooluid]['data']['name'] = deepcopy(self.target_obj.obj_options['name'])
+        self.target_obj.tools[self.tooluid]['data']['tools_mill_tooldia'] = tooldia
 
         # we do this HACK to make sure the tools attribute to be serialized is updated in the self.ser_attrs list
         try:
@@ -3112,19 +3116,25 @@ class ToolMilling(Excellon, AppTool):
             for tool_uid_key in used_tools:
                 tool_cnt += 1
 
-                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
                 tooldia_val = app_obj.dec_format(
-                    float(tools_dict[tool_uid_key]['data']['tools_mill_tooldia']), self.decimals)
-                dia_cnc_dict['data']['tools_mill_tooldia'] = tooldia_val
+                    float(milling_tool_diameter(
+                        tools_dict[tool_uid_key],
+                        fallback=geo_obj.obj_options.get('tools_mill_tooldia'),
+                    )),
+                    self.decimals,
+                )
+                tools_dict[tool_uid_key]['data']['tools_mill_tooldia'] = tooldia_val
+                fill_missing_mill_fields(tools_dict[tool_uid_key]['data'], self.app.options)
+                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
 
                 if "optimization_type" not in tools_dict[tool_uid_key]['data']:
                     def_optimization_type = geo_obj.obj_options["tools_mill_optimization_type"]
                     tools_dict[tool_uid_key]['data']["tools_mill_optimization_type"] = def_optimization_type
 
                 if dia_cnc_dict['data']['tools_mill_offset_type'] == 1:  # 'in'
-                    tool_offset = -dia_cnc_dict['tools_mill_tooldia'] / 2
+                    tool_offset = -tooldia_val / 2
                 elif dia_cnc_dict['data']['tools_mill_offset_type'] == 2:  # 'out'
-                    tool_offset = dia_cnc_dict['tools_mill_tooldia'] / 2
+                    tool_offset = tooldia_val / 2
                 elif dia_cnc_dict['data']['tools_mill_offset_type'] == 3:  # 'custom'
                     try:
                         offset_value = float(self.ui.offset_entry.get_value())
@@ -3281,12 +3291,16 @@ class ToolMilling(Excellon, AppTool):
             total_gcode = ''
             for tool_uid_key in used_tools:
                 tool_cnt += 1
-                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
-
-                # Tooldia update
                 tooldia_val = app_obj.dec_format(
-                    float(tools_dict[tool_uid_key]['data']['tools_mill_tooldia']), self.decimals)
-                dia_cnc_dict['data']['tools_mill_tooldia'] = deepcopy(tooldia_val)
+                    float(milling_tool_diameter(
+                        tools_dict[tool_uid_key],
+                        fallback=geo_obj.obj_options.get('tools_mill_tooldia'),
+                    )),
+                    self.decimals,
+                )
+                tools_dict[tool_uid_key]['data']['tools_mill_tooldia'] = tooldia_val
+                fill_missing_mill_fields(tools_dict[tool_uid_key]['data'], self.app.options)
+                dia_cnc_dict = deepcopy(tools_dict[tool_uid_key])
 
                 # Path optimizations
                 if "optimization_type" not in tools_dict[tool_uid_key]['data']:

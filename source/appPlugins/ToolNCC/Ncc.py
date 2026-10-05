@@ -8,6 +8,7 @@
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 
 from appPlugins.ToolNCC.NccUI import NccUI
+from appPlugins.mill_tool_shape import mill_tool_shape_index
 from appTool import AppTool
 from appGUI.GUIElements import (
     VerticalScrollArea,
@@ -892,7 +893,10 @@ class ToolNcc(Gerber, AppTool):
                     # ------------------------ Tool Shape -------------------------------------------------------------
                     tool_type_item = FCComboBox()
                     tool_type_item.addItems(self.tool_type_item_options)
-                    idx = int(tooluid_value['data']['tools_mill_tool_shape'])
+                    idx = mill_tool_shape_index(
+                        tooluid_value['data']['tools_mill_tool_shape'],
+                        self.tool_type_item_options,
+                    )
                     tool_type_item.setCurrentIndex(idx)
                     self.ui.tools_table.setCellWidget(row_no, 2, tool_type_item)
 
@@ -1973,9 +1977,10 @@ class ToolNcc(Gerber, AppTool):
 
     def on_ncc_tool_from_db_inserted(self, tool):
         """
-        Called from the Tools DB object through an App method when adding a tool from Tools Database
+        Adds a tool from the Tools Database into the NCC tool table.
+
         :param tool: a dict with the tool data
-        :return: None
+        :return:     the new tool uid, or ``'fail'`` when the tool is already in the table
         """
 
         self.ui_disconnect()
@@ -2018,9 +2023,11 @@ class ToolNcc(Gerber, AppTool):
 
         # select the tool just added
         for row in range(self.ui.tools_table.rowCount()):
-            if int(self.ui.tools_table.item(row, 3).text()) == self.tooluid:
+            if int(self.ui.tools_table.item(row, 3).text()) == tooluid:
                 self.ui.tools_table.selectRow(row)
                 break
+
+        return tooluid
 
     def on_ncc_tool_add_from_db_clicked(self):
         """
