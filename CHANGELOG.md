@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed application data paths to `pathlib.Path`; `App.data_path` is a `Path`, and files under it are built with `/`
 - Changed command-line parsing to argparse; `-h` and `--help` describe `--shellfile`, `--shellvar`, `--headless`, and startup files
+- Changed new Tools Database tools to keep the settings-model types instead of coercing them with `float()` and `int()`
 
 ### Removed
 
