@@ -606,7 +606,7 @@ class App(QtCore.QObject):
 
         self.app_units = self.options.units
         self.default_units = self.settings.units
-        self.decimals = int(self.options.units_precision)
+        self.decimals = self.options.units_precision
 
         if self.options.global_theme is Theme.DEFAULT:
             self.resource_location = 'assets/resources'
