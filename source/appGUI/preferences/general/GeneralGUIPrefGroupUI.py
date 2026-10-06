@@ -5,6 +5,7 @@ from PyQt6.QtCore import QSettings
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpinner, FCColorEntry, FCLabel, \
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
 from settings.st_types import Appearance
+from settings.utils import copy_shared
 from appGUI.widget_style import apply_widget_style, resolve_widget_style
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 from appTranslation import restart_program
@@ -182,7 +183,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         # Apply UI parameters
         self.apply_app_font_size_btn = FCButton(_("Apply and Restart"), bold=True)
         self.apply_app_font_size_btn.setToolTip(
-            _("Setting the Font Size for the entire application.")
+            _("Applies the font size and the color choice, then restarts the application.")
         )
         grid0.addWidget(self.apply_app_font_size_btn, 18, 0, 1, 2)
 
@@ -427,13 +428,22 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
             font_size = int(q_settings.value("font_size", type=str))  # noqa
             self.app_font_size_entry.set_value(font_size)
 
-    @staticmethod
-    def handle_font_size(app, val):
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        settings.setValue('font_size', str(val))
-        # This will write the setting to the platform specific storage.
-        del settings
+    def handle_font_size(self, app, val):
+        """
+        Saves the font size and the choices on this page, then restarts.
 
+        The restart writes the session options back to the settings file, so the
+        form has to be copied onto those options first.
+
+        :param app: the application
+        :param val: font size in points
+        """
+        settings = QSettings("Open Source", "FlatCAM_EVO")
+        settings.setValue("font_size", str(val))
+        settings.sync()
+
+        app.preferencesUiManager.defaults_read_form()
+        copy_shared(app.options, app.settings)
         restart_program(app=app)
 
     def handle_style(self, _index: int) -> None:
