@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed the GUI style preference so the chosen Qt style is saved by name, applied immediately, and restored on the next start
 - Fixed the macOS menu bar showing `python` instead of `FlatCAM` when running from sources
 
   ![macOS menu bar](docs/chlg_images/1.10.0_003.png)

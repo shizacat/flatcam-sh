@@ -5,6 +5,7 @@ from PyQt6.QtCore import QSettings
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpinner, FCColorEntry, FCLabel, \
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
 from settings.st_types import Appearance
+from appGUI.widget_style import apply_widget_style, resolve_widget_style
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 from appTranslation import restart_program
 
@@ -108,14 +109,22 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         self.style_label = FCLabel('%s:' % _('Style'))
         self.style_label.setToolTip(
             _("Select a style for the application.\n"
-              "It will be applied at the next app start.")
+              "It is applied immediately and restored on the next start.")
         )
         self.style_combo = FCComboBox()
-        self.style_combo.addItems(QtWidgets.QStyleFactory.keys())
-        # find current style
-        current_style = QtWidgets.QApplication.style().objectName()
-        index = self.style_combo.findText(current_style, QtCore.Qt.MatchFlag.MatchFixedString)
-        self.style_combo.setCurrentIndex(index)
+        style_keys = QtWidgets.QStyleFactory.keys()
+        self.style_combo.addItems(style_keys)
+        saved_style = q_settings.value("style", type=str) if q_settings.contains("style") else None
+        style_name = resolve_widget_style(
+            str(saved_style) if saved_style is not None else None,
+            style_keys,
+        )
+        if style_name is None:
+            style_name = resolve_widget_style(QtWidgets.QApplication.style().objectName(), style_keys)
+        if style_name is not None:
+            index = self.style_combo.findText(style_name, QtCore.Qt.MatchFlag.MatchFixedString)
+            if index >= 0:
+                self.style_combo.setCurrentIndex(index)
         self.style_combo.activated.connect(self.handle_style)
 
         grid0.addWidget(self.style_label, 8, 0)
@@ -429,17 +438,28 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
 
         restart_program(app=app)
 
-    @staticmethod
-    def handle_style(style):
-        # set current style
+    def handle_style(self, _index: int) -> None:
+        """
+        Stores the selected Qt style and applies it.
+
+        :param _index: combo index emitted by ``activated``; the stored value is the style name
+        """
+        name = self.style_combo.currentText()
+        if name not in QtWidgets.QStyleFactory.keys():
+            return
+
         q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue('style', str(style))
+        q_settings.setValue("style", name)
+        q_settings.sync()
 
-        new_style = QtWidgets.QStyleFactory.keys()[int(style)]
-        QtWidgets.QApplication.setStyle(new_style)
-
-        # This will write the setting to the platform specific storage.
-        del q_settings
+        self.style_combo.blockSignals(True)
+        try:
+            apply_widget_style(QtWidgets.QApplication.instance(), name)
+            index = self.style_combo.findText(name, QtCore.Qt.MatchFlag.MatchFixedString)
+            if index >= 0:
+                self.style_combo.setCurrentIndex(index)
+        finally:
+            self.style_combo.blockSignals(False)
 
     # Setting selection colors (left - right) handlers
     def on_sf_color_entry(self):
