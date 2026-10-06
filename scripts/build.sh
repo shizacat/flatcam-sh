@@ -287,8 +287,44 @@ copy_tree() {
     | (cd "$dest" && tar -xf -)
 }
 
+# The packaged copy shows the release tag and the build date. The checkout keeps
+# the development values ("Unstable" and the placeholder date).
+stamp_app_version() {
+  local app_main="$1/appMain.py"
+  local today
+  if [[ ! -f "$app_main" ]]; then
+    echo "Missing $app_main; cannot stamp the application version" >&2
+    exit 1
+  fi
+  today="$(date -u +%Y-%m-%d)"
+  log "Stamp App.version=${APP_VERSION} App.version_date=${today}"
+  "$(env_python)" - "$app_main" "$APP_VERSION" "$today" <<'PY'
+import pathlib
+import re
+import sys
+
+path, version, version_date = sys.argv[1:]
+file = pathlib.Path(path)
+text = file.read_text(encoding="utf-8")
+
+def replace_assignment(source, name, value):
+    pattern = re.compile(rf'^([ \t]*){name}[ \t]*=[ \t]*["\'].*?["\']', re.MULTILINE)
+    match = pattern.search(source)
+    if match is None:
+        raise SystemExit(f"could not stamp {name} in {path}")
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    replacement = f'{match.group(1)}{name} = "{escaped}"'
+    return source[: match.start()] + replacement + source[match.end() :]
+
+text = replace_assignment(text, "version", version)
+text = replace_assignment(text, "version_date", version_date)
+file.write_text(text, encoding="utf-8")
+PY
+}
+
 copy_sources_to() {
   copy_tree "$APP_SRC_DIR" "$1"
+  stamp_app_version "$1"
 }
 
 # App icon: Evo ships PNG/ICO, not .icns. Build .icns from the 256px PNG.

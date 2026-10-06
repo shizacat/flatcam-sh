@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Changed packaged builds to set `App.version` from the git tag and `App.version_date` to the build date
+
 ### Fixed
 
 - Fixed the macOS menu bar showing `python` instead of `FlatCAM` when running from sources
