@@ -25,7 +25,6 @@ from datetime import datetime as dt
 from copy import deepcopy, copy
 import numpy as np
 
-import argparse
 import random
 import simplejson as json
 import shutil
@@ -147,57 +146,6 @@ import builtins
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
-
-
-def parse_command_line(argv: list[str] | None = None) -> argparse.Namespace:
-    """
-    Reads the application command-line options.
-
-    :param argv: arguments without the program name; ``sys.argv[1:]`` when omitted
-    :return: parsed options; ``args`` holds the files to open
-    """
-    if argv is None:
-        argv = sys.argv[1:]
-
-    def eval_command_line_value(value: str):
-        try:
-            return eval(value)
-        except NameError:
-            return None
-
-    parser = argparse.ArgumentParser(prog="FlatCam.py")
-    parser.add_argument(
-        "--shellfile",
-        default="",
-        metavar="file",
-        help="Tcl script to run at startup",
-    )
-    parser.add_argument(
-        "--shellvar",
-        default="",
-        metavar="values",
-        help="comma-separated values exposed to the Tcl shell as shellvar_0, shellvar_1, ...",
-    )
-    parser.add_argument(
-        "--headless",
-        default=None,
-        type=eval_command_line_value,
-        metavar="value",
-        help="1 runs without showing the main window",
-    )
-    # Multiprocessing pool will spawn additional processes with 'multiprocessing-fork' flag
-    parser.add_argument("--multiprocessing-fork", default=None, help=argparse.SUPPRESS)
-    parser.add_argument(
-        "args",
-        nargs=argparse.REMAINDER,
-        metavar="file",
-        help="project, preferences, or script files to open",
-    )
-
-    parsed = parser.parse_args(argv)
-    if parsed.args[:1] == ["--"]:
-        parsed.args = parsed.args[1:]
-    return parsed
 
 
 class App(QtCore.QObject):

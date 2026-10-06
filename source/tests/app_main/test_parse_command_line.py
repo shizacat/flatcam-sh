@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from appMain import parse_command_line
+from flatcam import parse_command_line
 
 
 def test_parse_command_line_reads_options_and_files() -> None:
