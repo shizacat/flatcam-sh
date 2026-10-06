@@ -28,6 +28,44 @@ def debug_trace():
     # set_trace()
 
 
+def set_macos_app_name(name):
+    """
+    Sets the application name shown in the macOS menu bar when running from sources.
+
+    macOS takes the name next to the Apple menu from the main bundle's ``CFBundleName``;
+    for a bare interpreter there is none and the executable name (``python``) is shown.
+    The bundled ``FlatCAM.app`` already has the key in its ``Info.plist``, so a frozen
+    build is left untouched. Must be called before the ``QApplication`` is created.
+
+    :param name:    the name to show in the menu bar
+    """
+    if sys.platform != 'darwin' or getattr(sys, 'frozen', False):
+        return
+
+    import ctypes
+    import ctypes.util
+
+    try:
+        cf = ctypes.CDLL(ctypes.util.find_library('CoreFoundation'))
+        cf.CFBundleGetMainBundle.restype = ctypes.c_void_p
+        cf.CFBundleGetInfoDictionary.restype = ctypes.c_void_p
+        cf.CFBundleGetInfoDictionary.argtypes = [ctypes.c_void_p]
+        cf.CFStringCreateWithCString.restype = ctypes.c_void_p
+        cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
+        cf.CFDictionarySetValue.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        k_cf_string_encoding_utf8 = 0x08000100
+
+        info = cf.CFBundleGetInfoDictionary(cf.CFBundleGetMainBundle())
+        if not info:
+            return
+        key = cf.CFStringCreateWithCString(None, b'CFBundleName', k_cf_string_encoding_utf8)
+        value = cf.CFStringCreateWithCString(None, name.encode('utf-8'), k_cf_string_encoding_utf8)
+        cf.CFDictionarySetValue(info, key, value)
+    except (OSError, AttributeError):
+        # cosmetic only; never prevent the application from starting
+        pass
+
+
 if __name__ == '__main__':
     # All X11 calling should be thread safe otherwise we have strange issues
     # QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_X11InitThreads)
@@ -151,6 +189,7 @@ if __name__ == '__main__':
 
     sys.excepthook = excepthook
 
+    set_macos_app_name('FlatCAM')
     app = QtWidgets.QApplication(sys.argv)
 
     # apply style

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the macOS menu bar showing `python` instead of `FlatCAM` when running from sources
+
+  ![macOS menu bar](docs/chlg_images/1.10.0_003.png)
+
 ## [1.9.9] - 2026-10-06
 
 ### Added
