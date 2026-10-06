@@ -165,7 +165,7 @@ class PlotCanvasLegacy(QtCore.QObject):
 
         self.app = app
 
-        if self.app.options.global_theme in ['default', 'light']:
+        if self.app.options.global_theme.is_light():
             theme_color = '#FFFFFF'
             tick_color = '#000000'
             self.rect_hud_color = '#0000FF10'
@@ -650,7 +650,7 @@ class PlotCanvasLegacy(QtCore.QObject):
         if self.app.options.global_cursor_color_enabled:
             color = self.app.options.global_cursor_color
         else:
-            if self.app.options.global_theme in ['default', 'light']:
+            if self.app.options.global_theme.is_light():
                 color = '#000000'
             else:
                 color = '#FFFFFF'
@@ -705,7 +705,7 @@ class PlotCanvasLegacy(QtCore.QObject):
         if color:
             color = color
         else:
-            if self.app.options.global_theme in ['default', 'light']:
+            if self.app.options.global_theme.is_light():
                 color = '#000000'
             else:
                 color = '#FFFFFF'
@@ -748,7 +748,7 @@ class PlotCanvasLegacy(QtCore.QObject):
         self.canvas.blit(self.axes.bbox)
 
     def clear_cursor(self, state):
-        if self.app.options.global_theme in ['default', 'light']:
+        if self.app.options.global_theme.is_light():
             color = '#000000'
         else:
             color = '#FFFFFF'

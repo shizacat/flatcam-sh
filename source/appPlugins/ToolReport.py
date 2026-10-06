@@ -174,8 +174,7 @@ class ObjectReport(AppTool):
         font = QtGui.QFont()
         font.setBold(True)
 
-        p_color = QtGui.QColor("#000000") if self.app.options.global_theme in ['default', 'light'] \
-            else QtGui.QColor("#FFFFFF")
+        p_color = QtGui.QColor("#000000") if self.app.options.global_theme.is_light() else QtGui.QColor("#FFFFFF")
 
         # main Items categories
         obj_type = self.treeWidget.addParent(parent, _('TYPE'), expanded=True, color=p_color, font=font)

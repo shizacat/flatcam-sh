@@ -97,6 +97,7 @@ from appDatabase import ToolsDB2
 # App defaults (preferences)
 from exceptions import SettingsError
 from settings import Options, Settings
+from settings.st_types import Theme
 from settings.utils import copy_shared, propagate_settings
 
 # App Objects
@@ -142,8 +143,6 @@ except ImportError:
 import gettext
 import appTranslation as fcTranslate
 import builtins
-
-import darkdetect
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -597,33 +596,21 @@ class App(QtCore.QObject):
             self.settings = self.load_settings()
         else:
             self.settings = Settings()
-        self.options = Options.from_settings(self.settings)
+        self.options: Settings = Options.from_settings(self.settings)
 
         # self.preferencesUiManager.show_preferences_gui()
 
-        # Set global_theme based on appearance
-        if self.options.global_appearance == 'auto':
-            if darkdetect.isDark():
-                theme = 'dark'
-            else:
-                theme = 'light'
-        else:
-            if self.options.global_appearance == 'default':
-                theme = 'default'
-            elif self.options.global_appearance == 'dark':
-                theme = 'dark'
-            else:
-                theme = 'light'
-
-        self.options.global_theme = theme
+        # The window stylesheet is applied from this value and is not rebuilt later.
+        # Project load must not replace it; see STARTUP_THEME_FIELDS.
+        self.options.global_theme = self.options.theme_from_appearance()
 
         self.app_units = self.options.units
         self.default_units = self.settings.units
         self.decimals = int(self.options.units_precision)
 
-        if self.options.global_theme == 'default':
+        if self.options.global_theme is Theme.DEFAULT:
             self.resource_location = 'assets/resources'
-        elif self.options.global_theme == 'light':
+        elif self.options.global_theme is Theme.LIGHT:
             self.resource_location = 'assets/resources'
             qlightsheet.STYLE_SHEET = light_style_sheet.L_STYLE_SHEET
             self.qapp.setStyleSheet(libs.qdarktheme.load_stylesheet('light'))
@@ -780,19 +767,16 @@ class App(QtCore.QObject):
 
         theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
         theme_settings.setValue("appearance", self.options.global_appearance)
-        theme_settings.setValue("theme", self.options.global_theme)
+        theme_settings.setValue("theme", str(self.options.global_theme))
         theme_settings.setValue("dark_canvas", self.options.global_dark_canvas)
 
         if self.options.global_cursor_color_enabled:
             self.cursor_color_3D = self.options.global_cursor_color
         else:
-            if (theme == 'light' or theme == 'default') and not self.options.global_dark_canvas:
+            if self.options.global_theme.is_light() and not self.options.global_dark_canvas:
                 self.cursor_color_3D = 'black'
             else:
                 self.cursor_color_3D = 'gray'
-
-        # update the 'options' dict with the setting in QSetting
-        self.options.global_theme = theme
 
         # ########################
         self.ui = MainGUI(self)
@@ -7377,8 +7361,7 @@ class App(QtCore.QObject):
         root = d_properties_tw.invisibleRootItem()
         font = QtGui.QFont()
         font.setBold(True)
-        p_color = QtGui.QColor("#000000") if self.options.global_theme in ['default', 'light'] else \
-            QtGui.QColor("#FFFFFF")
+        p_color = QtGui.QColor("#000000") if self.options.global_theme.is_light() else QtGui.QColor("#FFFFFF")
 
         # main Items categories
         general_cat = d_properties_tw.addParent(root, _('General'), expanded=True, color=p_color, font=font)

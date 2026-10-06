@@ -79,7 +79,7 @@ class MainGUI(QtWidgets.QMainWindow):
         """
 
         if color in self.theme_safe_colors:
-            if self.app.options.global_theme in ['default', 'light']:
+            if self.app.options.global_theme.is_light():
                 return color
             else:
                 return self.theme_safe_colors[color]
@@ -1555,7 +1555,7 @@ class MainGUI(QtWidgets.QMainWindow):
         # remove the close button from the Plot Area tab (first tab index = 0) as this one will always be ON
         self.plot_tab_area.protectTab(0)
 
-        if self.app.options.global_theme not in ['default', 'light']:
+        if not self.app.options.global_theme.is_light():
             self.plot_tab_area.setStyleSheet(
                 """
                 QTabWidget::pane {
@@ -1573,7 +1573,7 @@ class MainGUI(QtWidgets.QMainWindow):
         self.pref_tab_layout.setContentsMargins(2, 2, 2, 2)
 
         self.pref_tab_area = FCTab()
-        if self.app.options.global_theme not in ['default', 'light']:
+        if not self.app.options.global_theme.is_light():
             self.pref_tab_area.setStyleSheet(
                 """
                 QTabWidget::pane {

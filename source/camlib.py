@@ -6686,7 +6686,7 @@ class CNCjob(Geometry):
             return
 
         try:
-            if self.app.options.global_theme in ['default', 'light']:
+            if self.app.options.global_theme.is_light():
                 obj.annotation.set(text=text, pos=pos, visible=obj.obj_options['plot'],
                                    font_size=self.app.options.cncjob_annotation_fontsize,
                                    color=self.app.options.cncjob_annotation_fontcolor)

@@ -4,6 +4,7 @@ from PyQt6.QtCore import QSettings
 
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpinner, FCColorEntry, FCLabel, \
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
+from settings.st_types import Appearance
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 from appTranslation import restart_program
 
@@ -44,10 +45,10 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         )
 
         self.appearance_radio = RadioSet([
-            {"label": _("Default"), "value": "default"},
-            {"label": _("Auto"), "value": "auto"},
-            {"label": _("Light"), "value": "light"},
-            {"label": _("Dark"), "value": "dark"}
+            {"label": _("Default"), "value": Appearance.DEFAULT},
+            {"label": _("Auto"), "value": Appearance.AUTO},
+            {"label": _("Light"), "value": Appearance.LIGHT},
+            {"label": _("Dark"), "value": Appearance.DARK}
         ], compact=True)
         self.appearance_radio.setToolTip(
             _("The theme can be:\n"

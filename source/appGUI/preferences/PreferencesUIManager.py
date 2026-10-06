@@ -1230,7 +1230,7 @@ class PreferencesUIManager(QtCore.QObject):
 
             if appearance_new_val != appearance:
                 if response == bt_yes:
-                    appearance_settings.setValue('appearance', appearance_new_val)
+                    appearance_settings.setValue('appearance', str(appearance_new_val))
                     should_restart = True
                 else:
                     self.ui.general_pref_form.general_gui_group.appearance_radio.set_value(appearance)

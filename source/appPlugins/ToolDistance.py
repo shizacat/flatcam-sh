@@ -234,7 +234,7 @@ class Distance(AppTool):
             self.app.on_cursor_type(val="big", control_cursor=True)
             self.cursor_color_memory = self.app.plotcanvas.cursor_color
 
-            if self.app.options.global_theme in ['default', 'light']:
+            if self.app.options.global_theme.is_light():
                 if self.app.use_3d_engine is True:
                     self.app.plotcanvas.cursor_color = '#000000FF'
                 else:

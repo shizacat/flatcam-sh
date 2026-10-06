@@ -1502,7 +1502,7 @@ class AppGeoEditor(QtCore.QObject):
     def get_draw_color(self):
         orig_color = self.app.options.global_draw_color
 
-        if self.app.options.global_theme in ['default', 'light']:
+        if self.app.options.global_theme.is_light():
             return orig_color
 
         # in the "dark" theme we invert the color

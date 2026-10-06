@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from settings.st_types import Appearance
+
 
 class Interface(BaseModel):
     """Store canvas, theme, and layout settings shared by saved settings and session options."""
@@ -42,14 +44,11 @@ class Interface(BaseModel):
         default_factory=lambda: [500, 300],
         description="Shell window width and height in pixels.",
     )
-    global_appearance: str = Field(
-        default="default", description="Default application appearance."
+    global_appearance: Appearance = Field(
+        default=Appearance.DEFAULT, description="Application appearance."
     )
     global_dark_canvas: bool = Field(
         default=False, description="Whether application dark canvas is enabled."
-    )
-    global_theme: str = Field(
-        default="default", description="Default application theme."
     )
     global_layout: str = Field(
         default="compact", description="Default application layout."

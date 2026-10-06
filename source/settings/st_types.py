@@ -1,8 +1,36 @@
 """Shared annotated types for settings fields."""
 
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BeforeValidator
+
+
+class Appearance(StrEnum):
+    """Appearance chosen in Preferences."""
+
+    DEFAULT = "default"
+    AUTO = "auto"
+    LIGHT = "light"
+    DARK = "dark"
+
+
+class Theme(StrEnum):
+    """Session theme resolved from the appearance preference."""
+
+    DEFAULT = "default"
+    LIGHT = "light"
+    DARK = "dark"
+
+    def is_light(self) -> bool:
+        """
+        Reports whether this theme keeps dark text on a light background.
+
+        The default theme and the light theme both do.
+
+        :return: True for the default and light themes
+        """
+        return self is Theme.DEFAULT or self is Theme.LIGHT
 
 
 def _xy_pair(value: object) -> object:

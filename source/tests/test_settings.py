@@ -10,7 +10,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from exceptions import FlatCAMError, SettingsError
 from settings import Options, Settings
-from settings.utils import apply_options, copy_shared, option_items, propagate_settings
+from settings.st_types import Appearance, Theme
+from settings.utils import (
+    STARTUP_THEME_FIELDS,
+    apply_options,
+    copy_shared,
+    option_items,
+    propagate_settings,
+)
 
 
 def test_settings_error_uses_the_project_base_exception() -> None:
@@ -66,12 +73,17 @@ def test_unknown_fields_are_rejected() -> None:
 def test_load_reads_json_file(tmp_path: Path) -> None:
     """Verify a JSON file overrides the settings it contains."""
     path = tmp_path / "settings.json"
-    path.write_text('{"units": "IN"}', encoding="utf-8")
+    path.write_text(
+        '{"units": "IN", "global_theme": "dark", "global_appearance": "dark"}',
+        encoding="utf-8",
+    )
 
     settings = Settings.load(path)
 
     assert settings.units == "IN"
     assert settings.version == "8.992"
+    assert settings.global_appearance is Appearance.DARK
+    assert "global_theme" not in Settings.model_fields
 
 
 def test_load_raises_settings_error(tmp_path: Path) -> None:
@@ -171,17 +183,17 @@ def test_options_start_from_settings_and_then_diverge() -> None:
     options = Options.from_settings(settings)
 
     options.units = "IN"
-    options.global_theme = "dark"
+    options.global_theme = Theme.DARK
     options.global_grid_context_menu["mm"].append(5.0)
 
     assert options.units == "IN"
-    assert options.global_theme == "dark"
+    assert options.global_theme is Theme.DARK
     assert settings.units == "MM"
-    assert settings.global_theme == "default"
+    assert "global_theme" not in Settings.model_fields
     assert 5.0 not in settings.global_grid_context_menu["mm"]
     assert "version" not in Options.model_fields
     assert "global_stats" not in Options.model_fields
-    assert set(Options.model_fields) < set(Settings.model_fields)
+    assert set(Options.model_fields) - {"global_theme"} < set(Settings.model_fields)
 
 
 def test_copy_shared_copies_common_fields_without_sharing_nested_values() -> None:
@@ -190,8 +202,11 @@ def test_copy_shared_copies_common_fields_without_sharing_nested_values() -> Non
     settings.report_usage("launch")
     settings.global_grid_context_menu["mm"].append(5.0)
     options = Options.from_settings(Settings())
+    options.global_theme = Theme.DARK
 
     copy_shared(options, settings)
+
+    assert options.global_theme is Theme.DARK
 
     assert options.units == "IN"
     assert options.global_grid_context_menu["mm"][-1] == 5.0
@@ -237,9 +252,58 @@ def test_apply_options_copies_known_fields_and_skips_the_rest() -> None:
     )
 
     assert options.units == "IN"
-    assert options.global_theme == "default"
+    assert options.global_theme is Theme.DEFAULT
     grid["mm"].append(2.0)
     assert options.global_grid_context_menu["mm"] == [0.1]
+
+
+def test_apply_options_leaves_the_startup_theme_when_asked() -> None:
+    """Verify a project mapping cannot replace the theme applied at startup."""
+    options = Options.from_settings(Settings())
+    options.global_appearance = Appearance.DARK
+    options.global_theme = Theme.DARK
+    options.global_dark_canvas = True
+
+    apply_options(
+        options,
+        {
+            "units": "IN",
+            "global_appearance": Appearance.LIGHT,
+            "global_theme": Theme.LIGHT,
+            "global_dark_canvas": False,
+        },
+        skip=STARTUP_THEME_FIELDS,
+    )
+
+    assert options.units == "IN"
+    assert options.global_appearance is Appearance.DARK
+    assert options.global_theme is Theme.DARK
+    assert options.global_dark_canvas is True
+
+
+def test_theme_is_light_for_the_default_and_light_themes() -> None:
+    """Verify only the default and light themes keep dark text on a light background."""
+    assert Theme.DEFAULT.is_light()
+    assert Theme.LIGHT.is_light()
+    assert not Theme.DARK.is_light()
+
+
+def test_theme_from_appearance_resolves_each_choice(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify the appearance on session options maps to the session theme, including the OS choice."""
+    options = Options.from_settings(Settings())
+
+    options.global_appearance = Appearance.DEFAULT
+    assert options.theme_from_appearance() is Theme.DEFAULT
+    options.global_appearance = Appearance.LIGHT
+    assert options.theme_from_appearance() is Theme.LIGHT
+    options.global_appearance = Appearance.DARK
+    assert options.theme_from_appearance() is Theme.DARK
+
+    monkeypatch.setattr("settings.models.options.darkdetect.isDark", lambda: True)
+    options.global_appearance = Appearance.AUTO
+    assert options.theme_from_appearance() is Theme.DARK
+    monkeypatch.setattr("settings.models.options.darkdetect.isDark", lambda: False)
+    assert options.theme_from_appearance() is Theme.LIGHT
 
 
 def test_propagate_settings_copies_parser_defaults() -> None:

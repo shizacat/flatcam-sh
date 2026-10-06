@@ -5,6 +5,14 @@ from collections.abc import Iterator
 
 from settings import Options, Settings
 
+# Chosen in Preferences and applied to the window once, at startup.
+# A project file must not replace them: the stylesheet and icon set stay as they were.
+STARTUP_THEME_FIELDS = frozenset({
+    "global_appearance",
+    "global_theme",
+    "global_dark_canvas",
+})
+
 
 def propagate_settings(settings: Settings) -> None:
     """
@@ -79,16 +87,23 @@ def option_items(storage) -> Iterator[tuple[str, object]]:
         yield name, storage[name]
 
 
-def apply_options(options: Options, values: dict[str, object]) -> None:
+def apply_options(
+    options: Options,
+    values: dict[str, object],
+    skip: frozenset[str] | set[str] | None = None,
+) -> None:
     """
     Copies known fields from a mapping onto session options.
 
     Names that are not fields on the options object are skipped.
+    Names in ``skip`` are left unchanged.
 
     :param options: session options
     :param values:  mapping of field names to values
+    :param skip:    field names that must not be replaced
     """
     fields = type(options).model_fields
+    skipped = skip or frozenset()
     for name, value in values.items():
-        if name in fields:
+        if name in fields and name not in skipped:
             setattr(options, name, copy.deepcopy(value))

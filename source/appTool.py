@@ -345,7 +345,7 @@ class AppToolEditor(AppTool):
         # TODO Hack, should find the root cause and fix
         # for whatever reason the stylesheet for dark mode is lost at some point here, so we should reapply it for the
         # QWidget
-        if self.app.options.global_theme not in ['default', 'light']:
+        if not self.app.options.global_theme.is_light():
             super(AppTool, self).setStyleSheet(
                 '''
                 QWidget {

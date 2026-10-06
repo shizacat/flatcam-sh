@@ -33,6 +33,8 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+from settings.st_types import Theme
+
 log = logging.getLogger('base')
 
 fcTranslate.apply_language('strings')
@@ -5236,7 +5238,12 @@ class FCTextAreaLineNumber(QtWidgets.QFrame):
         and from here: https://doc.qt.io/qt-5/qtwidgets-widgets-codeeditor-example.html
         """
 
-        def __init__(self, *args, color_dict=None, theme='default'):
+        def __init__(
+            self,
+            *args,
+            color_dict=None,
+            theme: Theme = Theme.DEFAULT
+        ):
             FCPlainTextAreaExtended.__init__(self, *args)
 
             self.color_storage = color_dict if color_dict else {}
@@ -5512,7 +5519,7 @@ class FCTextAreaLineNumber(QtWidgets.QFrame):
                 :return:            inverted color
                 :rtype:             QtGui.QColor
                 """
-                if self.theme in ['default', 'light']:
+                if self.theme.is_light():
                     return orig_color
 
                 if isinstance(orig_color, str):
@@ -5542,7 +5549,7 @@ class FCTextAreaLineNumber(QtWidgets.QFrame):
             hi_selection = QTextEdit.ExtraSelection()
 
             hi_selection.format.setBackground(self.palette().alternateBase())
-            if self.theme not in ['default', 'light']:
+            if not self.theme.is_light():
                 hi_selection.format.setForeground(QtGui.QColor('black'))
             hi_selection.format.setProperty(QtGui.QTextFormat.Property.FullWidthSelection, True)
             hi_selection.cursor = self.textCursor()
@@ -5597,7 +5604,7 @@ class FCTextAreaLineNumber(QtWidgets.QFrame):
     def __init__(self, *args, color_dict=None, **kwargs):
         self.theme = kwargs.pop('theme')
         if self.theme is None:
-            self.theme = 'default'
+            self.theme = Theme.DEFAULT
         QtWidgets.QFrame.__init__(self, *args)
 
         self.setFrameStyle(QtWidgets.QFrame.Shape.StyledPanel | QtWidgets.QFrame.Shadow.Sunken)
