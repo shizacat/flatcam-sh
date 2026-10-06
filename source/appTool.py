@@ -338,21 +338,5 @@ class AppTool(QtWidgets.QWidget):
 
 
 class AppToolEditor(AppTool):
+    """Editor tool. The window color comes from the application color scheme."""
 
-    def run(self):
-        super(AppToolEditor, self).run()
-
-        # TODO Hack, should find the root cause and fix
-        # for whatever reason the stylesheet for dark mode is lost at some point here, so we should reapply it for the
-        # QWidget
-        if not self.app.options.global_theme.is_light():
-            super(AppTool, self).setStyleSheet(
-                '''
-                QWidget {
-                    background-color: rgba(32.000, 33.000, 36.000, 1.000);
-                    color: rgba(170.000, 170.000, 170.000, 1.000);
-                    selection-background-color: rgba(138.000, 180.000, 247.000, 1.000);
-                    selection-color: rgba(32.000, 33.000, 36.000, 1.000);
-                }
-                '''
-            )

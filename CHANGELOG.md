@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Changed packaged builds to set `App.version` from the git tag and `App.version_date` to the build date
+- Changed GUI colors to System, Light, or Dark as a Qt color scheme, so the selected widget style keeps drawing the controls
 
 ### Fixed
 

@@ -252,7 +252,7 @@ def test_apply_options_copies_known_fields_and_skips_the_rest() -> None:
     )
 
     assert options.units == "IN"
-    assert options.global_theme is Theme.DEFAULT
+    assert options.global_theme is Theme.LIGHT
     grid["mm"].append(2.0)
     assert options.global_grid_context_menu["mm"] == [0.1]
 
@@ -281,26 +281,33 @@ def test_apply_options_leaves_the_startup_theme_when_asked() -> None:
     assert options.global_dark_canvas is True
 
 
-def test_theme_is_light_for_the_default_and_light_themes() -> None:
-    """Verify only the default and light themes keep dark text on a light background."""
-    assert Theme.DEFAULT.is_light()
+def test_theme_is_light_only_for_the_light_color() -> None:
+    """Verify the light session color keeps dark text on a light background."""
     assert Theme.LIGHT.is_light()
     assert not Theme.DARK.is_light()
 
 
+def test_load_maps_retired_appearance_names_to_system(tmp_path: Path) -> None:
+    """Verify default and auto from older settings files become the system color."""
+    path = tmp_path / "settings.json"
+    path.write_text('{"global_appearance": "default"}', encoding="utf-8")
+    assert Settings.load(path).global_appearance is Appearance.SYSTEM
+
+    path.write_text('{"global_appearance": "auto"}', encoding="utf-8")
+    assert Settings.load(path).global_appearance is Appearance.SYSTEM
+
+
 def test_theme_from_appearance_resolves_each_choice(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Verify the appearance on session options maps to the session theme, including the OS choice."""
+    """Verify the color choice maps to the session color, and System follows the OS."""
     options = Options.from_settings(Settings())
 
-    options.global_appearance = Appearance.DEFAULT
-    assert options.theme_from_appearance() is Theme.DEFAULT
     options.global_appearance = Appearance.LIGHT
     assert options.theme_from_appearance() is Theme.LIGHT
     options.global_appearance = Appearance.DARK
     assert options.theme_from_appearance() is Theme.DARK
 
     monkeypatch.setattr("settings.models.options.darkdetect.isDark", lambda: True)
-    options.global_appearance = Appearance.AUTO
+    options.global_appearance = Appearance.SYSTEM
     assert options.theme_from_appearance() is Theme.DARK
     monkeypatch.setattr("settings.models.options.darkdetect.isDark", lambda: False)
     assert options.theme_from_appearance() is Theme.LIGHT

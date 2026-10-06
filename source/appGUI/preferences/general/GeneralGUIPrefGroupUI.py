@@ -38,25 +38,23 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         grid0 = GLay(v_spacing=5, h_spacing=3)
         par_frame.setLayout(grid0)
 
-        # Theme selection
-        self.appearance_label = FCLabel('%s' % _("Theme"), bold=True)
+        # Color selection. The Style combo below chooses who draws the controls.
+        self.appearance_label = FCLabel('%s' % _("Color"), bold=True)
         self.appearance_label.setToolTip(
-            _("Select a theme for the application.\n"
-              "It will theme the plot area.")
+            _("Select the application colors.\n"
+              "The selected style draws the controls.")
         )
 
         self.appearance_radio = RadioSet([
-            {"label": _("Default"), "value": Appearance.DEFAULT},
-            {"label": _("Auto"), "value": Appearance.AUTO},
+            {"label": _("System"), "value": Appearance.SYSTEM},
             {"label": _("Light"), "value": Appearance.LIGHT},
             {"label": _("Dark"), "value": Appearance.DARK}
         ], compact=True)
         self.appearance_radio.setToolTip(
-            _("The theme can be:\n"
-              "Default: Default theme\n"
-              "Auto: Matches mode from OS\n"
-              "Light: Light mode\n"
-              "Dark: Dark mode")
+            _("The colors can be:\n"
+              "System: matches the operating system\n"
+              "Light: light colors\n"
+              "Dark: dark colors")
         )
 
         # Dark Canvas

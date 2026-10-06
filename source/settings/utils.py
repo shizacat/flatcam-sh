@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from settings import Options, Settings
 
 # Chosen in Preferences and applied to the window once, at startup.
-# A project file must not replace them: the stylesheet and icon set stay as they were.
+# A project file must not replace them: the color scheme and icon set stay as they were.
 STARTUP_THEME_FIELDS = frozenset({
     "global_appearance",
     "global_theme",

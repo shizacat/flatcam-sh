@@ -25,15 +25,15 @@ class Options(BaseModelChangeTrack, *SHARED):
     A loaded project changes options.
     Changing options does not write the settings file.
     The settings-file version and usage counters stay on settings.
-    The session theme is resolved from the appearance preference at startup
+    The session color is resolved from the appearance preference at startup
     and is not stored in the settings file.
     """
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     global_theme: Theme = Field(
-        default=Theme.DEFAULT,
-        description="Session theme resolved from the appearance preference.",
+        default=Theme.LIGHT,
+        description="Session color resolved from the appearance preference.",
     )
 
     @classmethod
@@ -55,19 +55,16 @@ class Options(BaseModelChangeTrack, *SHARED):
 
     def theme_from_appearance(self) -> Theme:
         """
-        Resolves the session theme from ``global_appearance``.
+        Resolves the session color from ``global_appearance``.
 
-        ``Appearance.AUTO`` follows the operating-system color scheme.
+        ``Appearance.SYSTEM`` follows the operating-system color scheme.
 
-        :return: session theme
+        :return: session color, light or dark
         """
-        appearance = self.global_appearance
-        if appearance == Appearance.AUTO:
-            if darkdetect.isDark():
-                return Theme.DARK
+        if self.global_appearance is Appearance.DARK:
+            return Theme.DARK
+        if self.global_appearance is Appearance.LIGHT:
             return Theme.LIGHT
-        if appearance == Appearance.DEFAULT:
-            return Theme.DEFAULT
-        if appearance == Appearance.DARK:
+        if darkdetect.isDark():
             return Theme.DARK
         return Theme.LIGHT

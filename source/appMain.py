@@ -48,9 +48,6 @@ import socket
 
 import tkinter as tk
 
-import libs.qdarktheme
-import libs.qdarktheme.themes.dark.stylesheet as qdarksheet
-import libs.qdarktheme.themes.light.stylesheet as qlightsheet
 
 from typing import Union
 
@@ -79,7 +76,7 @@ from appGUI.GUIElements import (
     DialogBoxChoice,
     VerticalScrollArea,
 )
-from appGUI.themes import dark_style_sheet, light_style_sheet
+from appGUI.widget_style import apply_color_scheme
 
 # Various
 from appCommon.Common import color_variant
@@ -96,7 +93,6 @@ from appDatabase import ToolsDB2
 # App defaults (preferences)
 from exceptions import SettingsError
 from settings import Options, Settings
-from settings.st_types import Theme
 from settings.utils import copy_shared, propagate_settings
 
 # App Objects
@@ -547,24 +543,19 @@ class App(QtCore.QObject):
 
         # self.preferencesUiManager.show_preferences_gui()
 
-        # The window stylesheet is applied from this value and is not rebuilt later.
-        # Project load must not replace it; see STARTUP_THEME_FIELDS.
+        # The color scheme and icon set are applied from this value and are not rebuilt later.
+        # Project load must not replace them; see STARTUP_THEME_FIELDS.
         self.options.global_theme = self.options.theme_from_appearance()
+        apply_color_scheme(self.qapp, str(self.options.global_appearance))
 
         self.app_units = self.options.units
         self.default_units = self.settings.units
         self.decimals = self.options.units_precision
 
-        if self.options.global_theme is Theme.DEFAULT:
+        if self.options.global_theme.is_light():
             self.resource_location = 'assets/resources'
-        elif self.options.global_theme is Theme.LIGHT:
-            self.resource_location = 'assets/resources'
-            qlightsheet.STYLE_SHEET = light_style_sheet.L_STYLE_SHEET
-            self.qapp.setStyleSheet(libs.qdarktheme.load_stylesheet('light'))
         else:
             self.resource_location = 'assets/resources/dark_resources'
-            qdarksheet.STYLE_SHEET = dark_style_sheet.D_STYLE_SHEET
-            self.qapp.setStyleSheet(libs.qdarktheme.load_stylesheet())
 
         # ############################################################################################################
         # ################################### Set LOG verbosity ######################################################
