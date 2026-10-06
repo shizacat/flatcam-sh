@@ -3009,7 +3009,7 @@ class App(QtCore.QObject):
 
         class AboutDialog(QtWidgets.QDialog):
             # noinspection PyUnresolvedReferences
-            def __init__(self, app, parent):
+            def __init__(self, app: App, parent: MainGUI) -> None:
                 QtWidgets.QDialog.__init__(self, parent=parent)
 
                 self.app = app
@@ -3531,7 +3531,7 @@ class App(QtCore.QObject):
         """
 
         class HowtoDialog(QtWidgets.QDialog):
-            def __init__(self, app, parent):
+            def __init__(self, app: App, parent: MainGUI) -> None:
                 QtWidgets.QDialog.__init__(self, parent=parent)
 
                 self.app = app
