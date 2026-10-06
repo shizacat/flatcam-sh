@@ -161,7 +161,6 @@ class App(QtCore.QObject):
     # ################################### Version and VERSION DATE ##################################################
     # ###############################################################################################################
     version = "Unstable"
-    # version = 1.0
     version_date = "2023/6/31"
     beta = True
     engine = '3D'
@@ -3008,10 +3007,6 @@ class App(QtCore.QObject):
         """
         self.settings.report_usage("on_about")
 
-        version = self.version
-        version_date = self.version_date
-        beta = self.beta
-
         class AboutDialog(QtWidgets.QDialog):
             # noinspection PyUnresolvedReferences
             def __init__(self, app, parent):
@@ -3061,9 +3056,9 @@ class App(QtCore.QObject):
                 description_label = FCLabel(
                     "FlatCAM Evo {version} {beta} ({date}) - {arch}<br>"
                     "<a href = \"http://flatcam.org/\">http://flatcam.org</a><br>".format(
-                        version=version,
-                        beta=('BETA' if beta else ''),
-                        date=version_date,
+                        version=self.app.version,
+                        beta=('BETA' if self.app.beta else ''),
+                        date=self.app.version_date,
                         arch=platform.architecture()[0])
                 )
                 description_label.setOpenExternalLinks(True)
