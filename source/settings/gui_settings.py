@@ -147,21 +147,19 @@ class GuiSettings:
             if sheet:
                 app.setStyleSheet(sheet)
 
-    def style_name(self) -> str | None:
+    def style_name(self, app: QApplication) -> str | None:
         """
         Returns the style name to show as the current choice.
 
         The stored name is used when this process provides it. Otherwise the name of
-        the style already set on the application is used.
+        the style already set on ``app`` is used.
 
-        :return: a name from ``QStyleFactory.keys()``, or None when neither matches
+        :param app: the ``QApplication``
+        :return:    a name from ``QStyleFactory.keys()``, or None when neither matches
         """
         name = self._stored_style()
         if name is not None:
             return name
-        app = QApplication.instance()
-        if app is None:
-            return None
         return self.resolve_style(app.style().objectName(), QStyleFactory.keys())
 
     def _stored_style(self) -> str | None:

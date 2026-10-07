@@ -112,7 +112,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         )
         self.style_combo = FCComboBox()
         self.style_combo.addItems(QtWidgets.QStyleFactory.keys())
-        style_name = GuiSettings().style_name()
+        style_name = GuiSettings().style_name(app.qapp)
         if style_name is not None:
             index = self.style_combo.findText(style_name, QtCore.Qt.MatchFlag.MatchFixedString)
             if index >= 0:

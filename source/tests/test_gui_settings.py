@@ -127,13 +127,15 @@ def test_set_widget_style_sets_the_style_when_there_is_no_sheet() -> None:
 
 def test_style_name_uses_the_stored_name(gui_settings: GuiSettings) -> None:
     """Verify the stored style is the name reported for the current choice."""
-    from PyQt6.QtWidgets import QStyleFactory
+    from PyQt6.QtWidgets import QApplication, QStyleFactory
 
+    app = QApplication.instance()
+    assert app is not None
     available = QStyleFactory.keys()
     assert available
     gui_settings.set_value("style", available[0].swapcase())
 
-    assert gui_settings.style_name() == available[0]
+    assert gui_settings.style_name(app) == available[0]
 
 
 def test_style_name_falls_back_to_the_application_style(gui_settings: GuiSettings) -> None:
@@ -144,7 +146,7 @@ def test_style_name_falls_back_to_the_application_style(gui_settings: GuiSetting
     assert app is not None
     gui_settings.set_value("style", "not-a-style")
 
-    assert gui_settings.style_name() == GuiSettings.resolve_style(
+    assert gui_settings.style_name(app) == GuiSettings.resolve_style(
         app.style().objectName(),
         QStyleFactory.keys(),
     )
