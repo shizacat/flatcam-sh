@@ -16,7 +16,7 @@ A style is a `QStyle` from `QStyleFactory.keys()`. The combo lists whatever this
 
 The style does not pick light or dark. It only draws buttons, combo boxes, sliders, and the rest of the chrome. The color scheme below supplies the palette those controls use. On macOS, the native style follows that palette: Dark uses the system dark drawing, Light uses the system light drawing.
 
-The choice is stored by name in `QSettings("Open Source", "FlatCAM_EVO")` under the key `style`. It is not a field of `Settings` and it is not written to the FlatConfig file. An older build stored the combo index instead of the name; `resolve_widget_style()` still accepts that index when it falls inside the current list.
+The choice is stored by name in `QSettings("Open Source", "FlatCAM_EVO")` under the key `style`. It is not a field of `Settings` and it is not written to the FlatConfig file. A stored value that is not one of the available style names is ignored, and Qt keeps its default style.
 
 `flatcam.py` reads `style` and calls `apply_widget_style()` before `App` is constructed, so the first window already uses the saved style. Changing the combo calls the same function immediately and writes the name. No restart.
 

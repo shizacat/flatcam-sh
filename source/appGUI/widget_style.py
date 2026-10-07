@@ -3,11 +3,9 @@
 
 def resolve_widget_style(saved: str | None, available: list[str]) -> str | None:
     """
-    Resolves a stored Qt style to one of the styles available in this process.
+    Resolves a stored Qt style name to one of the styles available in this process.
 
-    A stored value is either a style name or a legacy combo index.
-
-    :param saved:     text read from settings; None when the setting is absent
+    :param saved:     style name read from settings; None when the setting is absent
     :param available: style names reported by the toolkit
     :return:          a name from ``available``, or None when nothing matches
     """
@@ -16,10 +14,6 @@ def resolve_widget_style(saved: str | None, available: list[str]) -> str | None:
     for name in available:
         if name.lower() == saved.lower():
             return name
-    if saved.isdigit():
-        index = int(saved)
-        if 0 <= index < len(available):
-            return available[index]
     return None
 
 

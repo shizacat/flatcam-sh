@@ -16,15 +16,11 @@ def test_resolve_widget_style_matches_a_name_ignoring_case() -> None:
     assert resolve_widget_style("fusion", KEYS) == "Fusion"
 
 
-def test_resolve_widget_style_accepts_a_legacy_index() -> None:
-    assert resolve_widget_style("2", KEYS) == "Fusion"
-    assert resolve_widget_style("0", KEYS) == "macOS"
-
-
 def test_resolve_widget_style_rejects_an_unknown_value() -> None:
     assert resolve_widget_style(None, KEYS) is None
     assert resolve_widget_style("", KEYS) is None
-    assert resolve_widget_style("9", KEYS) is None
+    assert resolve_widget_style("0", KEYS) is None
+    assert resolve_widget_style("2", KEYS) is None
     assert resolve_widget_style("windowsvista", KEYS) is None
 
 
