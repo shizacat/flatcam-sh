@@ -106,7 +106,7 @@ Keys stored there:
 - `font_size`, `notebook_font_size`, `axis_font_size`, `textbox_font_size`, `hud_font_size`
 - splash screen
 
-`font_size` is read once in `flatcam.py` before `App` is constructed, and written only by the **Apply and Restart** button. The other font sizes are written on Preferences Apply and read by the widgets and canvases that draw them.
+`font_size` is read once in `App.__init__`, together with the widget style and before the splash screen, and written only by the **Apply and Restart** button. The other font sizes are written on Preferences Apply and read by the widgets and canvases that draw them.
 
 On the first run, `app.options["first_run"]` clears every key in this `QSettings` store.
 

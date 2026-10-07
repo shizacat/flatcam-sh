@@ -6,12 +6,11 @@ import traceback
 from datetime import datetime
 
 from PyQt6 import QtWidgets, QtGui
-from PyQt6.QtCore import QSettings, QTimer
+from PyQt6.QtCore import QTimer
 from appMain import App
 from appGUI import VisPyPatches
 
 from appGUI.GUIElements import FCMessageBox
-from appGUI.widget_style import apply_widget_style, resolve_widget_style
 
 from multiprocessing import freeze_support
 
@@ -244,19 +243,6 @@ if __name__ == '__main__':
 
     set_macos_app_name("FlatCAM")
     app = QtWidgets.QApplication(sys.argv)
-
-    # apply style
-    settings = QSettings("Open Source", "FlatCAM_EVO")
-    saved_style = settings.value("style", type=str) if settings.contains("style") else None
-    style_name = resolve_widget_style(saved_style, QtWidgets.QStyleFactory.keys())
-    if style_name is not None:
-        apply_widget_style(app, style_name)
-
-    if settings.contains("font_size"):
-        font_size = int(settings.value("font_size", type=str))      # noqa
-        font = QtGui.QFont()
-        font.setPointSize(font_size)
-        app.setFont(font)
 
     fc = App(
         qapp=app,
