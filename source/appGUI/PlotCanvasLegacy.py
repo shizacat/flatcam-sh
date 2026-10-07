@@ -37,6 +37,7 @@ except ImportError:
 
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredText
+from settings.gui_settings import GuiSettings
 
 # from matplotlib.widgets import Cursor
 
@@ -82,18 +83,10 @@ class CanvasCache(QtCore.QObject):
         self.axes.set_xticks([])
         self.axes.set_yticks([])
 
-        settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
+        theme = self.app.options.global_theme
+        dark_canvas = self.app.options.global_dark_canvas
 
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
-
-        if (theme == 'default' or theme == 'light') and not dark_canvas:
+        if theme.is_light() and not dark_canvas:
             self.axes.set_facecolor('#FFFFFF')
         else:
             self.axes.set_facecolor('#000000')
@@ -462,14 +455,8 @@ class PlotCanvasLegacy(QtCore.QObject):
             #              ('0.0000', units, '0.0000', units, '0.0000', units, '0.0000', units)
             self.on_update_text_hud()
 
-            # set font size
-            q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-            if q_settings.contains("hud_font_size"):
-                # I multiply with 2.5 because this seems to be the difference between the value taken by the VisPy (3D)
-                # and Matplotlib (Legacy2D FlatCAM graphic engine)
-                fsize = int(q_settings.value('hud_font_size', type=int) * 2.5)
-            else:
-                fsize = 20
+            # Matplotlib point size is about 2.5 times the VisPy HUD size.
+            fsize = int(GuiSettings().hud_font_size() * 2.5)
 
             self.hud_holder = AnchoredText(self._text, prop=dict(size=fsize), frameon=True, loc='upper left')
             self.hud_holder.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")

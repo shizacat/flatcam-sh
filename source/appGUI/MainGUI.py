@@ -10,7 +10,6 @@
 # File Modified (major mod): Marius Adrian Stanciu         #
 # Date: 3/10/2019                                          #
 # ##########################################################
-from PyQt6.QtCore import QSettings
 
 import platform
 
@@ -41,6 +40,8 @@ import builtins
 import traceback
 
 import darkdetect
+from settings.gui_settings import GuiSettings
+from settings.st_types import Theme
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -2068,30 +2069,25 @@ class MainGUI(QtWidgets.QMainWindow):
         # ########################################################################
         # ################## RESTORE UI from QSettings #################
         # ########################################################################
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("saved_gui_state"):
-            self.restoreState(q_settings.value('saved_gui_state'), 0)
-        tb_lock_state = q_settings.value('toolbar_lock', "true")
-        show_text_state = q_settings.value('menu_show_text', "true")
-        win_geo = q_settings.value('window_geometry', (100, 100, 800, 400))
-        splitter_left = int(q_settings.value('splitter_left', 1))
+        q_settings = GuiSettings()
+        saved_state = q_settings.saved_gui_state()
+        if saved_state is not None:
+            self.restoreState(saved_state, 0)
+        tb_lock_state = q_settings.toolbar_lock()
+        show_text_state = q_settings.menu_show_text()
+        win_geo = q_settings.window_geometry()
+        splitter_left = q_settings.splitter_left()
 
-        if q_settings.contains("layout"):
-            layout = q_settings.value('layout', type=str)
-            self.exc_edit_toolbar.setDisabled(True)
-            self.geo_edit_toolbar.setDisabled(True)
-            self.grb_edit_toolbar.setDisabled(True)
+        self.exc_edit_toolbar.setDisabled(True)
+        self.geo_edit_toolbar.setDisabled(True)
+        self.grb_edit_toolbar.setDisabled(True)
 
-            self.app.log.debug("MainGUI.__init__() --> UI layout restored from QSettings. Layout = %s" % str(layout))
-        else:
-            self.exc_edit_toolbar.setDisabled(True)
-            self.geo_edit_toolbar.setDisabled(True)
-            self.grb_edit_toolbar.setDisabled(True)
-
-            q_settings.setValue('layout', "standard")
-            # This will write the setting to the platform specific storage.
-            del q_settings
+        layout = q_settings.layout()
+        if layout is None:
+            q_settings.save_layout("standard")
             self.app.log.debug("MainGUI.__init__() --> UI layout restored from options. QSettings set to 'standard'")
+        else:
+            self.app.log.debug("MainGUI.__init__() --> UI layout restored from QSettings. Layout = %s" % str(layout))
 
         self.lock_action.setChecked(True if tb_lock_state == 'true' else False)
         self.show_text_action.setChecked(True if show_text_state == 'true' else False)
@@ -2237,13 +2233,8 @@ class MainGUI(QtWidgets.QMainWindow):
 
     def on_toggle_gui(self):
         if self.isHidden():
-            mgui_settings = QSettings("Open Source", "FlatCAM_EVO")
-            if mgui_settings.contains("maximized_gui"):
-                maximized_ui = mgui_settings.value('maximized_gui', type=bool)
-                if maximized_ui is True:
-                    self.showMaximized()
-                else:
-                    self.show()
+            if GuiSettings().maximized_gui() is True:
+                self.showMaximized()
             else:
                 self.show()
         else:
@@ -2343,10 +2334,8 @@ class MainGUI(QtWidgets.QMainWindow):
         """
         self.app.log.debug("Clearing the settings in QSettings. GUI settings cleared.")
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        theme_settings.setValue('theme', 'light')
+        GuiSettings().save_theme(Theme.LIGHT)
 
-        del theme_settings
 
         response = None
         bt_yes = None
@@ -2368,11 +2357,7 @@ class MainGUI(QtWidgets.QMainWindow):
             response = msgbox.clickedButton()
 
         if forced_clear is True or response == bt_yes:
-            q_settings = QSettings("Open Source", "FlatCAM_EVO")
-            for key in q_settings.allKeys():
-                q_settings.remove(key)
-            # This will write the setting to the platform specific storage.
-            del q_settings
+            GuiSettings().clear()
 
     def populate_toolbars(self):
         """
@@ -2686,18 +2671,15 @@ class MainGUI(QtWidgets.QMainWindow):
         self.snap_magnet.setVisible(False)
         self.editor_exit_btn_ret_action.setVisible(False)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("layout"):
-            layout = q_settings.value('layout', type=str)
-
-            # on 'minimal' layout only some toolbars are active
-            if layout != 'minimal':
-                self.exc_edit_toolbar.setVisible(True)
-                self.exc_edit_toolbar.setDisabled(True)
-                self.geo_edit_toolbar.setVisible(True)
-                self.geo_edit_toolbar.setDisabled(True)
-                self.grb_edit_toolbar.setVisible(True)
-                self.grb_edit_toolbar.setDisabled(True)
+        layout = GuiSettings().layout()
+        # on 'minimal' layout only some toolbars are active
+        if layout is not None and layout != 'minimal':
+            self.exc_edit_toolbar.setVisible(True)
+            self.exc_edit_toolbar.setDisabled(True)
+            self.geo_edit_toolbar.setVisible(True)
+            self.geo_edit_toolbar.setDisabled(True)
+            self.grb_edit_toolbar.setVisible(True)
+            self.grb_edit_toolbar.setDisabled(True)
 
     def on_shortcut_list(self):
         # add the tab if it was closed
@@ -2754,10 +2736,7 @@ class MainGUI(QtWidgets.QMainWindow):
                 if isinstance(widget, QtWidgets.QToolBar):
                     widget.setMovable(True)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue('toolbar_lock', lock)
-        # This will write the setting to the platform specific storage.
-        del q_settings
+        GuiSettings().save_toolbar_lock(lock)
 
     def show_text_under_action(self, show_text=True):
         if show_text:
@@ -2769,10 +2748,7 @@ class MainGUI(QtWidgets.QMainWindow):
                 if isinstance(widget, QtWidgets.QToolBar):
                     widget.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue('menu_show_text', show_text)
-        # This will write the setting to the platform specific storage.
-        del q_settings
+        GuiSettings().save_menu_show_text(show_text)
 
     # def on_full_screen_toggled(self, disable=False):
     #     """
@@ -4610,15 +4586,13 @@ class MainGUI(QtWidgets.QMainWindow):
         else:
             g_rect = self.geometry()
 
-            q_settings = QSettings("Open Source", "FlatCAM_EVO")
-            q_settings.setValue('saved_gui_state', self.saveState(0))
-            q_settings.setValue('toolbar_lock', self.lock_action.isChecked())
-            q_settings.setValue('menu_show_text', self.show_text_action.isChecked())
+            q_settings = GuiSettings()
+            q_settings.save_gui_state(self.saveState(0))
+            q_settings.save_toolbar_lock(self.lock_action.isChecked())
+            q_settings.save_menu_show_text(self.show_text_action.isChecked())
             if not self.isMaximized():
-                q_settings.setValue('window_geometry', (g_rect.x(), g_rect.y(), g_rect.width(), g_rect.height()))
-            q_settings.setValue('splitter_left', self.splitter.sizes()[0])
-            # This will write the setting to the platform specific storage.
-            del q_settings
+                q_settings.save_window_geometry((g_rect.x(), g_rect.y(), g_rect.width(), g_rect.height()))
+            q_settings.save_splitter_left(self.splitter.sizes()[0])
             try:
                 self.final_save.emit()
             except SystemError:

@@ -8,7 +8,7 @@
 # ###########################################################
 
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QSettings, pyqtSlot
+from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt6.QtGui import QAction
 
@@ -76,7 +76,7 @@ from appGUI.GUIElements import (
     DialogBoxChoice,
     VerticalScrollArea,
 )
-from appGUI.widget_style import apply_color_scheme, apply_widget_style, resolve_widget_style
+from appGUI.widget_style import apply_color_scheme
 
 # Various
 from appCommon.Common import color_variant
@@ -93,6 +93,7 @@ from appDatabase import ToolsDB2
 # App defaults (preferences)
 from exceptions import SettingsError
 from settings import Options, Settings
+from settings.gui_settings import GuiSettings
 from settings.utils import copy_shared, propagate_settings
 
 # App Objects
@@ -549,17 +550,8 @@ class App(QtCore.QObject):
         apply_color_scheme(self.qapp, str(self.options.global_appearance))
 
         # Style and font are taken before the splash screen, the first widget.
-        gui_settings = QSettings("Open Source", "FlatCAM_EVO")
-        saved_style = gui_settings.value("style", type=str) if gui_settings.contains("style") else None
-        style_name = resolve_widget_style(saved_style, QtWidgets.QStyleFactory.keys())
-        if style_name is not None:
-            apply_widget_style(self.qapp, style_name)
-
-        if gui_settings.contains("font_size"):
-            font_size = int(gui_settings.value("font_size", type=str))      # noqa
-            font = QtGui.QFont()
-            font.setPointSize(font_size)
-            self.qapp.setFont(font)
+        GuiSettings().apply_style(self.qapp)
+        GuiSettings().apply_font_size(self.qapp)
 
         self.app_units = self.options.units
         self.default_units = self.settings.units
@@ -596,24 +588,15 @@ class App(QtCore.QObject):
         # ###########################################################################################################
         if self.options.first_run is True:
             # on first run clear the previous QSettings, therefore clearing the GUI settings
-            q_settings = QSettings("Open Source", "FlatCAM_EVO")
-            for key in q_settings.allKeys():
-                q_settings.remove(key)
-            # This will write the setting to the platform specific storage.
-            del q_settings
+            GuiSettings().clear()
 
         # ###########################################################################################################
         # ###################################### Setting the Splash Screen ##########################################
         # ###########################################################################################################
-        splash_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if splash_settings.contains("splash_screen"):
-            show_splash = splash_settings.value("splash_screen")
-        else:
-            splash_settings.setValue('splash_screen', 1)
-
-            # This will write the setting to the platform specific storage.
-            del splash_settings
-            show_splash = 1
+        show_splash = GuiSettings().splash_screen()
+        if show_splash is None:
+            GuiSettings().save_splash_screen(True)
+            show_splash = True
 
         if show_splash and self.cmd_line_headless != 1:
             splash_pix = QtGui.QPixmap(self.resource_location + '/splash.png')
@@ -716,10 +699,10 @@ class App(QtCore.QObject):
         self.FC_light_blue = '#a5a5ffbf'
         self.FC_dark_blue = '#0000ffbf'
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        theme_settings.setValue("appearance", self.options.global_appearance)
-        theme_settings.setValue("theme", str(self.options.global_theme))
-        theme_settings.setValue("dark_canvas", self.options.global_dark_canvas)
+        theme_settings = GuiSettings()
+        theme_settings.save_appearance(self.options.global_appearance)
+        theme_settings.save_theme(self.options.global_theme)
+        theme_settings.save_dark_canvas(self.options.global_dark_canvas)
 
         if self.options.global_cursor_color_enabled:
             self.cursor_color_3D = self.options.global_cursor_color
@@ -1252,13 +1235,8 @@ class App(QtCore.QObject):
                 # finish the splash
                 self.splash.finish(self.ui)
 
-            mgui_settings = QSettings("Open Source", "FlatCAM_EVO")
-            if mgui_settings.contains("maximized_gui"):
-                maximized_ui = mgui_settings.value('maximized_gui', type=bool)
-                if maximized_ui is True:
-                    self.ui.showMaximized()
-                else:
-                    self.ui.show()
+            if GuiSettings().maximized_gui() is True:
+                self.ui.showMaximized()
             else:
                 self.ui.show()
 
@@ -2222,11 +2200,8 @@ class App(QtCore.QObject):
         else:
             current_layout = self.ui.general_pref_form.general_gui_group.layout_combo.get_value()
 
-        lay_settings = QSettings("Open Source", "FlatCAM_EVO")
-        lay_settings.setValue('layout', current_layout)
+        GuiSettings().save_layout(current_layout)
 
-        # This will write the setting to the platform specific storage.
-        del lay_settings
 
         # first remove the toolbars:
         self.log.debug(" -> Remove Toolbars")
@@ -3947,31 +3922,22 @@ class App(QtCore.QObject):
 
         if self.cmd_line_headless != 1:
             # save app state to file
-            stgs = QSettings("Open Source", "FlatCAM_EVO")
-            stgs.setValue('saved_gui_state', self.ui.saveState())
-            stgs.setValue('maximized_gui', self.ui.isMaximized())
-            stgs.setValue(
-                'language',
-                self.ui.general_pref_form.general_app_group.language_combo.get_value()
-            )
-            stgs.setValue(
-                'notebook_font_size',
+            stgs = GuiSettings()
+            stgs.save_gui_state(self.ui.saveState())
+            stgs.save_maximized_gui(self.ui.isMaximized())
+            stgs.save_language(self.ui.general_pref_form.general_app_group.language_combo.get_value())
+            stgs.save_notebook_font_size(
                 self.ui.general_pref_form.general_app_set_group.notebook_font_size_spinner.get_value()
             )
-            stgs.setValue(
-                'axis_font_size',
+            stgs.save_axis_font_size(
                 self.ui.general_pref_form.general_app_set_group.axis_font_size_spinner.get_value()
             )
-            stgs.setValue(
-                'textbox_font_size',
+            stgs.save_textbox_font_size(
                 self.ui.general_pref_form.general_app_set_group.textbox_font_size_spinner.get_value()
             )
-            stgs.setValue(
-                'hud_font_size',
+            stgs.save_hud_font_size(
                 self.ui.general_pref_form.general_app_set_group.hud_font_size_spinner.get_value()
             )
-            # This will write the setting to the platform specific storage.
-            del stgs
 
         if silent is False:
             self.log.debug("App.quit_application() --> App UI state saved.")

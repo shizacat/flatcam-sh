@@ -54,6 +54,7 @@ from typing import Union
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -3133,11 +3134,7 @@ class FCCircle(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -3676,11 +3673,7 @@ class FCRectangle(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -3894,11 +3887,7 @@ class FCPolygon(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -4182,11 +4171,7 @@ class FCPath(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -4744,11 +4729,7 @@ class FCMove(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -5269,11 +5250,7 @@ class FCCopy(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]

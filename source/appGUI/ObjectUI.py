@@ -17,7 +17,6 @@ import sys
 import gettext
 import appTranslation as fcTranslate
 import builtins
-
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
@@ -36,13 +35,7 @@ class ObjectUI(QtWidgets.QWidget):
         self.app = app
         self.decimals = app.decimals
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
+        if app.options.global_theme.is_light():
             self.resource_loc = 'assets/resources'
         else:
             self.resource_loc = 'assets/resources/dark_resources'
@@ -561,13 +554,7 @@ class ExcellonObjectUI(ObjectUI):
         self.decimals = app.decimals
         self.app = app
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
+        if app.options.global_theme.is_light():
             self.resource_loc = 'assets/resources'
         else:
             self.resource_loc = 'assets/resources/dark_resources'
@@ -856,13 +843,7 @@ class GeometryObjectUI(ObjectUI):
         self.decimals = app.decimals
         self.app = app
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
+        if app.options.global_theme.is_light():
             self.resource_loc = 'assets/resources'
         else:
             self.resource_loc = 'assets/resources/dark_resources'
@@ -1173,13 +1154,7 @@ class CNCObjectUI(ObjectUI):
         self.decimals = app.decimals
         self.app = app
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
+        if app.options.global_theme.is_light():
             self.resource_loc = 'assets/resources'
         else:
             self.resource_loc = 'assets/resources/dark_resources'
@@ -1473,13 +1448,7 @@ class ScriptObjectUI(ObjectUI):
         self.decimals = app.decimals
         self.app = app
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
+        if app.options.global_theme.is_light():
             self.resource_loc = 'assets/resources'
         else:
             self.resource_loc = 'assets/resources/dark_resources'
@@ -1536,13 +1505,7 @@ class DocumentObjectUI(ObjectUI):
         self.decimals = app.decimals
         self.app = app
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
+        if app.options.global_theme.is_light():
             self.resource_loc = 'assets/resources'
         else:
             self.resource_loc = 'assets/resources/dark_resources'

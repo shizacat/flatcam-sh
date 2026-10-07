@@ -1,6 +1,5 @@
 
 from PyQt6 import QtGui
-from PyQt6.QtCore import QSettings
 
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCLabel, GLay, FCFrame
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
@@ -8,6 +7,7 @@ from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -33,11 +33,7 @@ class CNCJobOptPrefGroupUI(OptionsGroupUI):
         )
         self.layout.addWidget(self.export_gcode_label)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("textbox_font_size"):
-            tb_fsize = q_settings.value('textbox_font_size', type=int)
-        else:
-            tb_fsize = 10
+        tb_fsize = GuiSettings().textbox_font_size()
         font = QtGui.QFont()
         font.setPointSize(tb_fsize)
 

@@ -1,6 +1,5 @@
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QSettings
 
 from appGUI.GUIElements import OptionalInputSection
 from appGUI.preferences.OptionUI import OptionUI, HeadingOptionUI, SeparatorOptionUI, DoubleSpinnerOptionUI, \
@@ -10,6 +9,7 @@ from appGUI.preferences.OptionsGroupUI import OptionsGroupUI2
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -75,25 +75,14 @@ class GeneralAppSettingsGroupUI(OptionsGroupUI2):
 
         self.setTitle(str(_("App Settings")))
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-
         self.notebook_font_size_field = self.option_dict()["notebook_font_size"].get_field()
-        if q_settings.contains("notebook_font_size"):
-            self.notebook_font_size_field.set_value(q_settings.value('notebook_font_size', type=int))
-        else:
-            self.notebook_font_size_field.set_value(12)
+        self.notebook_font_size_field.set_value(GuiSettings().notebook_font_size())
 
         self.axis_font_size_field = self.option_dict()["axis_font_size"].get_field()
-        if q_settings.contains("axis_font_size"):
-            self.axis_font_size_field.set_value(q_settings.value('axis_font_size', type=int))
-        else:
-            self.axis_font_size_field.set_value(8)
+        self.axis_font_size_field.set_value(GuiSettings().axis_font_size())
 
         self.textbox_font_size_field = self.option_dict()["textbox_font_size"].get_field()
-        if q_settings.contains("textbox_font_size"):
-            self.textbox_font_size_field.set_value(q_settings.value('textbox_font_size', type=int))
-        else:
-            self.textbox_font_size_field.set_value(10)
+        self.textbox_font_size_field.set_value(GuiSettings().textbox_font_size())
 
         self.workspace_enabled_field = self.option_dict()["global_workspace"].get_field()
         self.workspace_type_field = self.option_dict()["global_workspaceT"].get_field()
@@ -293,18 +282,10 @@ class GeneralAppSettingsGroupUI(OptionsGroupUI2):
         if val:
             self.app.cursor_color_3D = self.app.options.global_cursor_color
         else:
-            theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-            if theme_settings.contains("theme"):
-                theme = theme_settings.value('theme', type=str)
-            else:
-                theme = 'default'
+            theme = self.app.options.global_theme
+            dark_canvas = self.app.options.global_dark_canvas
 
-            if theme_settings.contains("dark_canvas"):
-                dark_canvas = theme_settings.value('dark_canvas', type=bool)
-            else:
-                dark_canvas = False
-
-            if (theme == 'default' or theme == 'light') and not dark_canvas:
+            if theme.is_light() and not dark_canvas:
                 self.app.cursor_color_3D = 'black'
             else:
                 self.app.cursor_color_3D = 'gray'

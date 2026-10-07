@@ -1,6 +1,5 @@
 
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QSettings
 
 from appGUI.GUIElements import FCDoubleSpinner, FCCheckBox, FCComboBox, RadioSet, OptionalInputSection, FCSpinner, \
     FCColorEntry, FCLabel, GLay, FCFrame
@@ -9,6 +8,7 @@ from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -23,16 +23,7 @@ class GeneralAPPSetGroupUI(OptionsGroupUI):
         self.decimals = app.decimals
         self.options = app.options
 
-        theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if theme_settings.contains("theme"):
-            theme = theme_settings.value('theme', type=str)
-        else:
-            theme = 'light'
-
-        if theme == 'light':
-            self.resource_loc = 'assets/resources'
-        else:
-            self.resource_loc = 'assets/resources'
+        self.resource_loc = 'assets/resources'
 
         # #############################################################################################################
         # Grid Settings Frame
@@ -213,11 +204,7 @@ class GeneralAPPSetGroupUI(OptionsGroupUI):
         self.notebook_font_size_spinner.set_range(8, 40)
         self.notebook_font_size_spinner.setWrapping(True)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("notebook_font_size"):
-            self.notebook_font_size_spinner.set_value(q_settings.value('notebook_font_size', type=int))
-        else:
-            self.notebook_font_size_spinner.set_value(12)
+        self.notebook_font_size_spinner.set_value(GuiSettings().notebook_font_size())
 
         fnt_grid.addWidget(self.notebook_font_size_label, 0, 0)
         fnt_grid.addWidget(self.notebook_font_size_spinner, 0, 1)
@@ -232,11 +219,7 @@ class GeneralAPPSetGroupUI(OptionsGroupUI):
         self.axis_font_size_spinner.set_range(0, 40)
         self.axis_font_size_spinner.setWrapping(True)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("axis_font_size"):
-            self.axis_font_size_spinner.set_value(q_settings.value('axis_font_size', type=int))
-        else:
-            self.axis_font_size_spinner.set_value(8)
+        self.axis_font_size_spinner.set_value(GuiSettings().axis_font_size())
 
         fnt_grid.addWidget(self.axis_font_size_label, 2, 0)
         fnt_grid.addWidget(self.axis_font_size_spinner, 2, 1)
@@ -252,11 +235,7 @@ class GeneralAPPSetGroupUI(OptionsGroupUI):
         self.textbox_font_size_spinner.set_range(8, 40)
         self.textbox_font_size_spinner.setWrapping(True)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("textbox_font_size"):
-            self.textbox_font_size_spinner.set_value(q_settings.value('textbox_font_size', type=int))
-        else:
-            self.textbox_font_size_spinner.set_value(10)
+        self.textbox_font_size_spinner.set_value(GuiSettings().textbox_font_size())
 
         fnt_grid.addWidget(self.textbox_font_size_label, 4, 0)
         fnt_grid.addWidget(self.textbox_font_size_spinner, 4, 1)
@@ -271,11 +250,7 @@ class GeneralAPPSetGroupUI(OptionsGroupUI):
         self.hud_font_size_spinner.set_range(8, 40)
         self.hud_font_size_spinner.setWrapping(True)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            self.hud_font_size_spinner.set_value(q_settings.value('hud_font_size', type=int))
-        else:
-            self.hud_font_size_spinner.set_value(8)
+        self.hud_font_size_spinner.set_value(GuiSettings().hud_font_size())
 
         fnt_grid.addWidget(self.hud_font_size_label, 6, 0)
         fnt_grid.addWidget(self.hud_font_size_spinner, 6, 1)
@@ -493,18 +468,10 @@ class GeneralAPPSetGroupUI(OptionsGroupUI):
         if val:
             self.app.cursor_color_3D = self.app.options.global_cursor_color
         else:
-            theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-            if theme_settings.contains("theme"):
-                theme = theme_settings.value('theme', type=str)
-            else:
-                theme = 'default'
+            theme = self.app.options.global_theme
+            dark_canvas = self.app.options.global_dark_canvas
 
-            if theme_settings.contains("dark_canvas"):
-                dark_canvas = theme_settings.value('dark_canvas', type=bool)
-            else:
-                dark_canvas = False
-
-            if (theme == 'default' or theme == 'light') and not dark_canvas:
+            if theme.is_light() and not dark_canvas:
                 self.app.cursor_color_3D = 'black'
             else:
                 self.app.cursor_color_3D = 'gray'

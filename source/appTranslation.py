@@ -13,12 +13,12 @@ from pathlib import Path
 
 from PyQt6 import QtWidgets, QtGui
 from PyQt6.QtCore import Qt
-from PyQt6.QtCore import QSettings
 
 from settings.utils import copy_shared
 
 import gettext
 import builtins
+from settings.gui_settings import GuiSettings
 
 log = logging.getLogger('base')
 
@@ -92,23 +92,14 @@ def on_language_apply_click(app, restart=False):
     """
     name = app.ui.general_pref_form.general_app_group.language_combo.currentText()
 
-    theme_settings = QSettings("Open Source", "FlatCAM_EVO")
-    if theme_settings.contains("theme"):
-        theme = theme_settings.value('theme', type=str)
-    else:
-        theme = 'light'
-
-    if theme == 'light':
+    if app.options.global_theme.is_light():
         resource_loc = 'assets/resources'
     else:
         resource_loc = 'assets/resources/dark_resources'
 
     # do nothing if trying to apply the language that is the current language (already applied).
-    settings = QSettings("Open Source", "FlatCAM_EVO")
-    if settings.contains("language"):
-        current_language = settings.value('language', type=str)
-        if current_language == name:
-            return
+    if GuiSettings().language() == name:
+        return
 
     if restart:
         msgbox = FCMessageBox(parent=app.ui)
@@ -130,30 +121,31 @@ def on_language_apply_click(app, restart=False):
         if response == bt_no:
             return
         else:
-            settings = QSettings("Open Source", "FlatCAM_EVO")
-            saved_language = name
-            settings.setValue('language', saved_language)
-            # This will write the setting to the platform specific storage.
-            del settings
+            GuiSettings().save_language(name)
 
             restart_program(app=app)
 
 
-def apply_language(domain, lang=None):
+def apply_language(domain: str, lang: str | None = None) -> str | None:
+    """
+    Installs a gettext translation for the application strings.
+
+    A missing ``lang`` reads the stored language and stores English when that key is absent.
+
+    :param domain: gettext domain, ``strings``
+    :param lang:   language name from Preferences, or None to use the stored language
+    :return:       the applied language name, ``no language`` when no catalog matches,
+                   or None when the catalog cannot be installed
+    """
     lang_code = ''
 
     if lang is None:
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("language"):
-            name = settings.value('language')
-        else:
+        settings = GuiSettings()
+        name = settings.language()
+        if name is None:
             name = 'English'
-            # in case the 'language' parameter is not in QSettings add it to QSettings and it's value is
-            # the default language, English
-            settings.setValue('language', 'English')
+            settings.save_language(name)
 
-            # This will write the setting to the platform specific storage.
-            del settings
     else:
         name = str(lang)    # we make it a string: "None"
 
@@ -188,13 +180,7 @@ def restart_program(app, ask=None):
     """
     log.debug("FlatCAMTranslation.restart_program()")
 
-    theme_settings = QSettings("Open Source", "FlatCAM_EVO")
-    if theme_settings.contains("theme"):
-        theme = theme_settings.value('theme', type=str)
-    else:
-        theme = 'light'
-
-    if theme == 'light':
+    if app.options.global_theme.is_light():
         resource_loc = 'assets/resources'
     else:
         resource_loc = 'assets/resources/dark_resources'

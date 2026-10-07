@@ -1,7 +1,6 @@
 
 import sys
 
-from PyQt6.QtCore import QSettings
 
 from appGUI.GUIElements import RadioSet, FCSpinner, FCCheckBox, FCComboBox, FCButton, OptionalInputSection, \
     FCDoubleSpinner, FCLabel, GLay, RadioSetDefaults, FCFrame, FCComboBox2
@@ -10,6 +9,7 @@ from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -226,11 +226,7 @@ class GeneralAppPrefGroupUI(OptionsGroupUI):
             _("Enable display of the splash screen at application startup.")
         )
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.value("splash_screen"):
-            self.splash_cb.set_value(True)
-        else:
-            self.splash_cb.set_value(False)
+        self.splash_cb.set_value(bool(GuiSettings().splash_screen()))
 
         grid4.addWidget(self.splash_cb, 0, 0, 1, 2)
 
@@ -439,8 +435,5 @@ class GeneralAppPrefGroupUI(OptionsGroupUI):
 
     @staticmethod
     def on_splash_changed(state):
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue('splash_screen', 1) if state else q_settings.setValue('splash_screen', 0)
+        GuiSettings().save_splash_screen(bool(state))
 
-        # This will write the setting to the platform specific storage.
-        del q_settings

@@ -36,6 +36,7 @@ from copy import deepcopy
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -391,11 +392,7 @@ class DrillAdd(FCShapeTool):
             self.points = self.draw_app.snap_x, self.draw_app.snap_y
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -864,11 +861,7 @@ class DrillArray(FCShapeTool):
             self.points = self.draw_app.snap_x, self.draw_app.snap_y
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -1212,11 +1205,7 @@ class SlotAdd(FCShapeTool):
             self.points = self.draw_app.snap_x, self.draw_app.snap_y
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -1803,11 +1792,7 @@ class SlotArray(FCShapeTool):
             self.points = self.draw_app.snap_x, self.draw_app.snap_y
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -2240,11 +2225,7 @@ class ResizeEditorExc(FCShapeTool):
             self.points = self.draw_app.snap_x, self.draw_app.snap_y
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -2834,11 +2815,7 @@ class CopyEditorExc(FCShapeTool):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         ref_val = (0, 0) if self.origin is None else self.origin
         x = pos[0]

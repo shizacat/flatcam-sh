@@ -1,12 +1,18 @@
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtCore import QSettings
+
+if TYPE_CHECKING:
+    from appMain import App
 
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpinner, FCColorEntry, FCLabel, \
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
 from settings.st_types import Appearance
 from settings.utils import copy_shared
-from appGUI.widget_style import apply_widget_style, resolve_widget_style
+from settings.gui_settings import GuiSettings
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 from appTranslation import restart_program
 
@@ -98,9 +104,8 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         grid0.addWidget(self.layout_combo, 6, 1)
 
         # Set the current index for layout_combo
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("layout"):
-            layout = q_settings.value('layout', type=str)
+        layout = GuiSettings().layout()
+        if layout is not None:
             idx = self.layout_combo.findText(layout.capitalize())
             self.layout_combo.setCurrentIndex(idx)
 
@@ -111,12 +116,8 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
               "It is applied immediately and restored on the next start.")
         )
         self.style_combo = FCComboBox()
-        style_keys = QtWidgets.QStyleFactory.keys()
-        self.style_combo.addItems(style_keys)
-        saved_style = q_settings.value("style", type=str) if q_settings.contains("style") else None
-        style_name = resolve_widget_style(saved_style, style_keys)
-        if style_name is None:
-            style_name = resolve_widget_style(QtWidgets.QApplication.style().objectName(), style_keys)
+        self.style_combo.addItems(QtWidgets.QStyleFactory.keys())
+        style_name = GuiSettings().style_name(app.qapp)
         if style_name is not None:
             index = self.style_combo.findText(style_name, QtCore.Qt.MatchFlag.MatchFixedString)
             if index >= 0:
@@ -420,12 +421,11 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
             lambda: self.handle_font_size(self.app, self.app_font_size_entry.get_value()))
 
         # Set UI
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("font_size"):
-            font_size = int(q_settings.value("font_size", type=str))  # noqa
+        font_size = GuiSettings().font_size()
+        if font_size is not None:
             self.app_font_size_entry.set_value(font_size)
 
-    def handle_font_size(self, app, val):
+    def handle_font_size(self, app: App, val: int) -> None:
         """
         Saves the font size and the choices on this page, then restarts.
 
@@ -435,9 +435,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         :param app: the application
         :param val: font size in points
         """
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        settings.setValue("font_size", str(val))
-        settings.sync()
+        GuiSettings().save_font_size(val)
 
         app.preferencesUiManager.defaults_read_form()
         copy_shared(app.options, app.settings)
@@ -449,17 +447,12 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
 
         :param _index: combo index emitted by ``activated``; the stored value is the style name
         """
-        name = self.style_combo.currentText()
-        if name not in QtWidgets.QStyleFactory.keys():
+        name = GuiSettings().save_style(self.app.qapp, self.style_combo.currentText())
+        if name is None:
             return
-
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue("style", name)
-        q_settings.sync()
 
         self.style_combo.blockSignals(True)
         try:
-            apply_widget_style(QtWidgets.QApplication.instance(), name)
             index = self.style_combo.findText(name, QtCore.Qt.MatchFlag.MatchFixedString)
             if index >= 0:
                 self.style_combo.setCurrentIndex(index)
