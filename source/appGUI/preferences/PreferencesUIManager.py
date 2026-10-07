@@ -1196,11 +1196,21 @@ class PreferencesUIManager(QtCore.QObject):
         should_restart = False
         appearance_new_val = self.ui.general_pref_form.general_gui_group.appearance_radio.get_value()
         dark_canvas_new_val = self.ui.general_pref_form.general_gui_group.dark_canvas_cb.get_value()
+        font_entry = self.ui.general_pref_form.general_gui_group.app_font_size_entry
+        font_size_new = font_entry.get_value()
+        font_size_old = appearance_settings.font_size()
+        # An absent key leaves the spinner at its minimum, so that value is not a change.
+        font_baseline = font_size_old if font_size_old is not None else font_entry.minimum()
 
         ge = self.settings.global_graphic_engine
         ge_val = self.ui.general_pref_form.general_app_group.ge_radio.get_value()
 
-        if appearance_new_val != appearance or ge != ge_val or dark_canvas_new_val != dark_canvas:
+        if (
+            appearance_new_val != appearance
+            or ge != ge_val
+            or dark_canvas_new_val != dark_canvas
+            or font_size_new != font_baseline
+        ):
             msgbox = FCMessageBox(parent=self.ui)
             title = _("Application will restart")
             txt = _("Are you sure you want to continue?")
@@ -1238,6 +1248,13 @@ class PreferencesUIManager(QtCore.QObject):
                     should_restart = True
                 else:
                     self.ui.general_pref_form.general_app_group.ge_radio.set_value(ge)
+
+            if font_size_new != font_baseline:
+                if response == bt_yes:
+                    appearance_settings.save_font_size(font_size_new)
+                    should_restart = True
+                else:
+                    font_entry.set_value(font_baseline)
 
         # #############################################################################################################
         # ############################  Here is done the actual preferences updates  ##################################

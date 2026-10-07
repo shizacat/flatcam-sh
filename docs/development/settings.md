@@ -106,7 +106,7 @@ Keys stored there:
 - `font_size`, `notebook_font_size`, `axis_font_size`, `textbox_font_size`, `hud_font_size`
 - splash screen
 
-`font_size` is applied once through `GuiSettings.apply_font_size()` in `App.__init__`, together with the widget style and before the splash screen, and written only by the **Apply and Restart** button through `GuiSettings.save_font_size()`. The other font sizes are written on Preferences Apply and read by the widgets and canvases that draw them.
+`font_size` is applied once through `GuiSettings.apply_font_size()` in `App.__init__`, together with the widget style and before the splash screen. Preferences **Save** and **Apply** write it through `GuiSettings.save_font_size()` and restart when the value changed. The **Apply and Restart** button on the GUI page does the same write, then restarts immediately. The other font sizes are written on Preferences Apply and read by the widgets and canvases that draw them.
 
 The session color is `options.global_theme`, a `Theme` value (`light` or `dark`). Interface code reads that object. `GuiSettings` stores the same name so the plot canvas can read it before it holds the application object. A missing key and the retired name `default` are the light theme.
 

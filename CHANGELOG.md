@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Preferences Save so a changed application font size is stored and asks to restart, the same way a color change does
 - Fixed Apply and Restart so the color choice on the GUI page is saved before the application restarts
 - Fixed the GUI style preference so the chosen Qt style is saved by name, applied immediately, and restored on the next start
 - Fixed the macOS menu bar showing `python` instead of `FlatCAM` when running from sources
