@@ -1,6 +1,5 @@
 
 from PyQt6 import QtGui, QtCore, QtWidgets
-from PyQt6.QtCore import QSettings
 
 from collections.abc import Mapping
 from pathlib import Path
@@ -14,6 +13,7 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 from settings.utils import copy_shared
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -830,11 +830,7 @@ class PreferencesUIManager(QtCore.QObject):
 
     def _select_language_from_qt(self) -> None:
         """Selects the Preferences language stored in the Qt ``language`` key."""
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("language"):
-            name = settings.value("language", type=str)
-        else:
-            name = "English"
+        name = GuiSettings().language() or "English"
         self.ui.general_pref_form.general_app_group.language_combo.set_value(name)
 
     def defaults_write_form_field(self, field, factor=None, units=None, defaults_dict=None):
@@ -1193,16 +1189,9 @@ class PreferencesUIManager(QtCore.QObject):
         self.current_defaults = self.settings.model_copy(deep=True)
 
         # deal with appearance change
-        appearance_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if appearance_settings.contains("appearance"):
-            appearance = appearance_settings.value('appearance', type=str)
-        else:
-            appearance = None
-
-        if appearance_settings.contains("dark_canvas"):
-            dark_canvas = appearance_settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = None
+        appearance_settings = GuiSettings()
+        appearance = appearance_settings.appearance()
+        dark_canvas = appearance_settings.dark_canvas()
 
         should_restart = False
         appearance_new_val = self.ui.general_pref_form.general_gui_group.appearance_radio.get_value()
@@ -1230,20 +1219,18 @@ class PreferencesUIManager(QtCore.QObject):
 
             if appearance_new_val != appearance:
                 if response == bt_yes:
-                    appearance_settings.setValue('appearance', str(appearance_new_val))
+                    appearance_settings.save_appearance(str(appearance_new_val))
                     should_restart = True
                 else:
                     self.ui.general_pref_form.general_gui_group.appearance_radio.set_value(appearance)
 
             if dark_canvas_new_val != dark_canvas:
                 if response == bt_yes:
-                    appearance_settings.setValue('dark_canvas', dark_canvas_new_val)
+                    appearance_settings.save_dark_canvas(dark_canvas_new_val)
                     should_restart = True
                 else:
                     self.ui.general_pref_form.general_gui_group.dark_canvas_cb.set_value(dark_canvas)
 
-            # This will write the setting to the platform specific storage.
-            del appearance_settings
 
             if ge != ge_val:
                 if response == bt_yes:
@@ -1265,26 +1252,20 @@ class PreferencesUIManager(QtCore.QObject):
             self.save_defaults(silent=False)
             self.current_defaults = self.settings.model_copy(deep=True)
 
-        settgs = QSettings("Open Source", "FlatCAM_EVO")
+        settgs = GuiSettings()
+        settgs.save_notebook_font_size(
+            self.ui.general_pref_form.general_app_set_group.notebook_font_size_spinner.get_value()
+        )
+        settgs.save_axis_font_size(
+            self.ui.general_pref_form.general_app_set_group.axis_font_size_spinner.get_value()
+        )
+        settgs.save_textbox_font_size(
+            self.ui.general_pref_form.general_app_set_group.textbox_font_size_spinner.get_value()
+        )
+        settgs.save_hud_font_size(
+            self.ui.general_pref_form.general_app_set_group.hud_font_size_spinner.get_value()
+        )
 
-        # save the notebook font size
-        fsize = self.ui.general_pref_form.general_app_set_group.notebook_font_size_spinner.get_value()
-        settgs.setValue('notebook_font_size', fsize)
-
-        # save the axis font size
-        g_fsize = self.ui.general_pref_form.general_app_set_group.axis_font_size_spinner.get_value()
-        settgs.setValue('axis_font_size', g_fsize)
-
-        # save the textbox font size
-        tb_fsize = self.ui.general_pref_form.general_app_set_group.textbox_font_size_spinner.get_value()
-        settgs.setValue('textbox_font_size', tb_fsize)
-
-        # save the HUD font size
-        hud_fsize = self.ui.general_pref_form.general_app_set_group.hud_font_size_spinner.get_value()
-        settgs.setValue('hud_font_size', hud_fsize)
-
-        # This will write the setting to the platform specific storage.
-        del settgs
 
         if save_to_file:
             # close the tab and delete it

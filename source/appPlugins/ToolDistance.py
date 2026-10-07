@@ -783,24 +783,16 @@ class Distance(AppTool):
         else:
             meas_line = LineString([start_pos, end_pos])
 
-        settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
-
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
+        theme = self.app.options.global_theme
+        dark_canvas = self.app.options.global_dark_canvas
 
         if self.app.use_3d_engine:
-            if (theme == 'default' or theme == 'light') and not dark_canvas:
+            if theme.is_light() and not dark_canvas:
                 color = '#000000FF'
             else:
                 color = '#FFFFFFFF'
         else:
-            if (theme == 'default' or theme == 'light') and not dark_canvas:
+            if theme.is_light() and not dark_canvas:
                 color = '#000000'
             else:
                 color = '#FFFFFF'

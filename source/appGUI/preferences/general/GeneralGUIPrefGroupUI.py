@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtCore import QSettings
 
 if TYPE_CHECKING:
     from appMain import App
@@ -105,9 +104,8 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         grid0.addWidget(self.layout_combo, 6, 1)
 
         # Set the current index for layout_combo
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("layout"):
-            layout = q_settings.value('layout', type=str)
+        layout = GuiSettings().layout()
+        if layout is not None:
             idx = self.layout_combo.findText(layout.capitalize())
             self.layout_combo.setCurrentIndex(idx)
 

@@ -7,7 +7,6 @@
 # ##########################################################
 
 from PyQt6.QtGui import QPalette
-from PyQt6.QtCore import QSettings
 
 import numpy as np
 
@@ -17,6 +16,7 @@ from vispy.scene.cameras.base_camera import BaseCamera
 from vispy.color import Color
 
 import time
+from settings.gui_settings import GuiSettings
 
 white = Color("#ffffff")
 black = Color("#000000")
@@ -30,24 +30,12 @@ class VisPyCanvas(scene.SceneCanvas):
 
         self.unfreeze()
 
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("axis_font_size"):
-            a_fsize = settings.value('axis_font_size', type=int)
-        else:
-            a_fsize = 6
-
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
-
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
+        a_fsize = GuiSettings().axis_font_size(default=6)
+        theme = GuiSettings().theme()
+        dark_canvas = GuiSettings().dark_canvas()
 
         window_color = QPalette().color(QPalette.ColorRole.Window)
-        if (theme == 'default' or theme == 'light') and not dark_canvas:
+        if theme.is_light() and not dark_canvas:
             theme_color = Color('#FFFFFF')
             back_color = window_color.name()
             # Axis labels sit on the OS window color. A dark system palette keeps
@@ -57,12 +45,12 @@ class VisPyCanvas(scene.SceneCanvas):
             else:
                 tick_color = Color('#000000')
         else:
-            if theme not in ['default', 'light']:
-                theme_color = Color('#202124')
-                back_color = Color('#202124')
-            else:
+            if theme.is_light():
                 theme_color = Color('#000000')
                 back_color = Color('#000000')
+            else:
+                theme_color = Color('#202124')
+                back_color = Color('#202124')
             tick_color = Color('gray')
 
         self.central_widget.bgcolor = back_color
@@ -106,19 +94,11 @@ class VisPyCanvas(scene.SceneCanvas):
         # grid1 = scene.GridLines(parent=view.scene, color='dimgray')
         # grid1.set_gl_state(depth_test=False)
 
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
-
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
+        theme = GuiSettings().theme()
+        dark_canvas = GuiSettings().dark_canvas()
 
         self.view = view
-        if (theme == 'default' or theme == 'light') and not dark_canvas:
+        if theme.is_light() and not dark_canvas:
             self.grid = scene.GridLines(parent=self.view.scene, color='dimgray')
         else:
             self.grid = scene.GridLines(parent=self.view.scene, color='#dededeff')

@@ -25,6 +25,7 @@ import builtins
 
 import numpy as np
 from vispy.geometry import Rect
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -62,23 +63,11 @@ class PlotCanvas3d(QtCore.QObject, scene.SceneCanvas):
         # Parent container
         self.container = container
 
-        settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
+        theme = self.fcapp.options.global_theme
+        dark_canvas = self.fcapp.options.global_dark_canvas
+        a_fsize = GuiSettings().axis_font_size()
 
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
-
-        if settings.contains("axis_font_size"):
-            a_fsize = settings.value('axis_font_size', type=int)
-        else:
-            a_fsize = 8
-
-        if (theme == 'default' or theme == 'light') and not dark_canvas:
+        if theme.is_light() and not dark_canvas:
             theme_color = Color('#FFFFFF')
             tick_color = Color('#000000')
             back_color = str(QPalette().color(QPalette.ColorRole.Window).name())
@@ -161,12 +150,7 @@ class PlotCanvas3d(QtCore.QObject, scene.SceneCanvas):
         else:
             c_color = self.line_color
 
-        # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         # units
         # units = self.fcapp.app_units.upper()

@@ -5,9 +5,12 @@ from __future__ import annotations
 import threading
 from typing import Any, ClassVar, Self
 
+from PyQt6 import sip
 from PyQt6.QtCore import QSettings
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QStyleFactory
+
+from settings.st_types import Theme
 
 
 class GuiSettings:
@@ -16,6 +19,8 @@ class GuiSettings:
 
     Qt keeps this store outside the FlatConfig file. One instance serves the whole
     process, so a later read sees an earlier write without constructing ``QSettings`` again.
+    The Qt store is opened on the first read or write. A store opened before
+    ``QApplication`` exists is replaced, because Qt deletes it when the application starts.
 
     Writes are synced immediately. The instance lives for the process and would otherwise
     keep the new value in memory until it is destroyed.
@@ -37,9 +42,20 @@ class GuiSettings:
             with cls._lock:
                 if cls._instance is None:
                     instance = super().__new__(cls)
-                    instance._store = QSettings(cls.organization, cls.application)
+                    instance._store = None
                     cls._instance = instance
         return cls._instance
+
+    def _qsettings(self) -> QSettings:
+        """
+        Returns the Qt store, opening it on the first use.
+
+        :return: the ``QSettings`` object for this application
+        """
+        store = self._store
+        if store is None or sip.isdeleted(store):
+            self._store = QSettings(type(self).organization, type(self).application)
+        return self._store
 
     def contains(self, key: str) -> bool:
         """
@@ -48,7 +64,7 @@ class GuiSettings:
         :param key: setting name
         :return:    True when the key has a stored value
         """
-        return self._store.contains(key)
+        return self._qsettings().contains(key)
 
     def value(self, key: str, default: Any = None, *, value_type: type | None = None) -> Any:
         """
@@ -64,11 +80,11 @@ class GuiSettings:
         """
         if value_type is None:
             if default is None:
-                return self._store.value(key)
-            return self._store.value(key, default)
+                return self._qsettings().value(key)
+            return self._qsettings().value(key, default)
         if default is None:
-            return self._store.value(key, type=value_type)
-        return self._store.value(key, default, type=value_type)
+            return self._qsettings().value(key, type=value_type)
+        return self._qsettings().value(key, default, type=value_type)
 
     def set_value(self, key: str, value: Any) -> None:
         """
@@ -77,7 +93,7 @@ class GuiSettings:
         :param key:   setting name
         :param value: value to store
         """
-        self._store.setValue(key, value)
+        self._qsettings().setValue(key, value)
         self.sync()
 
     def remove(self, key: str) -> None:
@@ -86,7 +102,7 @@ class GuiSettings:
 
         :param key: setting name
         """
-        self._store.remove(key)
+        self._qsettings().remove(key)
         self.sync()
 
     def keys(self) -> list[str]:
@@ -95,20 +111,20 @@ class GuiSettings:
 
         :return: key names
         """
-        return list(self._store.allKeys())
+        return list(self._qsettings().allKeys())
 
     def clear(self) -> None:
         """
         Deletes every key and writes the store.
         """
-        self._store.clear()
+        self._qsettings().clear()
         self.sync()
 
     def sync(self) -> None:
         """
         Writes pending values to the platform store.
         """
-        self._store.sync()
+        self._qsettings().sync()
 
     @staticmethod
     def resolve_style(saved: str | None, available: list[str]) -> str | None:
@@ -221,6 +237,317 @@ class GuiSettings:
         """
         self.set_value("font_size", str(size))
 
+    def hud_font_size(self, default: int = 8) -> int:
+        """
+        Returns the stored HUD font size.
+
+        :param default: size in points used when the key is absent
+        :return:        size in points
+        """
+        return self._stored_int("hud_font_size", default)
+
+    def save_hud_font_size(self, size: int) -> None:
+        """
+        Stores the HUD font size.
+
+        :param size: size in points
+        """
+        self.set_value("hud_font_size", size)
+
+    def notebook_font_size(self, default: int = 12) -> int:
+        """
+        Returns the stored notebook font size.
+
+        :param default: size in pixels used when the key is absent
+        :return:        size in pixels
+        """
+        return self._stored_int("notebook_font_size", default)
+
+    def save_notebook_font_size(self, size: int) -> None:
+        """
+        Stores the notebook font size.
+
+        :param size: size in pixels
+        """
+        self.set_value("notebook_font_size", size)
+
+    def axis_font_size(self, default: int = 8) -> int:
+        """
+        Returns the stored canvas axis font size.
+
+        :param default: size in points used when the key is absent
+        :return:        size in points
+        """
+        return self._stored_int("axis_font_size", default)
+
+    def save_axis_font_size(self, size: int) -> None:
+        """
+        Stores the canvas axis font size.
+
+        :param size: size in points
+        """
+        self.set_value("axis_font_size", size)
+
+    def textbox_font_size(self, default: int = 10) -> int:
+        """
+        Returns the stored text box font size.
+
+        :param default: size in points used when the key is absent
+        :return:        size in points
+        """
+        return self._stored_int("textbox_font_size", default)
+
+    def save_textbox_font_size(self, size: int) -> None:
+        """
+        Stores the text box font size.
+
+        :param size: size in points
+        """
+        self.set_value("textbox_font_size", size)
+
+    def theme(self) -> Theme:
+        """
+        Returns the stored plot theme.
+
+        A missing key and the retired name ``default`` are the light theme.
+
+        :return: the light or dark theme
+        """
+        if self._stored_text("theme") == Theme.DARK:
+            return Theme.DARK
+        return Theme.LIGHT
+
+    def save_theme(self, theme: Theme) -> None:
+        """
+        Stores the plot theme.
+
+        :param theme: light or dark theme
+        """
+        self.set_value("theme", str(theme))
+
+    def dark_canvas(self) -> bool | None:
+        """
+        Returns whether the plot canvas is forced dark.
+
+        :return: the stored flag, or None when the key is absent
+        """
+        return self._stored_bool("dark_canvas")
+
+    def save_dark_canvas(self, enabled: bool) -> None:
+        """
+        Stores whether the plot canvas is forced dark.
+
+        :param enabled: True to draw the canvas dark
+        """
+        self.set_value("dark_canvas", enabled)
+
+    def appearance(self) -> str | None:
+        """
+        Returns the stored color appearance.
+
+        :return: ``system``, ``light``, ``dark``, or None when the key is absent
+        """
+        return self._stored_text("appearance")
+
+    def save_appearance(self, appearance: object) -> None:
+        """
+        Stores the color appearance chosen for this session.
+
+        :param appearance: appearance name or enum stored as Qt left it
+        """
+        self.set_value("appearance", appearance)
+
+    def language(self) -> str | None:
+        """
+        Returns the stored interface language.
+
+        :return: language name, or None when the key is absent
+        """
+        return self._stored_text("language")
+
+    def save_language(self, name: str) -> None:
+        """
+        Stores the interface language.
+
+        :param name: language name shown in Preferences
+        """
+        self.set_value("language", name)
+
+    def layout(self) -> str | None:
+        """
+        Returns the stored window layout.
+
+        :return: ``standard``, ``compact``, ``minimal``, or None when the key is absent
+        """
+        return self._stored_text("layout")
+
+    def save_layout(self, name: str) -> None:
+        """
+        Stores the window layout.
+
+        :param name: layout name
+        """
+        self.set_value("layout", name)
+
+    def splash_screen(self) -> bool | None:
+        """
+        Returns whether the splash screen is shown at startup.
+
+        :return: the stored flag, or None when the key is absent
+        """
+        if not self.contains("splash_screen"):
+            return None
+        return bool(self.value("splash_screen"))
+
+    def save_splash_screen(self, enabled: bool) -> None:
+        """
+        Stores whether the splash screen is shown at startup.
+
+        The value is ``1`` or ``0``, matching the existing preference checkbox.
+
+        :param enabled: True to show the splash screen
+        """
+        self.set_value("splash_screen", 1 if enabled else 0)
+
+    def maximized_gui(self) -> bool | None:
+        """
+        Returns whether the main window was maximized.
+
+        :return: the stored flag, or None when the key is absent
+        """
+        return self._stored_bool("maximized_gui")
+
+    def save_maximized_gui(self, maximized: bool) -> None:
+        """
+        Stores whether the main window is maximized.
+
+        :param maximized: True when the window is maximized
+        """
+        self.set_value("maximized_gui", maximized)
+
+    def saved_gui_state(self) -> Any | None:
+        """
+        Returns the stored main-window state.
+
+        :return: the ``QByteArray`` from ``saveState``, or None when the key is absent
+        """
+        if not self.contains("saved_gui_state"):
+            return None
+        return self.value("saved_gui_state")
+
+    def save_gui_state(self, state: Any) -> None:
+        """
+        Stores the main-window state.
+
+        :param state: value returned by ``QMainWindow.saveState``
+        """
+        self.set_value("saved_gui_state", state)
+
+    def toolbar_lock(self) -> Any:
+        """
+        Returns the stored toolbar lock.
+
+        A missing key is the string ``true``. A stored bool is returned as Qt stored it.
+
+        :return: the stored lock
+        """
+        return self.value("toolbar_lock", "true")
+
+    def save_toolbar_lock(self, locked: Any) -> None:
+        """
+        Stores the toolbar lock.
+
+        :param locked: checked state of the lock action
+        """
+        self.set_value("toolbar_lock", locked)
+
+    def menu_show_text(self) -> Any:
+        """
+        Returns whether toolbar buttons show text.
+
+        A missing key is the string ``true``.
+
+        :return: the stored flag
+        """
+        return self.value("menu_show_text", "true")
+
+    def save_menu_show_text(self, show_text: Any) -> None:
+        """
+        Stores whether toolbar buttons show text.
+
+        :param show_text: checked state of the show-text action
+        """
+        self.set_value("menu_show_text", show_text)
+
+    def window_geometry(self) -> Any:
+        """
+        Returns the stored window geometry.
+
+        A missing key is ``(100, 100, 800, 400)``.
+
+        :return: ``(x, y, width, height)``
+        """
+        return self.value("window_geometry", (100, 100, 800, 400))
+
+    def save_window_geometry(self, geometry: tuple[int, int, int, int]) -> None:
+        """
+        Stores the window geometry.
+
+        :param geometry: ``(x, y, width, height)``
+        """
+        self.set_value("window_geometry", geometry)
+
+    def splitter_left(self) -> int:
+        """
+        Returns the stored width of the left splitter pane.
+
+        :return: width in pixels; ``1`` when the key is absent
+        """
+        return int(self.value("splitter_left", 1))
+
+    def save_splitter_left(self, width: int) -> None:
+        """
+        Stores the width of the left splitter pane.
+
+        :param width: width in pixels
+        """
+        self.set_value("splitter_left", width)
+
+    def _stored_int(self, key: str, default: int) -> int:
+        """
+        Returns a stored integer.
+
+        :param key:     settings key
+        :param default: value used when the key is absent
+        :return:        the stored integer, or ``default``
+        """
+        if not self.contains(key):
+            return default
+        return int(self.value(key, value_type=int))
+
+    def _stored_text(self, key: str, default: str | None = None) -> str | None:
+        """
+        Returns a stored string.
+
+        :param key:     settings key
+        :param default: value used when the key is absent
+        :return:        the stored string, or ``default``
+        """
+        if not self.contains(key):
+            return default
+        return self.value(key, value_type=str)
+
+    def _stored_bool(self, key: str) -> bool | None:
+        """
+        Returns a stored flag.
+
+        :param key: settings key
+        :return:    the stored flag, or None when the key is absent
+        """
+        if not self.contains(key):
+            return None
+        return bool(self.value(key, value_type=bool))
+
     def apply_font_size(self, app: QApplication) -> None:
         """
         Applies the stored application font size.
@@ -248,8 +575,9 @@ class GuiSettings:
         :return:      the new instance, or None when no store is given
         """
         with cls._lock:
-            if cls._instance is not None:
-                cls._instance.sync()
+            current = cls._instance
+            if current is not None and current._store is not None and not sip.isdeleted(current._store):
+                current.sync()
             if store is None:
                 cls._instance = None
                 return None

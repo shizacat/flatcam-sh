@@ -90,7 +90,7 @@ Some color controls write `app.options` as the color changes, before Apply. That
 
 ## `QSettings`
 
-`GuiSettings` (`source/settings/gui_settings.py`) is the shared handle for `QSettings("Open Source", "FlatCAM_EVO")`. It is a process-wide singleton: `GuiSettings()` returns the same object everywhere. It has no shared object with the two dictionaries. Existing call sites still construct `QSettings` directly until they are moved onto this class.
+`GuiSettings` (`source/settings/gui_settings.py`) is the shared handle for `QSettings("Open Source", "FlatCAM_EVO")`. It is a process-wide singleton: `GuiSettings()` returns the same object everywhere. It has no shared object with the two dictionaries. Call sites read and write this store through `GuiSettings`.
 
 Qt stores this outside the FlatConfig file:
 
@@ -107,6 +107,8 @@ Keys stored there:
 - splash screen
 
 `font_size` is applied once through `GuiSettings.apply_font_size()` in `App.__init__`, together with the widget style and before the splash screen, and written only by the **Apply and Restart** button through `GuiSettings.save_font_size()`. The other font sizes are written on Preferences Apply and read by the widgets and canvases that draw them.
+
+The session color is `options.global_theme`, a `Theme` value (`light` or `dark`). Interface code reads that object. `GuiSettings` stores the same name so the plot canvas can read it before it holds the application object. A missing key and the retired name `default` are the light theme.
 
 On the first run, `app.options["first_run"]` clears every key in this `QSettings` store.
 

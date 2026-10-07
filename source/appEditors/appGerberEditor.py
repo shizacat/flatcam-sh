@@ -41,6 +41,7 @@ from shapely.affinity import translate, scale, skew, rotate
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 if TYPE_CHECKING:
     from appMain import App
@@ -311,8 +312,7 @@ class PadEditorGrb(ShapeToolEditorGrb):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        fsize = q_settings.value('hud_font_size', type=int, defaultValue=8)
+        fsize = GuiSettings().hud_font_size()
 
         old_x = self.ui.x_entry.get_value()
         old_y = self.ui.y_entry.get_value()
@@ -910,11 +910,7 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
             self.points = self.draw_app.snap_x, self.draw_app.snap_y
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         x = pos[0]
         y = pos[1]
@@ -1442,11 +1438,7 @@ class RegionEditorGrb(ShapeToolEditorGrb):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         old_x = self.ui.x_entry.get_value()
         old_y = self.ui.y_entry.get_value()
@@ -1856,11 +1848,7 @@ class TrackEditorGrb(ShapeToolEditorGrb):
             return
 
         # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         if not self.points:
             old_x = self.draw_app.snap_x

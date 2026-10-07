@@ -12,7 +12,7 @@
 # ##########################################################
 
 from PyQt6 import QtGui, QtCore, QtWidgets
-from PyQt6.QtCore import Qt, QSettings
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 # from PyQt6.QtCore import QModelIndex
 
@@ -37,6 +37,7 @@ except ImportError:
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -537,11 +538,7 @@ class ObjectCollection(QtCore.QAbstractItemModel):
         # self.view.setAcceptDrops(True)
         # self.view.setDropIndicatorShown(True)
 
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("notebook_font_size"):
-            fsize = settings.value('notebook_font_size', type=int)
-        else:
-            fsize = 12
+        fsize = GuiSettings().notebook_font_size()
 
         font = QtGui.QFont()
         font.setPixelSize(fsize)
@@ -690,15 +687,12 @@ class ObjectCollection(QtCore.QAbstractItemModel):
                 return index.internalPointer().data(index.column())
 
         if role == Qt.ItemDataRole.ForegroundRole:
-            theme_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-            theme = theme_settings.value('theme', type=str)
-
-            if theme == 'dark':
-                color = QColor(self.app.options.global_proj_item_color_dark[:-2])
-                color_disabled = QColor(self.app.options.global_proj_item_dis_color_dark[:-2])
-            else:
+            if self.app.options.global_theme.is_light():
                 color = QColor(self.app.options.global_proj_item_color_light[:-2])
                 color_disabled = QColor(self.app.options.global_proj_item_dis_color_light[:-2])
+            else:
+                color = QColor(self.app.options.global_proj_item_color_dark[:-2])
+                color_disabled = QColor(self.app.options.global_proj_item_dis_color_dark[:-2])
 
             obj = index.internalPointer().obj
             if obj:

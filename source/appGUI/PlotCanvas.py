@@ -18,6 +18,7 @@ import builtins
 
 import numpy as np
 from vispy.geometry import Rect
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -50,18 +51,10 @@ class PlotCanvas(QtCore.QObject, VisPyCanvas):
 
         self.fcapp = fcapp
 
-        settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
+        theme = self.fcapp.options.global_theme
+        dark_canvas = self.fcapp.options.global_dark_canvas
 
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
-
-        if (theme == 'default' or theme == 'light') and not dark_canvas:
+        if theme.is_light() and not dark_canvas:
             self.line_color = (0.3, 0.0, 0.0, 1.0)
             # self.rect_hud_color = Color('#0000FF10')
             self.rect_hud_color = Color('#80808040')
@@ -343,12 +336,7 @@ class PlotCanvas(QtCore.QObject, VisPyCanvas):
         l4_hud_text = 'Y:   %s [%s]' % (y_dec, units)
         hud_text = '%s\n%s\n\n%s\n%s' % (l1_hud_text, l2_hud_text, l3_hud_text, l4_hud_text)
 
-        # font size
-        q_settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("hud_font_size"):
-            fsize = q_settings.value('hud_font_size', type=int)
-        else:
-            fsize = 8
+        fsize = GuiSettings().hud_font_size()
 
         if self._hud_font_family:
             c_font = QtGui.QFont(self._hud_font_family, fsize)
@@ -391,18 +379,10 @@ class PlotCanvas(QtCore.QObject, VisPyCanvas):
     def on_toggle_grid_lines(self, signal=None, silent=None):
         state = self.grid_lines_enabled
 
-        settings = QtCore.QSettings("Open Source", "FlatCAM_EVO")
-        if settings.contains("theme"):
-            theme = settings.value('theme', type=str)
-        else:
-            theme = 'default'
+        theme = self.fcapp.options.global_theme
+        dark_canvas = self.fcapp.options.global_dark_canvas
 
-        if settings.contains("dark_canvas"):
-            dark_canvas = settings.value('dark_canvas', type=bool)
-        else:
-            dark_canvas = False
-
-        if (theme == 'default' or theme == 'light') and not dark_canvas:
+        if theme.is_light() and not dark_canvas:
             color = 'dimgray'
         else:
             color = '#202124ff'

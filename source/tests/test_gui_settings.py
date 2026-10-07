@@ -9,6 +9,7 @@ from PyQt6.QtCore import QSettings
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from settings.gui_settings import GuiSettings
+from settings.st_types import Theme
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -196,6 +197,51 @@ def test_apply_style_ignores_an_unknown_name(gui_settings: GuiSettings) -> None:
     gui_settings.apply_style(app)
 
     assert app.style().objectName() == current
+
+
+def test_hud_font_size_returns_the_stored_size_or_the_default(gui_settings: GuiSettings) -> None:
+    """Verify the HUD font size reads the stored int and falls back when the key is absent."""
+    assert gui_settings.hud_font_size() == 8
+
+    gui_settings.save_hud_font_size(14)
+
+    assert gui_settings.hud_font_size() == 14
+
+
+def test_theme_returns_the_theme_object(gui_settings: GuiSettings) -> None:
+    """Verify a missing key and the retired name are light, and a stored dark theme stays dark."""
+    assert gui_settings.theme() is Theme.LIGHT
+
+    gui_settings.save_theme(Theme.DARK)
+    assert gui_settings.theme() is Theme.DARK
+
+    gui_settings.set_value("theme", "default")
+    assert gui_settings.theme() is Theme.LIGHT
+
+
+def test_named_settings_hide_the_missing_key(gui_settings: GuiSettings) -> None:
+    """Verify the other GUI keys return their defaults until a value is stored."""
+    assert gui_settings.notebook_font_size() == 12
+    assert gui_settings.axis_font_size() == 8
+    assert gui_settings.axis_font_size(default=6) == 6
+    assert gui_settings.textbox_font_size() == 10
+    assert gui_settings.language() is None
+    assert gui_settings.layout() is None
+    assert gui_settings.splash_screen() is None
+    assert gui_settings.dark_canvas() is None
+    assert gui_settings.toolbar_lock() == "true"
+    assert gui_settings.window_geometry() == (100, 100, 800, 400)
+    assert gui_settings.splitter_left() == 1
+
+    gui_settings.save_language("Russian")
+    gui_settings.save_layout("compact")
+    gui_settings.save_splash_screen(False)
+    gui_settings.save_notebook_font_size(16)
+
+    assert gui_settings.language() == "Russian"
+    assert gui_settings.layout() == "compact"
+    assert gui_settings.splash_screen() is False
+    assert gui_settings.notebook_font_size() == 16
 
 
 def test_save_font_size_stores_the_size_as_text(gui_settings: GuiSettings) -> None:

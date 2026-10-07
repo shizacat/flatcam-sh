@@ -7,7 +7,6 @@
 # ##########################################################
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QSettings
 from PyQt6.QtGui import QTextCursor, QPixmap
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QHBoxLayout
 
@@ -23,6 +22,7 @@ import tclCommands
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from settings.gui_settings import GuiSettings
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -44,11 +44,7 @@ class TermWidget(QWidget):
 
         self._browser = _BrowserTextEdit(version=version, app=app)
 
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("textbox_font_size"):
-            tb_fsize = q_settings.value('textbox_font_size', type=int)
-        else:
-            tb_fsize = 9
+        tb_fsize = GuiSettings().textbox_font_size(default=9)
         self._browser.setStyleSheet("font: {0}pt \"Courier\";".format(tb_fsize))
 
         self._browser.setReadOnly(True)
