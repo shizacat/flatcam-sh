@@ -76,7 +76,7 @@ from appGUI.GUIElements import (
     DialogBoxChoice,
     VerticalScrollArea,
 )
-from appGUI.widget_style import apply_color_scheme, apply_widget_style, resolve_widget_style
+from appGUI.widget_style import apply_color_scheme
 
 # Various
 from appCommon.Common import color_variant
@@ -93,6 +93,7 @@ from appDatabase import ToolsDB2
 # App defaults (preferences)
 from exceptions import SettingsError
 from settings import Options, Settings
+from settings.gui_settings import GuiSettings
 from settings.utils import copy_shared, propagate_settings
 
 # App Objects
@@ -549,17 +550,8 @@ class App(QtCore.QObject):
         apply_color_scheme(self.qapp, str(self.options.global_appearance))
 
         # Style and font are taken before the splash screen, the first widget.
-        gui_settings = QSettings("Open Source", "FlatCAM_EVO")
-        saved_style = gui_settings.value("style", type=str) if gui_settings.contains("style") else None
-        style_name = resolve_widget_style(saved_style, QtWidgets.QStyleFactory.keys())
-        if style_name is not None:
-            apply_widget_style(self.qapp, style_name)
-
-        if gui_settings.contains("font_size"):
-            font_size = int(gui_settings.value("font_size", type=str))      # noqa
-            font = QtGui.QFont()
-            font.setPointSize(font_size)
-            self.qapp.setFont(font)
+        GuiSettings().apply_style(self.qapp)
+        GuiSettings().apply_font_size(self.qapp)
 
         self.app_units = self.options.units
         self.default_units = self.settings.units

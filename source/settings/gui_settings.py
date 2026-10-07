@@ -6,6 +6,8 @@ import threading
 from typing import Any, ClassVar, Self
 
 from PyQt6.QtCore import QSettings
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QApplication, QStyleFactory
 
 
 class GuiSettings:
@@ -107,6 +109,96 @@ class GuiSettings:
         Writes pending values to the platform store.
         """
         self._store.sync()
+
+    @staticmethod
+    def resolve_style(saved: str | None, available: list[str]) -> str | None:
+        """
+        Resolves a style name to one of the styles available in this process.
+
+        :param saved:     style name; None when the setting is absent
+        :param available: style names reported by the toolkit
+        :return:          a name from ``available``, or None when nothing matches
+        """
+        if not saved or not available:
+            return None
+        for name in available:
+            if name.lower() == saved.lower():
+                return name
+        return None
+
+    @staticmethod
+    def set_widget_style(app: QApplication, name: str) -> None:
+        """
+        Sets the application widget style and keeps an existing stylesheet on top of it.
+
+        A stylesheet replaces the style object, so changing the style while it is set
+        leaves the previous style in place. The sheet is cleared, the style is set,
+        and the same sheet is put back.
+
+        :param app:  the ``QApplication``
+        :param name: a style name from ``QStyleFactory.keys()``
+        """
+        sheet = app.styleSheet()
+        if sheet:
+            app.setStyleSheet("")
+        try:
+            app.setStyle(name)
+        finally:
+            if sheet:
+                app.setStyleSheet(sheet)
+
+    def style_name(self) -> str | None:
+        """
+        Returns the style name to show as the current choice.
+
+        The stored name is used when this process provides it. Otherwise the name of
+        the style already set on the application is used.
+
+        :return: a name from ``QStyleFactory.keys()``, or None when neither matches
+        """
+        name = self._stored_style()
+        if name is not None:
+            return name
+        app = QApplication.instance()
+        if app is None:
+            return None
+        return self.resolve_style(app.style().objectName(), QStyleFactory.keys())
+
+    def _stored_style(self) -> str | None:
+        """
+        Returns the stored style when this process provides it.
+
+        :return: a name from ``QStyleFactory.keys()``, or None
+        """
+        saved = self.value("style", value_type=str) if self.contains("style") else None
+        return self.resolve_style(saved, QStyleFactory.keys())
+
+    def apply_style(self, app: QApplication) -> None:
+        """
+        Applies the stored widget style when this process provides that style.
+
+        A missing key, or a name that is not in ``QStyleFactory.keys()``, leaves the
+        current style in place.
+
+        :param app: the ``QApplication``
+        """
+        name = self._stored_style()
+        if name is not None:
+            self.set_widget_style(app, name)
+
+    def apply_font_size(self, app: QApplication) -> None:
+        """
+        Applies the stored application font size.
+
+        A missing key leaves the current font in place.
+
+        :param app: the ``QApplication``
+        """
+        if not self.contains("font_size"):
+            return
+        font = QFont()
+        font.setPointSize(int(self.value("font_size", value_type=str)))
+        app.setFont(font)
 
     @classmethod
     def reset(cls, store: QSettings | None = None) -> GuiSettings | None:

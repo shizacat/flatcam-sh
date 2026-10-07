@@ -6,7 +6,7 @@ from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpi
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
 from settings.st_types import Appearance
 from settings.utils import copy_shared
-from appGUI.widget_style import apply_widget_style, resolve_widget_style
+from settings.gui_settings import GuiSettings
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 from appTranslation import restart_program
 
@@ -111,12 +111,8 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
               "It is applied immediately and restored on the next start.")
         )
         self.style_combo = FCComboBox()
-        style_keys = QtWidgets.QStyleFactory.keys()
-        self.style_combo.addItems(style_keys)
-        saved_style = q_settings.value("style", type=str) if q_settings.contains("style") else None
-        style_name = resolve_widget_style(saved_style, style_keys)
-        if style_name is None:
-            style_name = resolve_widget_style(QtWidgets.QApplication.style().objectName(), style_keys)
+        self.style_combo.addItems(QtWidgets.QStyleFactory.keys())
+        style_name = GuiSettings().style_name()
         if style_name is not None:
             index = self.style_combo.findText(style_name, QtCore.Qt.MatchFlag.MatchFixedString)
             if index >= 0:
@@ -459,7 +455,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
 
         self.style_combo.blockSignals(True)
         try:
-            apply_widget_style(QtWidgets.QApplication.instance(), name)
+            GuiSettings.set_widget_style(QtWidgets.QApplication.instance(), name)
             index = self.style_combo.findText(name, QtCore.Qt.MatchFlag.MatchFixedString)
             if index >= 0:
                 self.style_combo.setCurrentIndex(index)
