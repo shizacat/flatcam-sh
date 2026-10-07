@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed packaged builds to set `App.version` from the git tag and `App.version_date` to the build date
 - Changed GUI colors to System, Light, or Dark as a Qt color scheme, so the selected widget style keeps drawing the controls
 - Changed the red dark-theme toolbar icons and the default busy indicator to the neutral light gray used by the rest of the dark icon set; the original red versions are kept in `assets/resources/dark_red_resources`
+  
+  ![macOS menu bar](docs/chlg_images/1.10.0_004.png)
 
 ### Removed
 
