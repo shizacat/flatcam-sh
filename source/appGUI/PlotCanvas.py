@@ -160,19 +160,26 @@ class PlotCanvas(QtCore.QObject, VisPyCanvas):
         self._hud_font_family = "Georgia" if "Georgia" in QtGui.QFontDatabase.families() else None
 
         # TEXT HUD
+        # Glyphs are rasterized lazily on the first draw. With method='gpu' a first
+        # draw after a project load leaves the font atlas empty, so the text is blank.
         self.text_hud = Text(
-            '', color=self.text_hud_color, method='gpu', anchor_x='left',
+            '', color=self.text_hud_color, method='cpu', anchor_x='left',
             face=self._hud_font_family or 'OpenSans', parent=None
         )
         # RECT HUD
         self.rect_hud = Rectangle(width=10, height=10, radius=[5, 5, 5, 5], center=(20, 20),
                                   border_color=self.rect_hud_color, color=self.rect_hud_color, parent=None)
-        self.rect_hud.set_gl_state(depth_test=False)
+        # Shape meshes enable back-face culling and leave it on. This plate does not
+        # set its own cull or blend state, so after the first plot the fill is discarded
+        # and only the text remains.
+        self.rect_hud.set_gl_state(
+            'translucent', depth_test=False, cull_face=False, polygon_offset_fill=False
+        )
 
         self.on_update_text_hud()
 
         # cursor text t obe attached to mouse cursor in Editors
-        self.text_cursor = Text('', color=self.text_hud_color, method='gpu', anchor_x='left', parent=None)
+        self.text_cursor = Text('', color=self.text_hud_color, method='cpu', anchor_x='left', parent=None)
 
         # draw a rectangle made out of 4 lines on the canvas to serve as a hint for the work area
         # all CNC have a limited workspace
