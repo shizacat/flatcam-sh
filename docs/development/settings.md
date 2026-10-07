@@ -90,7 +90,7 @@ Some color controls write `app.options` as the color changes, before Apply. That
 
 ## `QSettings`
 
-`QSettings("Open Source", "FlatCAM_EVO")` has no shared object with the two dictionaries. Call sites open it, read or write a key, and drop it.
+`GuiSettings` (`source/settings/gui_settings.py`) is the shared handle for `QSettings("Open Source", "FlatCAM_EVO")`. It is a process-wide singleton: `GuiSettings()` returns the same object everywhere. It has no shared object with the two dictionaries. Existing call sites still construct `QSettings` directly until they are moved onto this class.
 
 Qt stores this outside the FlatConfig file:
 
@@ -116,4 +116,4 @@ Use `app.options` when the running tool or object needs the value now.
 
 Also add it as a field on the shared preference model and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.settings`, into `app.options`, and into the FlatConfig file.
 
-Use `QSettings("Open Source", "FlatCAM_EVO")` for window chrome, theme, language, and font sizes. Those keys are not part of `app.defaults`.
+Use `GuiSettings` for window chrome, theme, language, and font sizes. Those keys are not part of `app.defaults`.
