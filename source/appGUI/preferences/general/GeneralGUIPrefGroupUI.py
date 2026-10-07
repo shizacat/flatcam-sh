@@ -1,6 +1,13 @@
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import QSettings
+
+if TYPE_CHECKING:
+    from appMain import App
 
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpinner, FCColorEntry, FCLabel, \
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
@@ -416,12 +423,11 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
             lambda: self.handle_font_size(self.app, self.app_font_size_entry.get_value()))
 
         # Set UI
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        if q_settings.contains("font_size"):
-            font_size = int(q_settings.value("font_size", type=str))  # noqa
+        font_size = GuiSettings().font_size()
+        if font_size is not None:
             self.app_font_size_entry.set_value(font_size)
 
-    def handle_font_size(self, app, val):
+    def handle_font_size(self, app: App, val: int) -> None:
         """
         Saves the font size and the choices on this page, then restarts.
 
@@ -431,9 +437,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         :param app: the application
         :param val: font size in points
         """
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        settings.setValue("font_size", str(val))
-        settings.sync()
+        GuiSettings().save_font_size(val)
 
         app.preferencesUiManager.defaults_read_form()
         copy_shared(app.options, app.settings)
@@ -445,17 +449,12 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
 
         :param _index: combo index emitted by ``activated``; the stored value is the style name
         """
-        name = self.style_combo.currentText()
-        if name not in QtWidgets.QStyleFactory.keys():
+        name = GuiSettings().save_style(self.app.qapp, self.style_combo.currentText())
+        if name is None:
             return
-
-        q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue("style", name)
-        q_settings.sync()
 
         self.style_combo.blockSignals(True)
         try:
-            GuiSettings.set_widget_style(QtWidgets.QApplication.instance(), name)
             index = self.style_combo.findText(name, QtCore.Qt.MatchFlag.MatchFixedString)
             if index >= 0:
                 self.style_combo.setCurrentIndex(index)

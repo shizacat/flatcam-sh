@@ -16,9 +16,9 @@ A style is a `QStyle` from `QStyleFactory.keys()`. The combo lists whatever this
 
 The style does not pick light or dark. It only draws buttons, combo boxes, sliders, and the rest of the chrome. The color scheme below supplies the palette those controls use. On macOS, the native style follows that palette: Dark uses the system dark drawing, Light uses the system light drawing.
 
-The choice is stored by name in `QSettings("Open Source", "FlatCAM_EVO")` under the key `style`. It is not a field of `Settings` and it is not written to the FlatConfig file. A stored value that is not one of the available style names is ignored, and Qt keeps its default style.
+The choice is stored by name through `GuiSettings.save_style()` under the key `style`. It is not a field of `Settings` and it is not written to the FlatConfig file. A stored value that is not one of the available style names is ignored, and Qt keeps its default style.
 
-`App.__init__` calls `GuiSettings.apply_style()` after the color scheme and before the splash screen, the first widget, so the window is created with the saved style. Changing the combo calls the same function immediately and writes the name. No restart.
+`App.__init__` calls `GuiSettings.apply_style()` after the color scheme and before the splash screen, the first widget, so the window is created with the saved style. Changing the combo calls `save_style()`, which writes the name and applies it immediately. No restart.
 
 A stylesheet on the application replaces the style object. Setting a new style while a sheet is active leaves the previous style in place. `GuiSettings.set_widget_style()` clears the sheet, calls `QApplication.setStyle()`, then puts the same sheet back.
 

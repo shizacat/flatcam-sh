@@ -152,6 +152,23 @@ def test_style_name_falls_back_to_the_application_style(gui_settings: GuiSetting
     )
 
 
+def test_save_style_stores_and_applies_an_available_name(gui_settings: GuiSettings) -> None:
+    """Verify a chosen style name is stored and applied, and an unknown name is ignored."""
+    from PyQt6.QtWidgets import QApplication, QStyleFactory
+
+    app = QApplication.instance()
+    assert app is not None
+    available = QStyleFactory.keys()
+    assert available
+
+    assert gui_settings.save_style(app, available[0].swapcase()) == available[0]
+    assert gui_settings.value("style") == available[0]
+    assert app.style().objectName().lower() == available[0].lower()
+
+    assert gui_settings.save_style(app, "not-a-style") is None
+    assert gui_settings.value("style") == available[0]
+
+
 def test_apply_style_sets_a_stored_style_name(gui_settings: GuiSettings) -> None:
     """Verify a stored style name is applied when this process provides it."""
     from PyQt6.QtWidgets import QApplication, QStyleFactory
@@ -179,6 +196,14 @@ def test_apply_style_ignores_an_unknown_name(gui_settings: GuiSettings) -> None:
     gui_settings.apply_style(app)
 
     assert app.style().objectName() == current
+
+
+def test_save_font_size_stores_the_size_as_text(gui_settings: GuiSettings) -> None:
+    """Verify the application font size is stored as text and read back as an int."""
+    gui_settings.save_font_size(14)
+
+    assert gui_settings.value("font_size") == "14"
+    assert gui_settings.font_size() == 14
 
 
 def test_apply_font_size_sets_the_stored_size(gui_settings: GuiSettings) -> None:

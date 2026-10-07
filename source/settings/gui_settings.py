@@ -171,6 +171,23 @@ class GuiSettings:
         saved = self.value("style", value_type=str) if self.contains("style") else None
         return self.resolve_style(saved, QStyleFactory.keys())
 
+    def save_style(self, app: QApplication, name: str) -> str | None:
+        """
+        Stores a widget style name and applies it.
+
+        A name this process does not provide is ignored.
+
+        :param app:  the ``QApplication``
+        :param name: style name chosen in the interface
+        :return:     the stored name, or None when ``name`` is not available
+        """
+        resolved = self.resolve_style(name, QStyleFactory.keys())
+        if resolved is None:
+            return None
+        self.set_value("style", resolved)
+        self.set_widget_style(app, resolved)
+        return resolved
+
     def apply_style(self, app: QApplication) -> None:
         """
         Applies the stored widget style when this process provides that style.
@@ -184,6 +201,26 @@ class GuiSettings:
         if name is not None:
             self.set_widget_style(app, name)
 
+    def font_size(self) -> int | None:
+        """
+        Returns the stored application font size.
+
+        :return: size in points, or None when the key is absent
+        """
+        if not self.contains("font_size"):
+            return None
+        return int(self.value("font_size", value_type=str))
+
+    def save_font_size(self, size: int) -> None:
+        """
+        Stores the application font size.
+
+        The new size is applied on the next start.
+
+        :param size: size in points
+        """
+        self.set_value("font_size", str(size))
+
     def apply_font_size(self, app: QApplication) -> None:
         """
         Applies the stored application font size.
@@ -192,10 +229,11 @@ class GuiSettings:
 
         :param app: the ``QApplication``
         """
-        if not self.contains("font_size"):
+        size = self.font_size()
+        if size is None:
             return
         font = QFont()
-        font.setPointSize(int(self.value("font_size", value_type=str)))
+        font.setPointSize(size)
         app.setFont(font)
 
     @classmethod
