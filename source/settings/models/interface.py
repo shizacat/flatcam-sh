@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from settings.st_types import Appearance
+from settings.st_types import Appearance, ColorAppearance
 
 
 class Interface(BaseModel):
@@ -44,8 +44,9 @@ class Interface(BaseModel):
         default_factory=lambda: [500, 300],
         description="Shell window width and height in pixels.",
     )
-    global_appearance: Appearance = Field(
-        default=Appearance.DEFAULT, description="Application appearance."
+    global_appearance: ColorAppearance = Field(
+        default=Appearance.SYSTEM,
+        description="Application color scheme: system, light, or dark.",
     )
     global_dark_canvas: bool = Field(
         default=False, description="Whether application dark canvas is enabled."

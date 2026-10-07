@@ -5242,7 +5242,7 @@ class FCTextAreaLineNumber(QtWidgets.QFrame):
             self,
             *args,
             color_dict=None,
-            theme: Theme = Theme.DEFAULT
+            theme: Theme = Theme.LIGHT
         ):
             FCPlainTextAreaExtended.__init__(self, *args)
 
@@ -5604,7 +5604,7 @@ class FCTextAreaLineNumber(QtWidgets.QFrame):
     def __init__(self, *args, color_dict=None, **kwargs):
         self.theme = kwargs.pop('theme')
         if self.theme is None:
-            self.theme = Theme.DEFAULT
+            self.theme = Theme.LIGHT
         QtWidgets.QFrame.__init__(self, *args)
 
         self.setFrameStyle(QtWidgets.QFrame.Shape.StyledPanel | QtWidgets.QFrame.Shadow.Sunken)

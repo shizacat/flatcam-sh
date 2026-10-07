@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime
 
 from PyQt6 import QtWidgets, QtGui
-from PyQt6.QtCore import QSettings, QTimer
+from PyQt6.QtCore import QTimer
 from appMain import App
 from appGUI import VisPyPatches
 
@@ -241,27 +241,8 @@ if __name__ == '__main__':
 
     sys.excepthook = excepthook
 
-    set_macos_app_name('FlatCAM')
+    set_macos_app_name("FlatCAM")
     app = QtWidgets.QApplication(sys.argv)
-
-    # apply style
-    settings = QSettings("Open Source", "FlatCAM_EVO")
-    if settings.contains("style"):
-        style_index = settings.value('style', type=str)
-        try:
-            idx = int(style_index)
-        except Exception:
-            idx = 0
-        style = QtWidgets.QStyleFactory.keys()[idx]
-        app.setStyle(style)
-    else:
-        app.setStyle('windowsvista')
-
-    if settings.contains("font_size"):
-        font_size = int(settings.value("font_size", type=str))      # noqa
-        font = QtGui.QFont()
-        font.setPointSize(font_size)
-        app.setFont(font)
 
     fc = App(
         qapp=app,

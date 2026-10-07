@@ -5,6 +5,8 @@ from PyQt6.QtCore import QSettings
 from appGUI.GUIElements import RadioSet, FCCheckBox, FCComboBox, FCSliderWithSpinner, FCColorEntry, FCLabel, \
     GLay, FCFrame, FCComboBox2, FCButton, FCSpinner
 from settings.st_types import Appearance
+from settings.utils import copy_shared
+from appGUI.widget_style import apply_widget_style, resolve_widget_style
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 from appTranslation import restart_program
 
@@ -37,25 +39,23 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         grid0 = GLay(v_spacing=5, h_spacing=3)
         par_frame.setLayout(grid0)
 
-        # Theme selection
-        self.appearance_label = FCLabel('%s' % _("Theme"), bold=True)
+        # Color selection. The Style combo below chooses who draws the controls.
+        self.appearance_label = FCLabel('%s' % _("Color"), bold=True)
         self.appearance_label.setToolTip(
-            _("Select a theme for the application.\n"
-              "It will theme the plot area.")
+            _("Select the application colors.\n"
+              "The selected style draws the controls.")
         )
 
         self.appearance_radio = RadioSet([
-            {"label": _("Default"), "value": Appearance.DEFAULT},
-            {"label": _("Auto"), "value": Appearance.AUTO},
+            {"label": _("System"), "value": Appearance.SYSTEM},
             {"label": _("Light"), "value": Appearance.LIGHT},
             {"label": _("Dark"), "value": Appearance.DARK}
         ], compact=True)
         self.appearance_radio.setToolTip(
-            _("The theme can be:\n"
-              "Default: Default theme\n"
-              "Auto: Matches mode from OS\n"
-              "Light: Light mode\n"
-              "Dark: Dark mode")
+            _("The colors can be:\n"
+              "System: matches the operating system\n"
+              "Light: light colors\n"
+              "Dark: dark colors")
         )
 
         # Dark Canvas
@@ -108,14 +108,19 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         self.style_label = FCLabel('%s:' % _('Style'))
         self.style_label.setToolTip(
             _("Select a style for the application.\n"
-              "It will be applied at the next app start.")
+              "It is applied immediately and restored on the next start.")
         )
         self.style_combo = FCComboBox()
-        self.style_combo.addItems(QtWidgets.QStyleFactory.keys())
-        # find current style
-        current_style = QtWidgets.QApplication.style().objectName()
-        index = self.style_combo.findText(current_style, QtCore.Qt.MatchFlag.MatchFixedString)
-        self.style_combo.setCurrentIndex(index)
+        style_keys = QtWidgets.QStyleFactory.keys()
+        self.style_combo.addItems(style_keys)
+        saved_style = q_settings.value("style", type=str) if q_settings.contains("style") else None
+        style_name = resolve_widget_style(saved_style, style_keys)
+        if style_name is None:
+            style_name = resolve_widget_style(QtWidgets.QApplication.style().objectName(), style_keys)
+        if style_name is not None:
+            index = self.style_combo.findText(style_name, QtCore.Qt.MatchFlag.MatchFixedString)
+            if index >= 0:
+                self.style_combo.setCurrentIndex(index)
         self.style_combo.activated.connect(self.handle_style)
 
         grid0.addWidget(self.style_label, 8, 0)
@@ -175,7 +180,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         # Apply UI parameters
         self.apply_app_font_size_btn = FCButton(_("Apply and Restart"), bold=True)
         self.apply_app_font_size_btn.setToolTip(
-            _("Setting the Font Size for the entire application.")
+            _("Applies the font size and the color choice, then restarts the application.")
         )
         grid0.addWidget(self.apply_app_font_size_btn, 18, 0, 1, 2)
 
@@ -420,26 +425,46 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
             font_size = int(q_settings.value("font_size", type=str))  # noqa
             self.app_font_size_entry.set_value(font_size)
 
-    @staticmethod
-    def handle_font_size(app, val):
-        settings = QSettings("Open Source", "FlatCAM_EVO")
-        settings.setValue('font_size', str(val))
-        # This will write the setting to the platform specific storage.
-        del settings
+    def handle_font_size(self, app, val):
+        """
+        Saves the font size and the choices on this page, then restarts.
 
+        The restart writes the session options back to the settings file, so the
+        form has to be copied onto those options first.
+
+        :param app: the application
+        :param val: font size in points
+        """
+        settings = QSettings("Open Source", "FlatCAM_EVO")
+        settings.setValue("font_size", str(val))
+        settings.sync()
+
+        app.preferencesUiManager.defaults_read_form()
+        copy_shared(app.options, app.settings)
         restart_program(app=app)
 
-    @staticmethod
-    def handle_style(style):
-        # set current style
+    def handle_style(self, _index: int) -> None:
+        """
+        Stores the selected Qt style and applies it.
+
+        :param _index: combo index emitted by ``activated``; the stored value is the style name
+        """
+        name = self.style_combo.currentText()
+        if name not in QtWidgets.QStyleFactory.keys():
+            return
+
         q_settings = QSettings("Open Source", "FlatCAM_EVO")
-        q_settings.setValue('style', str(style))
+        q_settings.setValue("style", name)
+        q_settings.sync()
 
-        new_style = QtWidgets.QStyleFactory.keys()[int(style)]
-        QtWidgets.QApplication.setStyle(new_style)
-
-        # This will write the setting to the platform specific storage.
-        del q_settings
+        self.style_combo.blockSignals(True)
+        try:
+            apply_widget_style(QtWidgets.QApplication.instance(), name)
+            index = self.style_combo.findText(name, QtCore.Qt.MatchFlag.MatchFixedString)
+            if index >= 0:
+                self.style_combo.setCurrentIndex(index)
+        finally:
+            self.style_combo.blockSignals(False)
 
     # Setting selection colors (left - right) handlers
     def on_sf_color_entry(self):

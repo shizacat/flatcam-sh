@@ -10,9 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Changed packaged builds to set `App.version` from the git tag and `App.version_date` to the build date
+- Changed GUI colors to System, Light, or Dark as a Qt color scheme, so the selected widget style keeps drawing the controls
+- Changed the red dark-theme toolbar icons and the default busy indicator to the neutral light gray used by the rest of the dark icon set; the original red versions are kept in `assets/resources/dark_red_resources`
+
+### Removed
+
+- Removed restoring the GUI style from a stored combo index; the style is restored only when `QSettings` holds the style name
 
 ### Fixed
 
+- Fixed Apply and Restart so the color choice on the GUI page is saved before the application restarts
+- Fixed the GUI style preference so the chosen Qt style is saved by name, applied immediately, and restored on the next start
 - Fixed the macOS menu bar showing `python` instead of `FlatCAM` when running from sources
 
   ![macOS menu bar](docs/chlg_images/1.10.0_003.png)

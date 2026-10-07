@@ -7,30 +7,43 @@ from pydantic import BeforeValidator
 
 
 class Appearance(StrEnum):
-    """Appearance chosen in Preferences."""
+    """Color scheme chosen in Preferences."""
 
-    DEFAULT = "default"
-    AUTO = "auto"
+    SYSTEM = "system"
     LIGHT = "light"
     DARK = "dark"
 
 
-class Theme(StrEnum):
-    """Session theme resolved from the appearance preference."""
+def _color_appearance(value: object) -> object:
+    """
+    Maps retired appearance names onto the system color scheme.
 
-    DEFAULT = "default"
+    ``default`` and ``auto`` were stored before color and widget style were split.
+
+    :param value: stored appearance
+    :return:      ``system`` for a retired name, otherwise the original value
+    """
+    if isinstance(value, str) and value in {"default", "auto"}:
+        return Appearance.SYSTEM
+    return value
+
+
+ColorAppearance = Annotated[Appearance, BeforeValidator(_color_appearance)]
+
+
+class Theme(StrEnum):
+    """Session color resolved from the appearance preference."""
+
     LIGHT = "light"
     DARK = "dark"
 
     def is_light(self) -> bool:
         """
-        Reports whether this theme keeps dark text on a light background.
+        Reports whether this color keeps dark text on a light background.
 
-        The default theme and the light theme both do.
-
-        :return: True for the default and light themes
+        :return: True for the light color
         """
-        return self is Theme.DEFAULT or self is Theme.LIGHT
+        return self is Theme.LIGHT
 
 
 def _xy_pair(value: object) -> object:
