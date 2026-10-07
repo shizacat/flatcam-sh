@@ -242,16 +242,13 @@ if __name__ == '__main__':
 
     sys.excepthook = excepthook
 
-    set_macos_app_name('FlatCAM')
+    set_macos_app_name("FlatCAM")
     app = QtWidgets.QApplication(sys.argv)
 
     # apply style
     settings = QSettings("Open Source", "FlatCAM_EVO")
     saved_style = settings.value("style", type=str) if settings.contains("style") else None
-    style_name = resolve_widget_style(
-        str(saved_style) if saved_style is not None else None,
-        QtWidgets.QStyleFactory.keys(),
-    )
+    style_name = resolve_widget_style(saved_style, QtWidgets.QStyleFactory.keys())
     if style_name is not None:
         apply_widget_style(app, style_name)
 

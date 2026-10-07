@@ -1,5 +1,7 @@
 """Qt widget style stored in application settings."""
 
+from PyQt6.QtWidgets import QApplication
+
 
 def resolve_widget_style(saved: str | None, available: list[str]) -> str | None:
     """
@@ -33,7 +35,7 @@ def color_scheme_name(appearance: str) -> str:
     return "system"
 
 
-def apply_color_scheme(app, appearance: str) -> None:
+def apply_color_scheme(app: QApplication, appearance: str) -> None:
     """
     Sets the application color scheme and leaves the widget style in place.
 
@@ -49,7 +51,7 @@ def apply_color_scheme(app, appearance: str) -> None:
     app.styleHints().setColorScheme(scheme)
 
 
-def apply_widget_style(app, name: str) -> None:
+def apply_widget_style(app: QApplication, name: str) -> None:
     """
     Sets the application widget style and keeps an existing stylesheet on top of it.
 

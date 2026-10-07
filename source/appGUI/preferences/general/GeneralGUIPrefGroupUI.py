@@ -114,10 +114,7 @@ class GeneralGUIPrefGroupUI(OptionsGroupUI):
         style_keys = QtWidgets.QStyleFactory.keys()
         self.style_combo.addItems(style_keys)
         saved_style = q_settings.value("style", type=str) if q_settings.contains("style") else None
-        style_name = resolve_widget_style(
-            str(saved_style) if saved_style is not None else None,
-            style_keys,
-        )
+        style_name = resolve_widget_style(saved_style, style_keys)
         if style_name is None:
             style_name = resolve_widget_style(QtWidgets.QApplication.style().objectName(), style_keys)
         if style_name is not None:
