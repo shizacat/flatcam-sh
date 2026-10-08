@@ -25,7 +25,7 @@ Saved application settings. They are loaded from `current_defaults_<version>.Fla
 
 ### `Options`
 
-Session values used by tools, editors, and the open project. `Options.from_settings()` builds them from the saved settings. After that they may diverge: a theme choice or a loaded project changes options and does not write the settings file.
+Session values used by tools, editors, and the open project. `Options.from_settings()` builds them from the saved settings. After that they may diverge: a theme choice or a loaded project changes options and does not write the settings file. A loaded project does not replace Application Level (`global_app_level`) or the color fields. Those stay as chosen in Preferences.
 
 Options do not repeat the settings schema. Shared preference groups are defined once and inherited by both objects:
 
@@ -212,7 +212,7 @@ Startup resolves that field once:
 2. `apply_color_scheme()` sets `QApplication.styleHints().setColorScheme()`. System uses `Qt.ColorScheme.Unknown`, so Qt keeps following the OS.
 3. The icon folder is chosen from `global_theme`: `assets/resources` for light, `assets/resources/dark_resources` for dark.
 
-The window, the icon set, and the canvas are built from that result and are not rebuilt later. Changing Color asks for a restart. Apply copies the form into the settings file first, then the process starts again. A loaded project must not replace these fields; they are listed in `STARTUP_THEME_FIELDS` (`source/settings/utils.py`).
+The window, the icon set, and the canvas are built from that result and are not rebuilt later. Changing Color asks for a restart. Apply copies the form into the settings file first, then the process starts again. A loaded project must not replace these fields or Application Level. Both are listed in `PROJECT_EXCLUDED_FIELDS` (`source/settings/utils.py`).
 
 `App` then copies `appearance`, `theme`, and `dark_canvas` into `GuiSettings`. The plot canvases read `theme()` and `dark_canvas()` from there, because the canvas is built before it holds the application object. `theme()` returns a `Theme`. Interface code that already has the application reads `options.global_theme` instead. A leftover `default` in the stored key is the light theme.
 

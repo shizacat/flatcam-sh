@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Application Level returning to Beginner after a change, after Save and a restart, and when a project is opened
 - Fixed the HUD showing an empty box when it is turned on after a project is loaded; the editor cursor text had the same problem
 - Fixed the HUD background disappearing after a project is plotted; the plate is no longer discarded by back-face culling left on by the plotted shapes
 - Fixed Preferences Save so a changed application font size is stored and asks to restart, the same way a color change does

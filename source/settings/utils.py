@@ -13,6 +13,12 @@ STARTUP_THEME_FIELDS = frozenset({
     "global_dark_canvas",
 })
 
+# Application preferences a project must not replace.
+# Application Level is the Beginner/Advanced choice for every object and tool.
+PROJECT_EXCLUDED_FIELDS = STARTUP_THEME_FIELDS | frozenset({
+    "global_app_level",
+})
+
 
 def propagate_settings(settings: Settings) -> None:
     """

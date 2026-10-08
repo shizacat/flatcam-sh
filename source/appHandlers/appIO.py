@@ -51,7 +51,7 @@ import appTranslation as fcTranslate
 import builtins
 
 import typing
-from settings.utils import STARTUP_THEME_FIELDS, apply_options, propagate_settings
+from settings.utils import PROJECT_EXCLUDED_FIELDS, apply_options, propagate_settings
 
 if typing.TYPE_CHECKING:
     import appMain
@@ -2656,21 +2656,21 @@ class appIO(QtCore.QObject):
             if response == bt_yes:
                 # self.app.defaults.update(self.app.options)
                 # self.app.preferencesUiManager.save_defaults()
-                # Project options. The running theme stays; it is applied only at startup.
+                # Project options. Theme and Application Level stay as chosen in Preferences.
                 apply_options(
                     self.app.options,
                     proj_dict['options'],
-                    skip=STARTUP_THEME_FIELDS,
+                    skip=PROJECT_EXCLUDED_FIELDS,
                 )
             if response == bt_no:
                 pass
         else:
             # Load by default new options when not using GUI.
-            # The running theme stays; it is applied only at startup.
+            # Theme and Application Level stay as chosen in Preferences.
             apply_options(
                 self.app.options,
                 proj_dict['options'],
-                skip=STARTUP_THEME_FIELDS,
+                skip=PROJECT_EXCLUDED_FIELDS,
             )
 
         self.app.project_filename = filename
@@ -2830,7 +2830,7 @@ class appIO(QtCore.QObject):
             app_options = {
                 name: getattr(self.app.options, name)
                 for name in type(self.app.options).model_fields
-                if name not in STARTUP_THEME_FIELDS
+                if name not in PROJECT_EXCLUDED_FIELDS
             }
             d = {
                 "objs":             [obj.to_dict() for obj in self.app.collection.get_list()],

@@ -545,7 +545,7 @@ class App(QtCore.QObject):
         # self.preferencesUiManager.show_preferences_gui()
 
         # The color scheme and icon set are applied from this value and are not rebuilt later.
-        # Project load must not replace them; see STARTUP_THEME_FIELDS.
+        # Project load must not replace them; see PROJECT_EXCLUDED_FIELDS.
         self.options.global_theme = self.options.theme_from_appearance()
         apply_color_scheme(self.qapp, str(self.options.global_appearance))
 
@@ -4071,13 +4071,55 @@ class App(QtCore.QObject):
 
     def on_defaults_dict_change(self, field):
         """
-        Called whenever a key changed in the "self.options" dictionary. It will set the required GUI element in the
-        Edit -> Preferences tab window.
+        Updates the Preferences control for a session option that just changed.
 
-        :param field:   the key of the "self.options" dictionary that was changed.
-        :return:        None
+        The control must show the new session value. Reading the saved settings here
+        puts the previous value back, so Application Level returns to Beginner before
+        Save can store the new choice.
+
+        :param field: name of the changed ``options`` field
+        :return: None
         """
-        self.preferencesUiManager.defaults_write_form_field(field=field)
+        self.preferencesUiManager.defaults_write_form_field(field=field, defaults_dict=self.options)
+        if field == "global_app_level":
+            self.apply_app_level()
+
+    def apply_app_level(self, level: str | None = None) -> None:
+        """
+        Shows Beginner or Advanced on every object, editor, and tool that has a level button.
+
+        Those screens copy ``options.global_app_level`` only while they are built, so a later
+        change in Preferences left them showing Beginner.
+
+        :param level: ``b`` or ``a``. The current session value is used when omitted.
+        :return: None
+        """
+        if level is None:
+            level = self.options.global_app_level
+
+        targets = []
+        collection = getattr(self, "collection", None)
+        if collection is not None:
+            try:
+                targets.extend(collection.get_list())
+            except Exception as exc:
+                self.log.debug("App.apply_app_level() --> %s" % exc)
+
+        for name, value in vars(self).items():
+            if value is not None and (name.endswith("_tool") or name.endswith("_editor")):
+                targets.append(value)
+
+        for target in targets:
+            change = getattr(target, "change_level", None)
+            if not callable(change):
+                ui = getattr(target, "ui", None)
+                change = getattr(ui, "change_level", None) if ui is not None else None
+            if not callable(change):
+                continue
+            try:
+                change(level)
+            except Exception as exc:
+                self.log.debug("App.apply_app_level() --> %s" % exc)
 
     def on_deselect_all(self):
         self.collection.set_all_inactive()

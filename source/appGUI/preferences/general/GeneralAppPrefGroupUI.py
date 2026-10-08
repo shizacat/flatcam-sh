@@ -1,9 +1,28 @@
 
+from __future__ import annotations
+
 import sys
+from typing import TYPE_CHECKING
 
+from PyQt6 import QtWidgets
 
-from appGUI.GUIElements import RadioSet, FCSpinner, FCCheckBox, FCComboBox, FCButton, OptionalInputSection, \
-    FCDoubleSpinner, FCLabel, GLay, RadioSetDefaults, FCFrame, FCComboBox2
+if TYPE_CHECKING:
+    from appMain import App
+
+from appGUI.GUIElements import (
+    RadioSet,
+    FCSpinner,
+    FCCheckBox,
+    FCComboBox,
+    FCButton,
+    OptionalInputSection,
+    FCDoubleSpinner,
+    FCLabel,
+    GLay,
+    RadioSetDefaults,
+    FCFrame,
+    FCComboBox2
+)
 from appGUI.preferences.OptionsGroupUI import OptionsGroupUI
 
 import gettext
@@ -19,12 +38,12 @@ if '_' not in builtins.__dict__:
 # https://www.w3schools.com/colors/colors_names.asp
 # Colors names
 class GeneralAppPrefGroupUI(OptionsGroupUI):
-    def __init__(self, app, parent=None):
+    def __init__(self, app: App, parent: QtWidgets.QWidget | None = None) -> None:
         super(GeneralAppPrefGroupUI, self).__init__(self, parent=parent)
 
         self.setTitle(_("App Preferences"))
+        self.app = app
         self.decimals = app.decimals
-        self.options = app.options
 
         # #############################################################################################################
         # Grid0 Frame
@@ -178,6 +197,7 @@ class GeneralAppPrefGroupUI(OptionsGroupUI):
         # Application Level for FlatCAM
         self.app_level_radio = RadioSet([{'label': _('Beginner'), 'value': 'b'},
                                          {'label': _('Advanced'), 'value': 'a'}], compact=True)
+        self.app_level_radio.activated_custom.connect(self._on_app_level_changed)
         grid2.addWidget(self.app_level_radio, 2, 0, 1, 2)
 
         # #############################################################################################################
@@ -418,6 +438,20 @@ class GeneralAppPrefGroupUI(OptionsGroupUI):
         self.shell_startup_cb.clicked.connect(self.on_toggle_shell_from_settings)
 
         self.language_apply_btn.clicked.connect(lambda: fcTranslate.on_language_apply_click(app=self.app, restart=True))
+
+    def _on_app_level_changed(self, value: str) -> None:
+        """
+        Stores the Application Level chosen in Preferences.
+
+        Beginner and Advanced buttons read this value. Writing it here updates them
+        at once, instead of leaving them on the level captured when each screen was built.
+
+        :param value: ``b`` for Beginner or ``a`` for Advanced
+        :return: None
+        """
+        if value not in ("a", "b") or self.app.options.global_app_level == value:
+            return
+        self.app.options.global_app_level = value
 
     def on_toggle_shell_from_settings(self, state):
         """

@@ -12,6 +12,7 @@ from exceptions import FlatCAMError, SettingsError
 from settings import Options, Settings
 from settings.st_types import Appearance, Theme
 from settings.utils import (
+    PROJECT_EXCLUDED_FIELDS,
     STARTUP_THEME_FIELDS,
     apply_options,
     copy_shared,
@@ -279,6 +280,26 @@ def test_apply_options_leaves_the_startup_theme_when_asked() -> None:
     assert options.global_appearance is Appearance.DARK
     assert options.global_theme is Theme.DARK
     assert options.global_dark_canvas is True
+
+
+def test_apply_options_leaves_application_level_when_a_project_is_imported() -> None:
+    """Verify a project mapping cannot replace the Application Level chosen in Preferences."""
+    options = Options.from_settings(Settings())
+    options.global_app_level = "a"
+
+    apply_options(
+        options,
+        {
+            "units": "IN",
+            "global_app_level": "b",
+        },
+        skip=PROJECT_EXCLUDED_FIELDS,
+    )
+
+    assert options.units == "IN"
+    assert options.global_app_level == "a"
+    assert "global_app_level" in PROJECT_EXCLUDED_FIELDS
+    assert STARTUP_THEME_FIELDS < PROJECT_EXCLUDED_FIELDS
 
 
 def test_theme_is_light_only_for_the_light_color() -> None:
