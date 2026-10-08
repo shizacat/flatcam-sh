@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.10] - 2026-10-08
+
 ### Added
 
 - Added a GitHub Actions test job that runs pytest before packaged builds and on pull requests
