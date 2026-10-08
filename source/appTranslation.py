@@ -66,13 +66,13 @@ def load_languages() -> dict[str, str]:
     :return: language code mapped to the name shown in Preferences
     """
     available_translations = []
-    languages_path_search = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'locale')
+    languages_path_search = languages_dir()
 
     try:
         available_translations = next(os.walk(languages_path_search))[1]
     except StopIteration:
         if not available_translations:
-            languages_path_search = os.path.join(str(Path(__file__).parents[1]), 'locale')
+            languages_path_search = languages_dir_cx_freeze()
             try:
                 available_translations = next(os.walk(languages_path_search))[1]
             except StopIteration:
@@ -87,14 +87,14 @@ def load_languages() -> dict[str, str]:
     return translations
 
 
-def languages_dir() -> str:
+def languages_dir() -> Path:
     """Returns the locale directory next to this module."""
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'locale')
+    return Path(__file__).resolve().parent / 'locale'
 
 
-def languages_dir_cx_freeze() -> str:
+def languages_dir_cx_freeze() -> Path:
     """Returns the locale directory used by a frozen build."""
-    return os.path.join(Path(__file__).parents[1], 'locale')
+    return Path(__file__).resolve().parents[1] / 'locale'
 
 
 def on_language_apply_click(app: App, restart: bool = False) -> None:
