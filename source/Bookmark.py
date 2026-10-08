@@ -1,4 +1,8 @@
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PyQt6 import QtGui, QtCore, QtWidgets
 from appGUI.GUIElements import FCTable, FCEntry, FCButton, FCFileSaveDialog, GLay, FCLabel
 
@@ -12,16 +16,32 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 
+if TYPE_CHECKING:
+    from appMain import App
+
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
     _ = gettext.gettext
 
 
 class BookmarkManager(QtWidgets.QWidget):
+    """Edits the Help-menu bookmarks stored in the application options."""
 
     # mark_rows = QtCore.pyqtSignal()
 
-    def __init__(self, app, storage, parent=None):
+    def __init__(
+        self,
+        app: App,
+        storage: dict[str, list[str]],
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
+        """
+        Builds the bookmark table and the controls that edit it.
+
+        :param app:     application that owns the Help menu and the options
+        :param storage: bookmarks keyed by order; each value is a title and a web link
+        :param parent:  Qt parent widget
+        """
         super(BookmarkManager, self).__init__(parent)
 
         self.app = app
@@ -126,16 +146,19 @@ class BookmarkManager(QtWidgets.QWidget):
         self.ui_connect()
         self.build_bm_ui()
 
-    def ui_connect(self):
+    def ui_connect(self) -> None:
+        """Connects the table drag-and-drop signal to the row marker."""
         self.table_widget.drag_drop_sig.connect(self.mark_table_rows_for_actions)
 
-    def ui_disconnect(self):
+    def ui_disconnect(self) -> None:
+        """Disconnects the table drag-and-drop signal."""
         try:
-            self.table_widget.drag_drop_sig.connect(self.mark_table_rows_for_actions)
+            self.table_widget.drag_drop_sig.disconnect(self.mark_table_rows_for_actions)
         except (TypeError, AttributeError):
             pass
 
-    def build_bm_ui(self):
+    def build_bm_ui(self) -> None:
+        """Fills the table from the stored bookmarks and copies them into the options."""
 
         self.table_widget.setRowCount(len(self.bm_dict))
 
@@ -181,10 +204,12 @@ class BookmarkManager(QtWidgets.QWidget):
         for key, val in self.bm_dict.items():
             self.app.options.global_bookmarks[key] = deepcopy(val)
 
-    def on_add_entry(self, **kwargs):
+    def on_add_entry(self, **kwargs: str) -> str | None:
         """
-        Add a entry in the Bookmark Table and in the menu actions
-        :return: None
+        Adds a bookmark to the table and, when it fits the menu limit, to the Help menu.
+
+        :param kwargs: optional ``title`` and ``link``; empty values are read from the form
+        :return:       ``"fail"`` when the title or link is empty or already stored
         """
         if 'title' in kwargs:
             title = kwargs['title']
@@ -233,11 +258,8 @@ class BookmarkManager(QtWidgets.QWidget):
         # add the new entry to the bookmark manager table
         self.build_bm_ui()
 
-    def on_remove_entry(self):
-        """
-        Remove an Entry in the Bookmark table and from the menu actions
-        :return:
-        """
+    def on_remove_entry(self) -> None:
+        """Removes the selected bookmark from the table and from the Help menu."""
         index_list = []
         for model_index in self.table_widget.selectionModel().selectedRows():
             index = QtCore.QPersistentModelIndex(model_index)
@@ -282,7 +304,8 @@ class BookmarkManager(QtWidgets.QWidget):
         #     self.table_widget.model().removeRow(index.row())
         self.build_bm_ui()
 
-    def on_export_bookmarks(self):
+    def on_export_bookmarks(self) -> None:
+        """Writes the stored bookmarks to a text file chosen by the user."""
         self.app.settings.report_usage("on_export_bookmarks")
         self.app.log.debug("on_export_bookmarks()")
 
@@ -334,7 +357,8 @@ class BookmarkManager(QtWidgets.QWidget):
                 return
         self.app.inform.emit('[success] %s: %s' % (_("Exported bookmarks to"), filename))
 
-    def on_import_bookmarks(self):
+    def on_import_bookmarks(self) -> None:
+        """Reads bookmarks from a text file and adds each line to the table."""
         self.app.log.debug("on_import_bookmarks()")
 
         filter_ = "Text File (*.txt);;All Files (*.*)"
@@ -359,7 +383,8 @@ class BookmarkManager(QtWidgets.QWidget):
 
             self.app.inform.emit('[success] %s: %s' % (_("Imported Bookmarks from"), filename))
 
-    def mark_table_rows_for_actions(self):
+    def mark_table_rows_for_actions(self) -> None:
+        """Paints the rows that are installed in the Help menu."""
         for row in range(self.table_widget.rowCount()):
             item_to_paint = self.table_widget.item(row, 0)
             if row < self.app.options.global_bookmarks_limit:
@@ -369,7 +394,8 @@ class BookmarkManager(QtWidgets.QWidget):
                 item_to_paint.setBackground(QtGui.QColor('white'))
                 # item_to_paint.setForeground(QtGui.QColor('black'))
 
-    def rebuild_actions(self):
+    def rebuild_actions(self) -> None:
+        """Rebuilds the stored bookmarks from the table order and reinstalls the menu actions."""
         # rebuild the storage to reflect the order of the lines
         self.bm_dict.clear()
         for row in range(self.table_widget.rowCount()):
@@ -389,7 +415,12 @@ class BookmarkManager(QtWidgets.QWidget):
     #     self.rebuild_actions()
     #     super().accept()
 
-    def closeEvent(self, QCloseEvent):
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """
+        Rebuilds the menu actions and closes the widget.
+
+        :param event: Qt close event
+        """
         self.rebuild_actions()
         self.ui_disconnect()
-        super().closeEvent(QCloseEvent)
+        super().closeEvent(event)
