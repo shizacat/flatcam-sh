@@ -140,11 +140,8 @@ def apply_language(domain: str, lang: str | None = None) -> str | None:
 
     :param domain: gettext domain, ``strings``
     :param lang:   language name from Preferences, or None to use the stored language
-    :return:       the applied language name, ``no language`` when no catalog matches,
-                   or None when the catalog cannot be installed
+    :return:       the applied language name, or ``no language`` when no catalog matches
     """
-    lang_code = ''
-
     if lang is None:
         settings = GuiSettings()
         name = settings.language()
@@ -155,9 +152,10 @@ def apply_language(domain: str, lang: str | None = None) -> str | None:
     else:
         name = str(lang)    # we make it a string: "None"
 
-    for lang_code, lang_usable in load_languages().items():
+    lang_code = ''
+    for code, lang_usable in load_languages().items():
         if lang_usable == name:
-            # break and then use the current key as language
+            lang_code = code
             break
 
     if lang_code == '':
