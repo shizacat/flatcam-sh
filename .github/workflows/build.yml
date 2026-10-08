@@ -41,7 +41,7 @@ jobs:
           environment-name: flatcam
           create-args: python=3.11
           cache-environment: true
-          cache-environment-key: tests-${{ hashFiles('environment-dev.yml') }}
+          cache-environment-key: tests-${{ hashFiles('environment.yml', 'environment-dev.yml') }}
           init-shell: bash
 
       - name: Install development packages
