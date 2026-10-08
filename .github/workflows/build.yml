@@ -47,6 +47,9 @@ jobs:
       - name: Install development packages
         run: micromamba install -y -n flatcam -f environment-dev.yml
 
+      - name: Install GLU
+        run: sudo apt-get update && sudo apt-get install -y libglu1-mesa
+
       - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen

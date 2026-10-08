@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed the Ubuntu test job where shape tessellation failed because libGLU was not installed
 - Fixed bookmark manager close so the table drag-and-drop signal is disconnected
 - Fixed Application Level returning to Beginner after a change, after Save and a restart, and when a project is opened
 - Fixed the HUD showing an empty box when it is turned on after a project is loaded; the editor cursor text had the same problem
