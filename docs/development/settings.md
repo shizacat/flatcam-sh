@@ -162,7 +162,7 @@ A getter that returns None leaves the choice to the call site. The call site the
 
 **Style combo.** `save_style()` stores the name and applies the style at once; no restart. How that style relates to the color scheme is described below.
 
-**Language.** **Apply Language** stores the language and restarts.
+**Language.** **Apply Language** stores the display name and restarts. How `_()` then reads a catalog is described below.
 
 **Splash Screen checkbox.** Writes as soon as it changes.
 
@@ -177,6 +177,14 @@ A getter that returns None leaves the choice to the call site. The call site the
 **First run.** `app.options.first_run` clears every key.
 
 **Clear GUI Settings.** Stores `Theme.LIGHT`, then clears every key after confirmation.
+
+### Interface language
+
+User-visible text is wrapped in `_()`. The translation happens when `apply_language()` in `source/appTranslation.py` loads a gettext catalog and calls `install()`. That call binds `_` in the builtins, so a later `_("text")` looks the string up in the catalog instead of returning it unchanged. This is the standard-library pattern described in [Translate Your Python 3 Program with the gettext Module](https://inventwithpython.com/blog/2014/12/20/translate-your-python-3-program-with-the-gettext-module/).
+
+Catalogs live in `source/locale/<code>/LC_MESSAGES/` under the domain `strings`. The source file is `strings.po`. `gettext.translation` loads the compiled `strings.mo` beside it. `<code>` is an ISO 639-1 key from `languages_dict` in `appTranslation.py` (`en`, `ru`, `pt_BR`, and the rest). Preferences stores the display name (`English`, `Pусский`), and `apply_language` maps that name back to the code. A frozen build looks one directory above the module, because the locale tree sits next to the packed sources.
+
+Each module calls `apply_language('strings')` while it is imported. If no catalog is installed yet, the module binds `_` to `gettext.gettext`, which returns the original string. Many `_()` calls run at import time, so a language chosen later is not seen by strings that were already translated. **Apply Language** writes the name to `GuiSettings` and restarts the process, so the catalog is installed before those imports. English, or a name that matches no catalog, leaves the original strings in place.
 
 ### Style and color
 

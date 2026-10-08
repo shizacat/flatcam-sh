@@ -5,14 +5,20 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from __future__ import annotations
+
 import os
 import ctypes
 import sys
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from PyQt6 import QtWidgets, QtGui
 from PyQt6.QtCore import Qt
+
+if TYPE_CHECKING:
+    from appMain import App
 
 from settings.utils import copy_shared
 
@@ -44,7 +50,8 @@ translations = {}
 languages_path_search = ''
 
 
-def isAdmin():
+def isAdmin() -> bool:
+    """Reports whether the process is running with administrator rights."""
     try:
         is_admin = (os.getuid() == 0) or (os.geteuid() == 0)
     except AttributeError:
@@ -52,7 +59,12 @@ def isAdmin():
     return is_admin
 
 
-def load_languages():
+def load_languages() -> dict[str, str]:
+    """
+    Loads the translation catalogs found under the locale directory.
+
+    :return: language code mapped to the name shown in Preferences
+    """
     available_translations = []
     languages_path_search = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'locale')
 
@@ -75,20 +87,22 @@ def load_languages():
     return translations
 
 
-def languages_dir():
+def languages_dir() -> str:
+    """Returns the locale directory next to this module."""
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'locale')
 
 
-def languages_dir_cx_freeze():
+def languages_dir_cx_freeze() -> str:
+    """Returns the locale directory used by a frozen build."""
     return os.path.join(Path(__file__).parents[1], 'locale')
 
 
-def on_language_apply_click(app, restart=False):
+def on_language_apply_click(app: App, restart: bool = False) -> None:
     """
-    Using instructions from here:
-    https://inventwithpython.com/blog/2014/12/20/translate-your-python-3-program-with-the-gettext-module/
+    Saves a newly chosen language and restarts the application when requested.
 
-    :return:
+    :param app:     application that owns the language combo and the options
+    :param restart: when True, ask for confirmation and restart after saving
     """
     name = app.ui.general_pref_form.general_app_group.language_combo.currentText()
 
@@ -173,10 +187,14 @@ def apply_language(domain: str, lang: str | None = None) -> str | None:
         return name
 
 
-def restart_program(app, ask=None):
-    """Restarts the current program.
-    Note: this function does not return. Any cleanup action (like
-    saving data) must be done before calling this function.
+def restart_program(app: App, ask: bool | None = None) -> None:
+    """
+    Restarts the process after saving settings.
+
+    The call replaces the current process. Save data before calling it.
+
+    :param app: application to shut down and restart
+    :param ask: when True, ask to save the project even if nothing is marked modified
     """
     log.debug("FlatCAMTranslation.restart_program()")
 
@@ -247,11 +265,15 @@ def restart_program(app, ask=None):
 # TODO Due of some circular imports issues which I currently can't fix I re-add this class here
 #  (mainly is located in appGUI.GUIElements) - required for a consistent look
 class FCMessageBox(QtWidgets.QMessageBox):
-    """
-    Frameless QMessageBox
-    """
+    """Frameless message box that can be dragged by the mouse."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Creates a frameless message box.
+
+        :param args:   positional arguments forwarded to ``QMessageBox``
+        :param kwargs: keyword arguments forwarded to ``QMessageBox``
+        """
         super(FCMessageBox, self).__init__(*args, **kwargs)
         self.offset = None
         self.moving = None
@@ -264,11 +286,21 @@ class FCMessageBox(QtWidgets.QMessageBox):
             "}"
         )
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        Starts a window drag when the left button is pressed.
+
+        :param event: mouse press event
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             self.moving = True
             self.offset = event.position()
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        Moves the window while the left button stays down.
+
+        :param event: mouse move event
+        """
         if self.moving:
             self.move(event.globalPosition().toPoint() - self.offset.toPoint())
