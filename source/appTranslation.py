@@ -47,8 +47,6 @@ languages_dict = {
 
 translations = {}
 
-languages_path_search = ''
-
 
 def isAdmin() -> bool:
     """Reports whether the process is running with administrator rights."""
@@ -65,18 +63,13 @@ def load_languages() -> dict[str, str]:
 
     :return: language code mapped to the name shown in Preferences
     """
-    available_translations = []
-    languages_path_search = languages_dir()
+    locale_dir = languages_dir()
+    if not locale_dir.is_dir():
+        locale_dir = languages_dir_cx_freeze()
 
-    try:
-        available_translations = next(os.walk(languages_path_search))[1]
-    except StopIteration:
-        if not available_translations:
-            languages_path_search = languages_dir_cx_freeze()
-            try:
-                available_translations = next(os.walk(languages_path_search))[1]
-            except StopIteration:
-                pass
+    available_translations = []
+    if locale_dir.is_dir():
+        available_translations = [path.name for path in locale_dir.iterdir() if path.is_dir()]
 
     for lang in available_translations:
         try:
