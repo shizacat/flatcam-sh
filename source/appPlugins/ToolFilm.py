@@ -17,7 +17,7 @@ from camlib import flatten_shapely_geometry
 import logging
 from copy import deepcopy
 import math
-import simplejson as json
+import json
 
 from shapely import LineString, MultiPolygon, Point, Polygon, LinearRing
 from shapely.affinity import scale, skew

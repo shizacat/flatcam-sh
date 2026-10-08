@@ -16,7 +16,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 import logging
 from copy import deepcopy
 import numpy as np
-import simplejson as json
+import json
 import sys
 import math
 import traceback

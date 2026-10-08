@@ -17,7 +17,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
-import simplejson as json
+import json
 import sys
 import math
 

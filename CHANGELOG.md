@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed the `simplejson` dependency; project JSON now uses the standard library `json` module
 - Removed restoring the GUI style from a stored combo index; the style is restored only when `QSettings` holds the style name
 
 ### Fixed

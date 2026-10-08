@@ -26,7 +26,7 @@ from copy import deepcopy, copy
 import numpy as np
 
 import random
-import simplejson as json
+import json
 import shutil
 import traceback
 import logging

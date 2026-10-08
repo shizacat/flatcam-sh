@@ -14,7 +14,6 @@ sudo apt-get install -y \
 	python3-pip \
 	python3-pyqt6 \
 	python3-pyqt6.qtopengl \
-	python3-simplejson \
 	python3-tk
 
 

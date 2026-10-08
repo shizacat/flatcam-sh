@@ -6,7 +6,7 @@ from camlib import to_dict
 from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
 
 import sys
-import simplejson as json
+import json
 
 from copy import deepcopy
 from datetime import datetime

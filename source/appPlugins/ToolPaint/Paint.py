@@ -28,7 +28,7 @@ from matplotlib.backend_bases import KeyEvent as mpl_key_event
 import logging
 from copy import deepcopy
 import numpy as np
-import simplejson as json
+import json
 import sys
 try:
     from numpy import Inf

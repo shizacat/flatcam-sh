@@ -33,7 +33,7 @@ except ImportError:
     from numpy import inf as Inf
 
 from datetime import datetime
-import simplejson as json
+import json
 
 from appCommon.Common import LoudDict
 from settings.utils import copy_shared

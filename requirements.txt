@@ -19,7 +19,6 @@ python-dateutil>=2.1
 kiwisolver>=1.1
 six
 dill
-simplejson
 qrcode>=6.1
 pydantic>=2,<3
 
