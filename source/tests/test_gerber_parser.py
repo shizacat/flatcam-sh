@@ -11,9 +11,11 @@ Run: python tests/test_gerber_parser.py
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from appParsers.ParseGerber import Gerber
+from settings import Options
 
 
 class MockLog:
@@ -40,18 +42,18 @@ class MockInform:
 class MockApp:
     """Mock application object for Gerber parser testing."""
     def __init__(self):
-        self.options = {
-            'gerber_def_units': 'MM',
-            'gerber_def_zeros': 'L',
-            'gerber_circle_steps': 64,
-            'gerber_simp_tolerance': 0.001,
-            'gerber_simplification': True,
-            'gerber_buffering': True,
-            'gerber_extra_buffering': 0.0,
-            'gerber_clean_apertures': True,
-            'gerber_use_buffer_for_union': True,
-            'global_tolerance': 0.01,
-        }
+        self.options = Options(
+            gerber_def_units='MM',
+            gerber_def_zeros='L',
+            gerber_circle_steps=64,
+            gerber_simp_tolerance=0.001,
+            gerber_simplification=True,
+            gerber_buffering='full',
+            gerber_extra_buffering=False,
+            gerber_clean_apertures=True,
+            gerber_use_buffer_for_union=True,
+            global_tolerance=0.01,
+        )
         self.decimals = 4
         self.abort_flag = False
         self.log = MockLog()
