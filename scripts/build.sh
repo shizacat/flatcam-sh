@@ -298,7 +298,8 @@ stamp_app_version() {
   fi
   today="$(date -u +%Y-%m-%d)"
   log "Stamp App.version=${APP_VERSION} App.version_date=${today}"
-  "$(env_python)" - "$app_main" "$APP_VERSION" "$today" <<'PY'
+  # Git Bash keeps /d/a/...; Windows Python reads that as \d\a\... and misses the file.
+  "$(env_python)" - "$(native_path "$app_main")" "$APP_VERSION" "$today" <<'PY'
 import pathlib
 import re
 import sys

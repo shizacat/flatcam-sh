@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Windows packaging so the version stamp opens `appMain.py` with a Windows path
 - Fixed language selection so an unknown name does not install the last catalog on disk
 - Fixed the Ubuntu test job where shape tessellation failed because libGLU was not installed
 - Fixed bookmark manager close so the table drag-and-drop signal is disconnected
