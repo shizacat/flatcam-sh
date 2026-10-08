@@ -6,3 +6,4 @@ source/tests/tmp/
 tmp/
 /build/
 *.dmg
+.coverage

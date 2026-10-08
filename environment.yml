@@ -14,7 +14,6 @@ dependencies:
 - numpy>=2.0.2,<3
 - pikepdf>=2.0
 - pip
-- pre-commit
 - pyopengl
 - pyppeteer
 - pyserial>=3.4

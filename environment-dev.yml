@@ -1,0 +1,7 @@
+name: flatcam
+channels:
+- conda-forge
+dependencies:
+- pytest
+- pytest-cov
+- pre-commit
