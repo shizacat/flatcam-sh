@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a GitHub Actions test job that runs pytest before packaged builds and on pull requests
+
 ### Changed
 
 - Moved `pre-commit` out of the packaged environment into `environment-dev.yml` and added `pytest` and `pytest-cov` there for local tests

@@ -2,9 +2,12 @@ name: Build
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
       - "[0-9]*"
+  pull_request:
   workflow_dispatch:
     inputs:
       version:
@@ -20,8 +23,39 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up micromamba
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          environment-file: environment.yml
+          environment-name: flatcam
+          create-args: python=3.11
+          cache-environment: true
+          cache-environment-key: tests-${{ hashFiles('environment-dev.yml') }}
+          init-shell: bash
+
+      - name: Install development packages
+        run: micromamba install -y -n flatcam -f environment-dev.yml
+
+      - name: Run tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: micromamba run -n flatcam python -m pytest source/tests --cov=source --cov-report=term-missing
+
   build:
     name: ${{ matrix.name }}
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     defaults:
