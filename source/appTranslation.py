@@ -162,21 +162,21 @@ def apply_language(domain: str, lang: str | None = None) -> str | None:
 
     if lang_code == '':
         return "no language"
-    else:
+
+    try:
+        current_lang = gettext.translation(str(domain), localedir=languages_dir(), languages=[lang_code])
+        current_lang.install()
+    except Exception as e:
+        log.error("FlatCAMTranslation.apply_language() --> %s. Perhaps is Cx_freeze-ed?" % str(e))
         try:
-            current_lang = gettext.translation(str(domain), localedir=languages_dir(), languages=[lang_code])
+            current_lang = gettext.translation(str(domain),
+                                                localedir=languages_dir_cx_freeze(),
+                                                languages=[lang_code])
             current_lang.install()
         except Exception as e:
-            log.error("FlatCAMTranslation.apply_language() --> %s. Perhaps is Cx_freeze-ed?" % str(e))
-            try:
-                current_lang = gettext.translation(str(domain),
-                                                   localedir=languages_dir_cx_freeze(),
-                                                   languages=[lang_code])
-                current_lang.install()
-            except Exception as e:
-                log.error("FlatCAMTranslation.apply_language() --> %s" % str(e))
+            log.error("FlatCAMTranslation.apply_language() --> %s" % str(e))
 
-        return name
+    return name
 
 
 def restart_program(app: App, ask: bool | None = None) -> None:
