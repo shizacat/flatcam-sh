@@ -45,8 +45,6 @@ languages_dict = {
     'tr': 'Türk',
 }
 
-translations = {}
-
 
 def isAdmin() -> bool:
     """Reports whether the process is running with administrator rights."""
@@ -71,6 +69,7 @@ def load_languages() -> dict[str, str]:
     if locale_dir.is_dir():
         available_translations = [path.name for path in locale_dir.iterdir() if path.is_dir()]
 
+    translations: dict[str, str] = {}
     for lang in available_translations:
         try:
             if lang in languages_dict.keys():
