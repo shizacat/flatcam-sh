@@ -3146,9 +3146,6 @@ class App(QtCore.QObject):
                 self.splash_tab_layout.addWidget(logo, stretch=0)
                 self.splash_tab_layout.addWidget(title, stretch=1)
 
-                pal = QtGui.QPalette()
-                pal.setColor(QtGui.QPalette.ColorRole.Window, Qt.GlobalColor.white)
-
                 programmers = [
                     {
                         'name': "Denis Hayrullin",
@@ -3381,7 +3378,6 @@ class App(QtCore.QObject):
                 prog_scroll.setWidget(prog_widget)
                 prog_scroll.setWidgetResizable(True)
                 prog_scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-                prog_scroll.setPalette(pal)
 
                 self.programmmers_tab_layout.addWidget(prog_scroll)
 
@@ -3465,7 +3461,6 @@ class App(QtCore.QObject):
                 trans_scroll.setWidget(trans_widget)
                 trans_scroll.setWidgetResizable(True)
                 trans_scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-                trans_scroll.setPalette(pal)
                 self.translators_tab_layout.addWidget(trans_scroll)
 
                 self.translator_grid_lay.addWidget(FCLabel('<b>%s</b>' % _("Language")), 0, 0)

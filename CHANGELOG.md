@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the Programmers and Translators tabs in About appearing empty with the dark color, where white text was drawn on a forced white background
+
 ## [1.9.10] - 2026-10-08
 
 ### Added
