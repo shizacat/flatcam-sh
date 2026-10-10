@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Changed the preferences file name to `settings.FlatConfig` so an application update keeps the saved settings
+- Changed portable mode so `App.data_path` is read again from `user_settings_folder()` after the portable flag is saved
+
 ### Fixed
 
 - Fixed the Programmers and Translators tabs in About appearing empty with the dark color, where white text was drawn on a forced white background

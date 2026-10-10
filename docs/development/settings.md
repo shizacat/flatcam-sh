@@ -4,7 +4,7 @@ FlatCAM keeps its settings in two stores. They differ in where the values live a
 
 | Store | Class | Where it lives | What it holds |
 |---|---|---|---|
-| Preferences file | `Settings`, with the session copy `Options` (`source/settings/models`) | `current_defaults_<version>.FlatConfig` in the data folder | units, plotting, Gerber, Excellon, geometry, CNC job, and tool parameters |
+| Preferences file | `Settings`, with the session copy `Options` (`source/settings/models`) | `settings.FlatConfig` in the data folder | units, plotting, Gerber, Excellon, geometry, CNC job, and tool parameters |
 | GUI store | `GuiSettings` (`source/settings/gui_settings.py`) | Qt `QSettings("Open Source", "FlatCAM_EVO")` | main window layout, widget style, language, font sizes, splash screen |
 
 The Preferences file belongs to the project data. It can be exported, imported, and restored to defaults. The GUI store describes this installation's window and its look. **Clear GUI Settings** in Preferences empties it without touching the Preferences file.
@@ -12,7 +12,7 @@ The Preferences file belongs to the project data. It can be exported, imported, 
 | Question | Read and write |
 |---|---|
 | What should a tool or object use in this session? | `app.options` |
-| What did the user save in Preferences, and what comes back on the next launch? | `app.settings`, file `current_defaults_<version>.FlatConfig` |
+| What did the user save in Preferences, and what comes back on the next launch? | `app.settings`, file `settings.FlatConfig` |
 | Window layout, widget style, language, font sizes? | `GuiSettings()` |
 
 ## Preferences file: `Settings` and `Options`
@@ -21,7 +21,7 @@ The Preferences file belongs to the project data. It can be exported, imported, 
 
 ### `Settings`
 
-Saved application settings. They are loaded from `current_defaults_<version>.FlatConfig` and written back when the user saves preferences. A missing file is created from the built-in defaults. A file that cannot be read is deleted and replaced with those defaults; the replacement is written to the log. The file-format `version` and the usage counters in `global_stats` belong here.
+Saved application settings. They are loaded from `settings.FlatConfig` and written back when the user saves preferences. A missing file is created from the built-in defaults. A file that cannot be read is deleted and replaced with those defaults; the replacement is written to the log. The file-format `version` and the usage counters in `global_stats` belong here. The application version is not part of the file name, so an update keeps this file.
 
 ### `Options`
 
@@ -47,7 +47,7 @@ Options do not repeat the settings schema. Shared preference groups are defined 
 
 `App` creates this in `App.__init__` (`source/appMain.py`).
 
-Saved settings are a `Settings` model on `app.settings` (`source/settings`). Field defaults are the built-in starting set. `App.load_settings()` reads `current_defaults_<version>.FlatConfig` from the data folder and keeps a field default when a key is absent.
+Saved settings are a `Settings` model on `app.settings` (`source/settings`). Field defaults are the built-in starting set. `App.load_settings()` reads `settings.FlatConfig` from the data folder and keeps a field default when a key is absent.
 
 Data folder:
 
@@ -55,7 +55,7 @@ Data folder:
 - Windows, portable: `<app>/config`
 - macOS and Linux: `~/.FlatCAM`
 
-The settings file name uses the application version, `App.version`, as in `current_defaults_Unstable.FlatConfig`. The `version` field inside the file is the data-format version and is not part of the file name.
+The file name is `settings.FlatConfig`. The `version` field inside the file is the data-format version, not the application version. Older `current_defaults_<version>.FlatConfig` files are left unread.
 
 `PreferencesUIManager.current_defaults` is an in-memory `Settings` snapshot used to undo an unsaved Preferences edit. It is not the file.
 
@@ -79,7 +79,7 @@ They are copied only at these points.
 
 1. `defaults_read_form()` writes the form into `app.settings`. Only keys listed in `settings_from_fields` are read.
 2. `copy_shared(app.options, app.settings)` copies those fields onto the session.
-3. `save_defaults()` writes `app.settings` to `current_defaults_<version>.FlatConfig`.
+3. `save_defaults()` writes `app.settings` to `settings.FlatConfig`.
 
 **File → Save Defaults** (`AppIO.on_file_save_defaults`) copies `app.options` onto `app.settings`, then writes the settings file.
 

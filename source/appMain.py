@@ -757,7 +757,6 @@ class App(QtCore.QObject):
         # ##################################### UPDATE PREFERENCES GUI FORMS ########################################
         # ###########################################################################################################
         self.preferencesUiManager = PreferencesUIManager(
-            data_path=self.data_path,
             ui=self.ui,
             inform=self.inform,
             options=self.options,
@@ -1478,10 +1477,7 @@ class App(QtCore.QObject):
             return Path.home() / ".FlatCAM"
 
         portable = False
-        app_dir = Path(__file__).resolve().parent
-        config_file = app_dir.parent / "config" / "configuration.txt"
-        if not config_file.is_file():
-            config_file = app_dir / "config" / "configuration.txt"
+        config_file = App._windows_configuration_file()
 
         try:
             with open(config_file, 'r') as f:
@@ -1507,10 +1503,26 @@ class App(QtCore.QObject):
             return Path(os.getenv('appdata')) / "FlatCAM"
         return Path(__file__).resolve().parent.parent / "config"
 
+    @staticmethod
+    def _windows_configuration_file() -> Path:
+        """
+        Returns the Windows ``configuration.txt`` path.
+
+        The file one directory above this module is used when it exists.
+        Otherwise the file next to this module is used.
+
+        :return: path to ``configuration.txt``
+        """
+        app_dir = Path(__file__).resolve().parent
+        preferred = app_dir.parent / "config" / "configuration.txt"
+        if preferred.is_file():
+            return preferred
+        return app_dir / "config" / "configuration.txt"
+
     def tools_database_path(self) -> str:
         return str(self.data_path / ("tools_db_%s.FlatDB" % self.version))
 
-    def load_settings(self, filename: str | None = None) -> Settings:
+    def load_settings(self, filename: Path | None = None) -> Settings:
         """
         Loads application settings from a JSON file.
 
@@ -1525,7 +1537,7 @@ class App(QtCore.QObject):
         if filename is None:
             filename = self.settings_path()
 
-        if Path(filename).is_file():
+        if filename.is_file():
             try:
                 return Settings.load(filename)
             except SettingsError:
@@ -1538,7 +1550,7 @@ class App(QtCore.QObject):
 
         return self._write_default_settings(filename, created=True)
 
-    def _write_default_settings(self, filename: str, created: bool) -> Settings:
+    def _write_default_settings(self, filename: Path, created: bool) -> Settings:
         """
         Stores the built-in defaults in a settings file and returns them.
 
@@ -1555,7 +1567,7 @@ class App(QtCore.QObject):
             self.log.info("Failed to write settings file: %s" % filename)
         return settings
 
-    def _remove_settings_file(self, filename: str) -> None:
+    def _remove_settings_file(self, filename: Path) -> None:
         """
         Removes a settings file that could not be loaded.
 
@@ -1566,8 +1578,16 @@ class App(QtCore.QObject):
         except OSError as error:
             self.log.info("Could not remove settings file %s: %s" % (filename, error))
 
-    def settings_path(self) -> str:
-        return str(self.data_path / ("current_defaults_%s.FlatConfig" % self.version))
+    def settings_path(self) -> Path:
+        """
+        Returns the preferences file path.
+
+        The name does not include the application version, so an update keeps the saved settings.
+        The folder is ``data_path``.
+
+        :return: path to ``settings.FlatConfig``
+        """
+        return self.data_path / "settings.FlatConfig"
 
     def recent_files_path(self) -> str:
         return str(self.data_path / "recent.json")
@@ -3990,19 +4010,13 @@ class App(QtCore.QObject):
             # this won't work in Linux or macOS
             return
 
-        # test if the app was frozen and choose the path for the configuration file
-        if getattr(sys, "frozen", False) is True:
-            current_data_path = Path(__file__).resolve().parent.parent / "config"
-        else:
-            current_data_path = Path(__file__).resolve().parent / "config"
-
-        config_file = current_data_path / "configuration.txt"
+        config_file = self._windows_configuration_file()
         try:
             with open(config_file, 'r') as f:
                 try:
                     data = f.readlines()
                 except Exception as e:
-                    self.log.error('App.__init__() -->%s' % str(e))
+                    self.log.error('App.on_portable_checked() --> %s' % str(e))
                     return
         except FileNotFoundError:
             pass
@@ -4016,53 +4030,32 @@ class App(QtCore.QObject):
 
         if state == QtCore.Qt.CheckState.Checked:
             data[line_no] = 'portable=True\n'
-            # create the new defaults files
-            # create current_defaults.FlatConfig file if there is none
-            try:
-                f = open(current_data_path / "current_defaults.FlatConfig")
-                f.close()
-            except IOError:
-                self.log.debug('Creating empty current_defaults.FlatConfig')
-                f = open(current_data_path / "current_defaults.FlatConfig", "w")
-                json.dump({}, f)
-                f.close()
-
-            # create factory_defaults.FlatConfig file if there is none
-            try:
-                f = open(current_data_path / "factory_defaults.FlatConfig")
-                f.close()
-            except IOError:
-                self.log.debug('Creating empty factory_defaults.FlatConfig')
-                f = open(current_data_path / "factory_defaults.FlatConfig", "w")
-                json.dump({}, f)
-                f.close()
-
-            try:
-                f = open(current_data_path / "recent.json")
-                f.close()
-            except IOError:
-                self.log.debug('Creating empty recent.json')
-                f = open(current_data_path / "recent.json", "w")
-                json.dump([], f)
-                f.close()
-
-            try:
-                fp = open(current_data_path / "recent_projects.json")
-                fp.close()
-            except IOError:
-                self.log.debug('Creating empty recent_projects.json')
-                fp = open(current_data_path / "recent_projects.json", "w")
-                json.dump([], fp)
-                fp.close()
-
-            # save the current defaults to the new defaults file
-            self.preferencesUiManager.save_defaults(silent=True, data_path=current_data_path)
-
         else:
             data[line_no] = 'portable=False\n'
 
         with open(config_file, 'w') as f:
             f.writelines(data)
+
+        folder = self.user_settings_folder()
+        if folder is None:
+            return
+        self.data_path = folder
+        if state != QtCore.Qt.CheckState.Checked:
+            return
+
+        for filename, empty in (
+            (self.settings_path(), {}),
+            (str(self.data_path / "factory_defaults.FlatConfig"), {}),
+            (self.recent_files_path(), []),
+            (self.recent_projects_path(), []),
+        ):
+            if Path(filename).is_file():
+                continue
+            self.log.debug('Creating empty %s' % filename)
+            with open(filename, "w") as new_file:
+                json.dump(empty, new_file)
+
+        self.preferencesUiManager.save_defaults(silent=True)
 
     def on_defaults_dict_change(self, field):
         """

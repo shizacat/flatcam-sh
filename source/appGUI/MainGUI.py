@@ -1745,7 +1745,7 @@ class MainGUI(QtWidgets.QMainWindow):
         self.pref_save_button.setText(_("Save"))
         self.pref_save_button.setMinimumWidth(130)
         self.pref_save_button.setToolTip(
-            _("Save the current settings in the 'current_defaults' file\n"
+            _("Save the current settings in the 'settings.FlatConfig' file\n"
               "which is the file storing the working default preferences."))
         self.pref_tab_bottom_layout_2.addWidget(self.pref_save_button)
 

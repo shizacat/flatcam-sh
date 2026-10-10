@@ -3009,7 +3009,7 @@ class appIO(QtCore.QObject):
     def on_file_save_defaults(self):
         """
         Callback for menu item File->Save Defaults. Saves application default options
-        ``self.options`` to current_defaults.FlatConfig.
+        ``self.options`` to settings.FlatConfig.
 
         :return: None
         """

@@ -2,7 +2,6 @@
 from PyQt6 import QtGui, QtCore, QtWidgets
 
 from collections.abc import Mapping
-from pathlib import Path
 
 from appGUI.GUIElements import FCMessageBox
 from pydantic import BaseModel
@@ -22,12 +21,11 @@ if '_' not in builtins.__dict__:
 
 class PreferencesUIManager(QtCore.QObject):
 
-    def __init__(self, settings: Settings, data_path: Path, ui, inform, options):
+    def __init__(self, settings: Settings, ui, inform, options):
         """
         Class that control the Preferences Tab
 
         :param settings:    saved application settings
-        :param data_path:   a path to the file where all the preferences are stored for persistence
         :param ui:          reference to the MainGUI class which constructs the UI
         :param inform:      a pyqtSignal used to display information's in the StatusBar of the GUI
         :param options:     session options loaded in the application
@@ -46,7 +44,6 @@ class PreferencesUIManager(QtCore.QObject):
 
         self.settings = settings
         self.current_defaults = self.settings.model_copy(deep=True)
-        self.data_path = data_path
         self.ui = ui
         self.inform = inform
         self.ignore_tab_close_event = False
@@ -1309,28 +1306,23 @@ class PreferencesUIManager(QtCore.QObject):
         self.ui.units_label.setText("[mm]")
         self.inform.emit('[success] %s' % _("Preferences default values are restored."))
 
-    def save_defaults(self, silent=False, data_path: Path | None = None, first_time=False):
+    def save_defaults(self, silent=False, first_time=False):
         """
         Saves application default options
-        ``self.settings`` to current_defaults.FlatConfig file.
-        Save the toolbars visibility status to the preferences file (current_defaults.FlatConfig) to be
+        ``self.settings`` to settings.FlatConfig file.
+        Save the toolbars visibility status to the preferences file (settings.FlatConfig) to be
         used at the next launch of the application.
 
         :param silent:      Whether to display a message in status bar or not; boolean
-        :param data_path:   The path where to save the preferences file (current_defaults.FlatConfig)
-                            When the application is portable it should be a mobile location.
         :param first_time:  Boolean. If True will execute some code when the app is run first time
         :return:            None
         """
         self.ui.app.log.debug("App.PreferencesUIManager.save_defaults()")
 
-        if data_path is None:
-            data_path = self.data_path
-
         propagate_settings(self.settings)
 
         # Save the options to disk
-        filename = data_path / ("current_defaults_%s.FlatConfig" % self.ui.app.version)
+        filename = self.ui.app.settings_path()
 
         try:
             self.settings.write(filename=filename)
