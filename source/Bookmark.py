@@ -50,16 +50,6 @@ class BookmarkManager(QtWidgets.QWidget):
 
         self.bm_dict = deepcopy(storage)
 
-        # Icon and title
-        # self.setWindowIcon(parent.app_icon)
-        # self.setWindowTitle(_("Bookmark Manager"))
-        # self.resize(600, 400)
-
-        # title = FCLabel(
-        #     "<font size=8><B>FlatCAM</B></font><BR>"
-        # )
-        # title.setOpenExternalLinks(True)
-
         # layouts
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
@@ -90,9 +80,6 @@ class BookmarkManager(QtWidgets.QWidget):
         self.table_widget.horizontalHeaderItem(2).setToolTip(
             _("Web Link. E.g: https://your_website.org "))
 
-        # pal = QtGui.QPalette()
-        # pal.setColor(QtGui.QPalette.Background, Qt.white)
-
         # New Bookmark
         new_vlay = QtWidgets.QVBoxLayout()
         layout.addLayout(new_vlay)
@@ -122,15 +109,13 @@ class BookmarkManager(QtWidgets.QWidget):
         remove_entry_btn = FCButton(_("Remove Entry"))
         export_list_btn = FCButton(_("Export List"))
         import_list_btn = FCButton(_("Import List"))
-        # closebtn = FCButton(_("Close"))
 
-        # button_hlay.addStretch()
         button_hlay.addWidget(add_entry_btn)
         button_hlay.addWidget(remove_entry_btn)
 
         button_hlay.addWidget(export_list_btn)
         button_hlay.addWidget(import_list_btn)
-        # button_hlay.addWidget(closebtn)
+
         # ##############################################################################
         # ######################## SIGNALS #############################################
         # ##############################################################################
@@ -141,7 +126,6 @@ class BookmarkManager(QtWidgets.QWidget):
         import_list_btn.clicked.connect(self.on_import_bookmarks)
         self.title_entry.returnPressed.connect(self.on_add_entry)
         self.link_entry.returnPressed.connect(self.on_add_entry)
-        # closebtn.clicked.connect(self.accept)
 
         self.ui_connect()
         self.build_bm_ui()
@@ -300,8 +284,6 @@ class BookmarkManager(QtWidgets.QWidget):
 
         self.app.inform.emit('[success] %s' % _("Bookmark removed."))
 
-        # for index in index_list:
-        #     self.table_widget.model().removeRow(index.row())
         self.build_bm_ui()
 
     def on_export_bookmarks(self) -> None:
@@ -410,10 +392,6 @@ class BookmarkManager(QtWidgets.QWidget):
             )
 
         self.app.install_bookmarks(book_dict=self.bm_dict)
-
-    # def accept(self):
-    #     self.rebuild_actions()
-    #     super().accept()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """
