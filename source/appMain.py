@@ -483,10 +483,9 @@ class App(QtCore.QObject):
             self.log.debug("Created data folder: %s" % self.data_path)
 
         self.preprocessorpaths = self.preprocessors_path()
-        preprocessors_path = Path(self.preprocessorpaths)
-        if not preprocessors_path.exists():
-            preprocessors_path.mkdir(parents=True)
-            self.log.debug('Created preprocessors folder: ' + self.preprocessorpaths)
+        if not self.preprocessorpaths.exists():
+            self.preprocessorpaths.mkdir(parents=True)
+            self.log.debug('Created preprocessors folder: %s' % self.preprocessorpaths)
 
         # create tools_db.FlatDB file if there is none
         db_path = self.tools_database_path()
@@ -1589,17 +1588,17 @@ class App(QtCore.QObject):
         """
         return self.data_path / "settings.FlatConfig"
 
-    def recent_files_path(self) -> str:
-        return str(self.data_path / "recent.json")
+    def recent_files_path(self) -> Path:
+        return self.data_path / "recent.json"
 
-    def recent_projects_path(self) -> str:
-        return str(self.data_path / "recent_projects.json")
+    def recent_projects_path(self) -> Path:
+        return self.data_path / "recent_projects.json"
 
-    def preprocessors_path(self) -> str:
-        return str(self.data_path / "preprocessors")
+    def preprocessors_path(self) -> Path:
+        return self.data_path / "preprocessors"
 
-    def log_path(self) -> str:
-        return str(self.data_path / "log.txt")
+    def log_path(self) -> Path:
+        return self.data_path / "log.txt"
 
     def on_options_value_changed(self, key_changed):
         # when changing those properties the associated keys change, so we get an updated Properties default Tab
