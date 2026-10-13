@@ -5,11 +5,28 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Callable
+from enum import IntEnum
 from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
 
 from settings.st_types import XYPair
+
+
+class ToolTarget(IntEnum):
+    """
+    Operation a tool is stored for.
+
+    The value is the combo index written in the tools database.
+    """
+
+    GENERAL = 0
+    MILLING = 1
+    DRILLING = 2
+    ISOLATION = 3
+    PAINT = 4
+    NCC = 5
+    CUTOUT = 6
 
 
 class ToolData(BaseModel):
@@ -23,7 +40,7 @@ class ToolData(BaseModel):
     model_config = ConfigDict(extra="allow", validate_assignment=True)
 
     plot: bool = True
-    tool_target: int = 0
+    tool_target: ToolTarget = ToolTarget.GENERAL
     tol_min: float = 0.0
     tol_max: float = 0.0
     # The job combo stores its label. Defaults do not fill this field.

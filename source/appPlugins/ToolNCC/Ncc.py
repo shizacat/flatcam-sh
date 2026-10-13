@@ -24,7 +24,7 @@ from appGUI.GUIElements import (
 import logging
 from copy import deepcopy
 import numpy as np
-from tools_database import ToolsDatabase
+from tools_database import ToolTarget, ToolsDatabase
 import sys
 
 from shapely import (
@@ -1933,7 +1933,7 @@ class ToolNcc(Gerber, AppTool):
         """
         tool_from_db = deepcopy(tool)
 
-        if tool.data.tool_target not in [0, 5]:   # [General, NCC]
+        if tool.data.tool_target not in [ToolTarget.GENERAL, ToolTarget.NCC]:
             for idx in range(self.app.ui.plot_tab_area.count()):
                 if self.app.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
                     wdg = self.app.ui.plot_tab_area.widget(idx)

@@ -16,7 +16,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 import logging
 from copy import deepcopy
 import numpy as np
-from tools_database import ToolsDatabase
+from tools_database import ToolTarget, ToolsDatabase
 import sys
 import math
 import traceback
@@ -2132,7 +2132,7 @@ class ToolMilling(Excellon, AppTool):
             high_limit = db_tool_val.data.tol_max
 
             # we need only tool marked for Milling Tool (Geometry Object)
-            if db_tool_val.data.tool_target != 1:     # _('Milling')
+            if db_tool_val.data.tool_target != ToolTarget.MILLING:
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update its data

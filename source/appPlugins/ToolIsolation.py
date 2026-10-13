@@ -17,7 +17,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
-from tools_database import ToolsDatabase
+from tools_database import ToolTarget, ToolsDatabase
 import sys
 import math
 
@@ -1417,7 +1417,7 @@ class ToolIsolation(Gerber, AppTool):
             high_limit = db_tool_val.data.tol_max
 
             # we need only tool marked for Isolation Tool
-            if db_tool_val.data.tool_target != 3:  # _('Isolation')
+            if db_tool_val.data.tool_target != ToolTarget.ISOLATION:
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update it's data
@@ -2936,7 +2936,7 @@ class ToolIsolation(Gerber, AppTool):
         """
         tool_from_db = deepcopy(tool)
 
-        if tool.data.tool_target not in [0, 3]:  # [General, Isolation]
+        if tool.data.tool_target not in [ToolTarget.GENERAL, ToolTarget.ISOLATION]:
             for idx in range(self.app.ui.plot_tab_area.count()):
                 if self.app.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
                     wdg = self.app.ui.plot_tab_area.widget(idx)

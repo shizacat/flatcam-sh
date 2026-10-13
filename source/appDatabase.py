@@ -3,7 +3,7 @@ from PyQt6 import QtGui, QtCore, QtWidgets
 from appGUI.GUIElements import FCEntry, FCButton, FCDoubleSpinner, FCComboBox, FCCheckBox, FCSpinner, \
     FCTree, RadioSet, FCFileSaveDialog, FCLabel, FCComboBox2, GLay
 from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
-from tools_database import ToolRecord, ToolsDatabase
+from tools_database import ToolRecord, ToolTarget, ToolsDatabase
 
 import sys
 
@@ -1758,13 +1758,13 @@ class ToolsDB2(QtWidgets.QWidget):
 
             t_name = dict_val.name
             op_name = {
-                0: _("General"),
-                1: _("Milling"),
-                2: _("Drilling"),
-                3: _('Isolation'),
-                4: _('Paint'),
-                5: _('NCC'),
-                6: _('Cutout')
+                ToolTarget.GENERAL: _("General"),
+                ToolTarget.MILLING: _("Milling"),
+                ToolTarget.DRILLING: _("Drilling"),
+                ToolTarget.ISOLATION: _('Isolation'),
+                ToolTarget.PAINT: _('Paint'),
+                ToolTarget.NCC: _('NCC'),
+                ToolTarget.CUTOUT: _('Cutout')
             }[dict_val.data.tool_target]
 
             dia = dict_val.tooldia
@@ -1836,7 +1836,7 @@ class ToolsDB2(QtWidgets.QWidget):
 
         self.ui.tool_description_box.setEnabled(True)
         if self.db_tool_dict:
-            if tool_target == 0:    # _("General")
+            if tool_target == ToolTarget.GENERAL:
                 self.ui.milling_box.setEnabled(True)
                 self.ui.ncc_box.setEnabled(True)
                 self.ui.paint_box.setEnabled(True)
@@ -1858,33 +1858,33 @@ class ToolsDB2(QtWidgets.QWidget):
                 self.ui.drill_box.hide()
                 self.ui.cutout_box.hide()
 
-                if tool_target == 1:    # _("Milling")
+                if tool_target == ToolTarget.MILLING:
                     self.ui.milling_box.setEnabled(True)
                     self.ui.milling_box.show()
 
-                if tool_target == 2:    # _("Drilling")
+                if tool_target == ToolTarget.DRILLING:
                     self.ui.drill_box.setEnabled(True)
                     self.ui.drill_box.show()
 
-                if tool_target == 3:    # _("Isolation")
+                if tool_target == ToolTarget.ISOLATION:
                     self.ui.iso_box.setEnabled(True)
                     self.ui.iso_box.show()
                     self.ui.milling_box.setEnabled(True)
                     self.ui.milling_box.show()
 
-                if tool_target == 4:    # _("Paint")
+                if tool_target == ToolTarget.PAINT:
                     self.ui.paint_box.setEnabled(True)
                     self.ui.paint_box.show()
                     self.ui.milling_box.setEnabled(True)
                     self.ui.milling_box.show()
 
-                if tool_target == 5:    # _("NCC")
+                if tool_target == ToolTarget.NCC:
                     self.ui.ncc_box.setEnabled(True)
                     self.ui.ncc_box.show()
                     self.ui.milling_box.setEnabled(True)
                     self.ui.milling_box.show()
 
-                if tool_target == 6:    # _("Cutout")
+                if tool_target == ToolTarget.CUTOUT:
                     self.ui.cutout_box.setEnabled(True)
                     self.ui.cutout_box.show()
                     self.ui.milling_box.setEnabled(True)
@@ -1899,7 +1899,7 @@ class ToolsDB2(QtWidgets.QWidget):
         default_data = {}
         default_data.update({
             "plot":             True,
-            "tool_target": 0,   # _("General")
+            "tool_target": ToolTarget.GENERAL,
             "tol_min": 0.0,
             "tol_max": 0.0,
 

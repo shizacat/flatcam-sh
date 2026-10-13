@@ -16,7 +16,7 @@ from camlib import flatten_shapely_geometry
 import math
 import logging
 from copy import deepcopy
-from tools_database import ToolsDatabase
+from tools_database import ToolTarget, ToolsDatabase
 import sys
 try:
     from numpy import Inf
@@ -562,7 +562,7 @@ class CutOut(AppTool):
         :return:
         """
 
-        if tool.data.tool_target not in [0, 6]:   # [General, Cutout Tool]
+        if tool.data.tool_target not in [ToolTarget.GENERAL, ToolTarget.CUTOUT]:
             for idx in range(self.app.ui.plot_tab_area.count()):
                 if self.app.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
                     wdg = self.app.ui.plot_tab_area.widget(idx)
