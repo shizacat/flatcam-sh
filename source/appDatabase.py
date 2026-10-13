@@ -1710,7 +1710,7 @@ class ToolsDB2(QtWidgets.QWidget):
                 if option_changed in ("name", "tooldia"):
                     setattr(tooluid_val, option_changed, new_option_value)
                 else:
-                    setattr(tooluid_val.data, option_changed, new_option_value)
+                    tooluid_val.data.set_stored(option_changed, new_option_value)
         self.ui_connect()
 
     def setup_db_ui(self):
@@ -2475,7 +2475,7 @@ class ToolsDB2(QtWidgets.QWidget):
             if option in ("name", "tooldia"):
                 old_value = getattr(record, option)
             else:
-                old_value = getattr(record.data, option)
+                old_value = record.data.get_stored(option)
             wdg.set_value(old_value)
             wdg.clearFocus()
             return
@@ -2488,7 +2488,7 @@ class ToolsDB2(QtWidgets.QWidget):
         elif wdg_name == "gdb_job":
             self.db_tool_dict[tool_id].data.job = val
         elif wdg_name == "gdb_shape":
-            self.db_tool_dict[tool_id].data.tools_mill_tool_shape = val
+            self.db_tool_dict[tool_id].data.milling.tool_shape = val
         else:
             # Milling Tool
             if wdg_name == "gdb_tool_target":
@@ -2499,131 +2499,131 @@ class ToolsDB2(QtWidgets.QWidget):
                 self.db_tool_dict[tool_id].data.tol_max = val
 
             elif wdg_name == "gdb_tool_offset_type":
-                self.db_tool_dict[tool_id].data.tools_mill_offset_type = val
+                self.db_tool_dict[tool_id].data.milling.offset_type = val
             elif wdg_name == "gdb_custom_offset":
                 self.db_tool_dict[tool_id].tools_mill_offset_value = val
 
             elif wdg_name == "gdb_cutz":
-                self.db_tool_dict[tool_id].data.tools_mill_cutz = val
+                self.db_tool_dict[tool_id].data.milling.cutz = val
             elif wdg_name == "gdb_multidepth":
-                self.db_tool_dict[tool_id].data.tools_mill_multidepth = val
+                self.db_tool_dict[tool_id].data.milling.multidepth = val
             elif wdg_name == "gdb_multidepth_entry":
-                self.db_tool_dict[tool_id].data.tools_mill_depthperpass = val
+                self.db_tool_dict[tool_id].data.milling.depthperpass = val
 
             elif wdg_name == "gdb_travelz":
-                self.db_tool_dict[tool_id].data.tools_mill_travelz = val
+                self.db_tool_dict[tool_id].data.milling.travelz = val
             elif wdg_name == "gdb_frxy":
-                self.db_tool_dict[tool_id].data.tools_mill_feedrate = val
+                self.db_tool_dict[tool_id].data.milling.feedrate = val
             elif wdg_name == "gdb_frz":
-                self.db_tool_dict[tool_id].data.tools_mill_feedrate_z = val
+                self.db_tool_dict[tool_id].data.milling.feedrate_z = val
             elif wdg_name == "gdb_spindle":
-                self.db_tool_dict[tool_id].data.tools_mill_spindlespeed = val
+                self.db_tool_dict[tool_id].data.milling.spindlespeed = val
             elif wdg_name == "gdb_dwell":
-                self.db_tool_dict[tool_id].data.tools_mill_dwell = val
+                self.db_tool_dict[tool_id].data.milling.dwell = val
             elif wdg_name == "gdb_dwelltime":
-                self.db_tool_dict[tool_id].data.tools_mill_dwelltime = val
+                self.db_tool_dict[tool_id].data.milling.dwelltime = val
 
             elif wdg_name == "gdb_vdia":
-                self.db_tool_dict[tool_id].data.tools_mill_vtipdia = val
+                self.db_tool_dict[tool_id].data.milling.vtipdia = val
             elif wdg_name == "gdb_vangle":
-                self.db_tool_dict[tool_id].data.tools_mill_vtipangle = val
+                self.db_tool_dict[tool_id].data.milling.vtipangle = val
             elif wdg_name == "gdb_frapids":
-                self.db_tool_dict[tool_id].data.tools_mill_feedrate_rapid = val
+                self.db_tool_dict[tool_id].data.milling.feedrate_rapid = val
             elif wdg_name == "gdb_ecut":
-                self.db_tool_dict[tool_id].data.tools_mill_extracut = val
+                self.db_tool_dict[tool_id].data.milling.extracut = val
             elif wdg_name == "gdb_ecut_length":
-                self.db_tool_dict[tool_id].data.tools_mill_extracut_length = val
+                self.db_tool_dict[tool_id].data.milling.extracut_length = val
 
             # NCC Tool
             elif wdg_name == "gdb_n_operation":
-                self.db_tool_dict[tool_id].data.tools_ncc_operation = val
+                self.db_tool_dict[tool_id].data.ncc.operation = val
             elif wdg_name == "gdb_n_overlap":
-                self.db_tool_dict[tool_id].data.tools_ncc_overlap = val
+                self.db_tool_dict[tool_id].data.ncc.overlap = val
             elif wdg_name == "gdb_n_margin":
-                self.db_tool_dict[tool_id].data.tools_ncc_margin = val
+                self.db_tool_dict[tool_id].data.ncc.margin = val
             elif wdg_name == "gdb_n_method":
-                self.db_tool_dict[tool_id].data.tools_ncc_method = val
+                self.db_tool_dict[tool_id].data.ncc.method = val
             elif wdg_name == "gdb_n_connect":
-                self.db_tool_dict[tool_id].data.tools_ncc_connect = val
+                self.db_tool_dict[tool_id].data.ncc.connect = val
             elif wdg_name == "gdb_n_contour":
-                self.db_tool_dict[tool_id].data.tools_ncc_contour = val
+                self.db_tool_dict[tool_id].data.ncc.contour = val
             elif wdg_name == "gdb_n_offset":
-                self.db_tool_dict[tool_id].data.tools_ncc_offset_choice = val
+                self.db_tool_dict[tool_id].data.ncc.offset_choice = val
             elif wdg_name == "gdb_n_offset_value":
-                self.db_tool_dict[tool_id].data.tools_ncc_offset_value = val
+                self.db_tool_dict[tool_id].data.ncc.offset_value = val
             elif wdg_name == "gdb_n_milling_type":
-                self.db_tool_dict[tool_id].data.tools_ncc_milling_type = val
+                self.db_tool_dict[tool_id].data.ncc.milling_type = val
 
             # Paint Tool
             elif wdg_name == "gdb_p_overlap":
-                self.db_tool_dict[tool_id].data.tools_paint_overlap = val
+                self.db_tool_dict[tool_id].data.paint.overlap = val
             elif wdg_name == "gdb_p_offset":
-                self.db_tool_dict[tool_id].data.tools_paint_offset = val
+                self.db_tool_dict[tool_id].data.paint.offset = val
             elif wdg_name == "gdb_p_method":
-                self.db_tool_dict[tool_id].data.tools_paint_method = val
+                self.db_tool_dict[tool_id].data.paint.method = val
             elif wdg_name == "gdb_p_connect":
-                self.db_tool_dict[tool_id].data.tools_paint_connect = val
+                self.db_tool_dict[tool_id].data.paint.connect = val
             elif wdg_name == "gdb_p_contour":
-                self.db_tool_dict[tool_id].data.tools_paint_contour = val
+                self.db_tool_dict[tool_id].data.paint.contour = val
 
             # Isolation Tool
             elif wdg_name == "gdb_i_passes":
-                self.db_tool_dict[tool_id].data.tools_iso_passes = val
+                self.db_tool_dict[tool_id].data.isolation.passes = val
             elif wdg_name == "gdb_i_overlap":
-                self.db_tool_dict[tool_id].data.tools_iso_overlap = val
+                self.db_tool_dict[tool_id].data.isolation.overlap = val
             elif wdg_name == "gdb_i_milling_type":
-                self.db_tool_dict[tool_id].data.tools_iso_milling_type = val
+                self.db_tool_dict[tool_id].data.isolation.milling_type = val
             elif wdg_name == "gdb_i_iso_type":
-                self.db_tool_dict[tool_id].data.tools_iso_isotype = val
+                self.db_tool_dict[tool_id].data.isolation.isotype = val
 
             # Drilling Tool
             elif wdg_name == "gdb_e_cutz":
-                self.db_tool_dict[tool_id].data.tools_drill_cutz = val
+                self.db_tool_dict[tool_id].data.drilling.cutz = val
             elif wdg_name == "gdb_e_multidepth":
-                self.db_tool_dict[tool_id].data.tools_drill_multidepth = val
+                self.db_tool_dict[tool_id].data.drilling.multidepth = val
             elif wdg_name == "gdb_e_depthperpass":
-                self.db_tool_dict[tool_id].data.tools_drill_depthperpass = val
+                self.db_tool_dict[tool_id].data.drilling.depthperpass = val
             elif wdg_name == "gdb_e_travelz":
-                self.db_tool_dict[tool_id].data.tools_drill_travelz = val
+                self.db_tool_dict[tool_id].data.drilling.travelz = val
 
             elif wdg_name == "gdb_e_feedratez":
-                self.db_tool_dict[tool_id].data.tools_drill_feedrate_z = val
+                self.db_tool_dict[tool_id].data.drilling.feedrate_z = val
             elif wdg_name == "gdb_e_fr_rapid":
-                self.db_tool_dict[tool_id].data.tools_drill_feedrate_rapid = val
+                self.db_tool_dict[tool_id].data.drilling.feedrate_rapid = val
             elif wdg_name == "gdb_e_spindlespeed":
-                self.db_tool_dict[tool_id].data.tools_drill_spindlespeed = val
+                self.db_tool_dict[tool_id].data.drilling.spindlespeed = val
             elif wdg_name == "gdb_e_dwell":
-                self.db_tool_dict[tool_id].data.tools_drill_dwell = val
+                self.db_tool_dict[tool_id].data.drilling.dwell = val
             elif wdg_name == "gdb_e_dwelltime":
-                self.db_tool_dict[tool_id].data.tools_drill_dwelltime = val
+                self.db_tool_dict[tool_id].data.drilling.dwelltime = val
 
             elif wdg_name == "gdb_e_offset":
-                self.db_tool_dict[tool_id].data.tools_drill_offset = val
+                self.db_tool_dict[tool_id].data.drilling.offset = val
             elif wdg_name == "gdb_e_drill_slots":
-                self.db_tool_dict[tool_id].data.tools_drill_drill_slots = val
+                self.db_tool_dict[tool_id].data.drilling.drill_slots = val
             elif wdg_name == "gdb_e_drill_slots_over":
-                self.db_tool_dict[tool_id].data.tools_drill_drill_overlap = val
+                self.db_tool_dict[tool_id].data.drilling.drill_overlap = val
             elif wdg_name == "gdb_e_drill_last_drill":
-                self.db_tool_dict[tool_id].data.tools_drill_last_drill = val
+                self.db_tool_dict[tool_id].data.drilling.last_drill = val
 
             # Cutout Tool
             elif wdg_name == "gdb_ct_margin":
-                self.db_tool_dict[tool_id].data.tools_cutout_margin = val
+                self.db_tool_dict[tool_id].data.cutout.margin = val
             elif wdg_name == "gdb_ct_gapsize":
-                self.db_tool_dict[tool_id].data.tools_cutout_gapsize = val
+                self.db_tool_dict[tool_id].data.cutout.gapsize = val
             elif wdg_name == "gdb_ct_gaps":
-                self.db_tool_dict[tool_id].data.tools_cutout_gaps_ff = val
+                self.db_tool_dict[tool_id].data.cutout.gaps_ff = val
             elif wdg_name == "gdb_ct_convex":
-                self.db_tool_dict[tool_id].data.tools_cutout_convexshape = val
+                self.db_tool_dict[tool_id].data.cutout.convexshape = val
 
             elif wdg_name == "gdb_ct_gap_type":
-                self.db_tool_dict[tool_id].data.tools_cutout_gap_type = val
+                self.db_tool_dict[tool_id].data.cutout.gap_type = val
             elif wdg_name == "gdb_ct_gap_depth":
-                self.db_tool_dict[tool_id].data.tools_cutout_gap_depth = val
+                self.db_tool_dict[tool_id].data.cutout.gap_depth = val
             elif wdg_name == "gdb_ct_mb_dia":
-                self.db_tool_dict[tool_id].data.tools_cutout_mb_dia = val
+                self.db_tool_dict[tool_id].data.cutout.mb_dia = val
             elif wdg_name == "gdb_ct_mb_spacing":
-                self.db_tool_dict[tool_id].data.tools_cutout_mb_spacing = val
+                self.db_tool_dict[tool_id].data.cutout.mb_spacing = val
 
         self.on_tools_db_edited()
 

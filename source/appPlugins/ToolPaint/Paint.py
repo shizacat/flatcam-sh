@@ -976,8 +976,8 @@ class ToolPaint(Gerber, AppTool):
         # look in database tools
         if tools_db_dict:
             for db_tool, db_tool_val in tools_db_dict.items():
-                offset = db_tool_val.data.tools_mill_offset_type
-                offset_val = db_tool_val.data.tools_mill_offset_value
+                offset = db_tool_val.data.milling.offset_type
+                offset_val = db_tool_val.data.milling.offset_value
 
                 db_tooldia = db_tool_val.tooldia
                 low_limit = db_tool_val.data.tol_min
@@ -990,12 +990,12 @@ class ToolPaint(Gerber, AppTool):
                 # if we find a tool with the same diameter in the Tools DB just update its data
                 if truncated_tooldia == db_tooldia:
                     tool_found += 1
-                    db_tool_val.data.copy_into(new_tools_dict, prefix="tools_paint_")
+                    db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.paint)
                 # search for a tool that has a tolerance that the tool fits in
                 elif high_limit >= truncated_tooldia >= low_limit:
                     tool_found += 1
                     updated_tooldia = db_tooldia
-                    db_tool_val.data.copy_into(new_tools_dict, prefix="tools_paint_")
+                    db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.paint)
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:

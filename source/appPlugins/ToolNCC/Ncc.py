@@ -1376,12 +1376,12 @@ class ToolNcc(Gerber, AppTool):
             # if we find a tool with the same diameter in the Tools DB just update its data
             if truncated_tooldia == db_tooldia:
                 tool_found += 1
-                db_tool_val.data.copy_into(new_tools_dict, prefix="tools_ncc_")
+                db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.ncc)
             # search for a tool that has a tolerance that the tool fits in
             elif high_limit >= truncated_tooldia >= low_limit:
                 tool_found += 1
                 updated_tooldia = db_tooldia
-                db_tool_val.data.copy_into(new_tools_dict, prefix="tools_ncc_")
+                db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.ncc)
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:

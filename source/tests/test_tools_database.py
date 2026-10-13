@@ -52,6 +52,8 @@ def test_tools_database_round_trip_writes_the_same_object(tmp_path: Path) -> Non
     assert loaded["2"].data.tol_max == 0.3
     written = json.loads(path.read_text())
     assert written["2"]["data"]["tool_target"] == ToolTarget.DRILLING
+    assert "milling" not in written["2"]["data"]
+    assert "drilling" not in written["2"]["data"]
     assert "tools_mill_cutz" not in written["2"]["data"]
 
 
@@ -67,8 +69,10 @@ def test_tool_data_copy_into_keeps_only_the_requested_operation() -> None:
     )
     target: dict = {}
 
-    data.copy_into(target, prefix="tools_drill_")
+    data.copy_into(target, data.drilling)
 
+    assert data.drilling.cutz == -1.5
+    assert data.milling.cutz == -0.2
     assert target["tool_target"] is ToolTarget.DRILLING
     assert target["tol_min"] == 0.1
     assert target["tools_drill_cutz"] == -1.5
@@ -93,17 +97,17 @@ def test_tool_data_coerces_stored_values_to_field_types() -> None:
 
     assert data.tol_min == 1.0
     assert isinstance(data.tol_min, float)
-    assert data.tools_mill_tool_shape == "V"
-    assert data.tools_mill_offset_type == 0
-    assert data.tools_mill_travelz == 2.0
-    assert data.tools_mill_dwell is True
-    assert data.tools_mill_toolchangexy == (1.5, 2.0)
-    assert data.tools_mill_startz is None
-    assert data.tools_iso_passes == 3
-    assert data.tools_cutout_gap_type == "b"
+    assert data.milling.tool_shape == "V"
+    assert data.milling.offset_type == 0
+    assert data.milling.travelz == 2.0
+    assert data.milling.dwell is True
+    assert data.milling.toolchangexy == (1.5, 2.0)
+    assert data.milling.startz is None
+    assert data.isolation.passes == 3
+    assert data.cutout.gap_type == "b"
 
-    data.tools_mill_tool_shape = 4
-    assert data.tools_mill_tool_shape == 4
+    data.milling.tool_shape = 4
+    assert data.milling.tool_shape == 4
 
 
 def test_tools_database_rejects_a_non_object() -> None:

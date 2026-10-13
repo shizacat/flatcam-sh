@@ -1221,12 +1221,12 @@ class ToolDrilling(Excellon, AppTool):
                     # if we find a tool with the same diameter in the Tools DB just update it's data
                     if orig_tooldia == db_tooldia:
                         tool_found += 1
-                        db_tool_val.data.copy_into(new_tools_dict[orig_tool]['data'], prefix="tools_drill_")
+                        db_tool_val.data.copy_into(new_tools_dict[orig_tool]['data'], db_tool_val.data.drilling)
                     # search for a tool that has a tolerance that the tool fits in
                     elif high_limit >= orig_tooldia >= low_limit:
                         tool_found += 1
                         new_tools_dict[orig_tool]['tooldia'] = db_tooldia
-                        db_tool_val.data.copy_into(new_tools_dict[orig_tool]['data'], prefix="tools_drill_")
+                        db_tool_val.data.copy_into(new_tools_dict[orig_tool]['data'], db_tool_val.data.drilling)
 
                 if tool_found > 1:
                     self.app.inform.emit(

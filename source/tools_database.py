@@ -6,9 +6,9 @@ import json
 import os
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, Self
+from typing import Any, ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError, model_validator
 
 from settings.st_types import XYPair
 
@@ -29,12 +29,168 @@ class ToolTarget(IntEnum):
     CUTOUT = 6
 
 
+class OperationParameters(BaseModel):
+    """
+    Parameters of one operation.
+
+    The database file stores each field under ``prefix`` plus the field name.
+    """
+
+    model_config = ConfigDict(extra="allow", validate_assignment=True)
+
+    prefix: ClassVar[str] = ""
+
+    def flat_parameters(self) -> dict[str, Any]:
+        """
+        Returns the stored parameters under the names used in the database file.
+
+        :return: file field names and values, without fields left at their default
+        """
+        return {
+            f"{self.prefix}{name}": value
+            for name, value in self.model_dump(exclude_unset=True).items()
+        }
+
+
+class MillingTool(OperationParameters):
+    """Milling parameters of one tool."""
+
+    prefix: ClassVar[str] = "tools_mill_"
+
+    # Shape and offset type are a combo index in defaults and a label in the database form.
+    tool_shape: int | str = 0
+    job_type: int = 0
+    offset_type: int | str = 0
+    offset_value: float = 0.0
+    cutz: float = 0.0
+    multidepth: bool = False
+    depthperpass: float = 0.0
+    vtipdia: float = 0.0
+    vtipangle: float = 0.0
+    travelz: float = 0.0
+    feedrate: float = 0.0
+    feedrate_z: float = 0.0
+    feedrate_rapid: float = 0.0
+    spindlespeed: float = 0.0
+    dwell: bool = False
+    dwelltime: float = 0.0
+    ppname_g: str = ""
+    extracut: bool = False
+    extracut_length: float = 0.0
+    toolchange: bool = False
+    toolchangexy: XYPair = (0.0, 0.0)
+    toolchangez: float = 0.0
+    startz: float | None = None
+    endz: float = 0.0
+    endxy: XYPair | None = None
+    search_time: int = 0
+    z_p_depth: float = 0.0
+    f_plunge: bool = False
+    spindledir: str = ""
+    optimization_type: str = ""
+    feedrate_probe: int = 0
+    area_exclusion: bool = False
+    area_shape: str = ""
+    area_strategy: str = ""
+    area_overz: float = 0.0
+    polish: bool = False
+    polish_margin: float = 0.0
+    polish_overlap: int = 0
+    polish_method: int = 0
+
+
+class NccTool(OperationParameters):
+    """Non-copper clearing parameters of one tool."""
+
+    prefix: ClassVar[str] = "tools_ncc_"
+
+    operation: str = ""
+    milling_type: str = ""
+    overlap: float = 0.0
+    margin: float = 0.0
+    method: int = 0
+    connect: bool = False
+    contour: bool = False
+    offset_choice: bool = False
+    offset_value: float = 0.0
+
+
+class PaintTool(OperationParameters):
+    """Paint parameters of one tool."""
+
+    prefix: ClassVar[str] = "tools_paint_"
+
+    overlap: float = 0.0
+    offset: float = 0.0
+    method: int = 0
+    connect: bool = False
+    contour: bool = False
+
+
+class IsolationTool(OperationParameters):
+    """Isolation parameters of one tool."""
+
+    prefix: ClassVar[str] = "tools_iso_"
+
+    passes: int = 0
+    overlap: float = 0.0
+    milling_type: str = ""
+    isotype: str = ""
+
+
+class DrillingTool(OperationParameters):
+    """Drilling parameters of one tool."""
+
+    prefix: ClassVar[str] = "tools_drill_"
+
+    cutz: float = 0.0
+    multidepth: bool = False
+    depthperpass: float = 0.0
+    travelz: float = 0.0
+    feedrate_z: float = 0.0
+    feedrate_rapid: float = 0.0
+    spindlespeed: int = 0
+    dwell: bool = False
+    dwelltime: float = 0.0
+    offset: float = 0.0
+    drill_slots: bool = False
+    drill_overlap: float = 0.0
+    last_drill: bool = False
+
+
+class CutoutTool(OperationParameters):
+    """Board cutout parameters of one tool."""
+
+    prefix: ClassVar[str] = "tools_cutout_"
+
+    margin: float = 0.0
+    gapsize: float = 0.0
+    gaps_ff: str = ""
+    convexshape: bool = False
+    # Gap type is an index in defaults and a radio value in the database form.
+    gap_type: int | str = 0
+    gap_depth: float = 0.0
+    mb_dia: float = 0.0
+    mb_spacing: float = 0.0
+
+
+_OPERATIONS: tuple[tuple[str, type[OperationParameters]], ...] = (
+    ("milling", MillingTool),
+    ("ncc", NccTool),
+    ("paint", PaintTool),
+    ("isolation", IsolationTool),
+    ("drilling", DrillingTool),
+    ("cutout", CutoutTool),
+)
+
+
 class ToolData(BaseModel):
     """
     Parameters of one tool.
 
-    The values come from the tool's target operation. A field that was not in the file stays unset
-    and is left out when the database is saved.
+    Shared values sit on this object. Each operation has its own model. The database file still
+    stores every parameter as a flat name. A field that was not in the file stays unset and is
+    left out when the database is saved.
     """
 
     model_config = ConfigDict(extra="allow", validate_assignment=True)
@@ -45,117 +201,96 @@ class ToolData(BaseModel):
     tol_max: float = 0.0
     # The job combo stores its label. Defaults do not fill this field.
     job: str = ""
-
-    # Shape and offset type are a combo index in defaults and a label in the database form.
-    tools_mill_tool_shape: int | str = 0
-    tools_mill_job_type: int = 0
-    tools_mill_offset_type: int | str = 0
-    tools_mill_offset_value: float = 0.0
-    tools_mill_cutz: float = 0.0
-    tools_mill_multidepth: bool = False
-    tools_mill_depthperpass: float = 0.0
-    tools_mill_vtipdia: float = 0.0
-    tools_mill_vtipangle: float = 0.0
-    tools_mill_travelz: float = 0.0
-    tools_mill_feedrate: float = 0.0
-    tools_mill_feedrate_z: float = 0.0
-    tools_mill_feedrate_rapid: float = 0.0
-    tools_mill_spindlespeed: float = 0.0
-    tools_mill_dwell: bool = False
-    tools_mill_dwelltime: float = 0.0
-    tools_mill_ppname_g: str = ""
-    tools_mill_extracut: bool = False
-    tools_mill_extracut_length: float = 0.0
-    tools_mill_toolchange: bool = False
-    tools_mill_toolchangexy: XYPair = (0.0, 0.0)
-    tools_mill_toolchangez: float = 0.0
-    tools_mill_startz: float | None = None
-    tools_mill_endz: float = 0.0
-    tools_mill_endxy: XYPair | None = None
-    tools_mill_search_time: int = 0
-    tools_mill_z_p_depth: float = 0.0
-    tools_mill_f_plunge: bool = False
-    tools_mill_spindledir: str = ""
-    tools_mill_optimization_type: str = ""
-    tools_mill_feedrate_probe: int = 0
     seg_x: float = 0.0
     seg_y: float = 0.0
-    tools_mill_area_exclusion: bool = False
-    tools_mill_area_shape: str = ""
-    tools_mill_area_strategy: str = ""
-    tools_mill_area_overz: float = 0.0
-    tools_mill_polish: bool = False
-    tools_mill_polish_margin: float = 0.0
-    tools_mill_polish_overlap: int = 0
-    tools_mill_polish_method: int = 0
+    milling: MillingTool = Field(default_factory=MillingTool)
+    ncc: NccTool = Field(default_factory=NccTool)
+    paint: PaintTool = Field(default_factory=PaintTool)
+    isolation: IsolationTool = Field(default_factory=IsolationTool)
+    drilling: DrillingTool = Field(default_factory=DrillingTool)
+    cutout: CutoutTool = Field(default_factory=CutoutTool)
 
-    tools_ncc_operation: str = ""
-    tools_ncc_milling_type: str = ""
-    tools_ncc_overlap: float = 0.0
-    tools_ncc_margin: float = 0.0
-    tools_ncc_method: int = 0
-    tools_ncc_connect: bool = False
-    tools_ncc_contour: bool = False
-    tools_ncc_offset_choice: bool = False
-    tools_ncc_offset_value: float = 0.0
+    @model_validator(mode="before")
+    @classmethod
+    def nest_flat_fields(cls, value: Any) -> Any:
+        """
+        Groups flat database names into the operation models.
 
-    tools_paint_overlap: float = 0.0
-    tools_paint_offset: float = 0.0
-    tools_paint_method: int = 0
-    tools_paint_connect: bool = False
-    tools_paint_contour: bool = False
+        A value that already contains an operation model is left unchanged.
 
-    tools_iso_passes: int = 0
-    tools_iso_overlap: float = 0.0
-    tools_iso_milling_type: str = ""
-    tools_iso_isotype: str = ""
+        :param value: flat parameters, or parameters that are already nested
+        :return: parameters whose operation fields sit on their models
+        """
+        if not isinstance(value, dict):
+            return value
+        operation_names = {name for name, _operation in _OPERATIONS}
+        if operation_names.intersection(value):
+            return value
 
-    tools_drill_cutz: float = 0.0
-    tools_drill_multidepth: bool = False
-    tools_drill_depthperpass: float = 0.0
-    tools_drill_travelz: float = 0.0
-    tools_drill_feedrate_z: float = 0.0
-    tools_drill_feedrate_rapid: float = 0.0
-    tools_drill_spindlespeed: int = 0
-    tools_drill_dwell: bool = False
-    tools_drill_dwelltime: float = 0.0
-    tools_drill_offset: float = 0.0
-    tools_drill_drill_slots: bool = False
-    tools_drill_drill_overlap: float = 0.0
-    tools_drill_last_drill: bool = False
-
-    tools_cutout_margin: float = 0.0
-    tools_cutout_gapsize: float = 0.0
-    tools_cutout_gaps_ff: str = ""
-    tools_cutout_convexshape: bool = False
-    # Gap type is an index in defaults and a radio value in the database form.
-    tools_cutout_gap_type: int | str = 0
-    tools_cutout_gap_depth: float = 0.0
-    tools_cutout_mb_dia: float = 0.0
-    tools_cutout_mb_spacing: float = 0.0
+        nested = {}
+        operations = {name: {} for name, _operation in _OPERATIONS}
+        for key, item in value.items():
+            for name, operation in _OPERATIONS:
+                prefix = operation.prefix
+                if key.startswith(prefix):
+                    operations[name][key.removeprefix(prefix)] = item
+                    break
+            else:
+                nested[key] = item
+        nested.update(operations)
+        return nested
 
     def parameters(self) -> dict[str, Any]:
         """
         Returns the parameters that were stored for this tool.
 
+        Operation fields are returned under their flat database names.
+
         :return: parameter names and values, without fields left at their default
         """
-        return self.model_dump(exclude_unset=True)
+        operation_names = {name for name, _operation in _OPERATIONS}
+        flat = self.model_dump(exclude_unset=True, exclude=operation_names)
+        for name, _operation in _OPERATIONS:
+            flat.update(getattr(self, name).flat_parameters())
+        return flat
 
-    def copy_into(self, target: dict[str, Any], prefix: str) -> None:
+    def get_stored(self, name: str) -> Any:
         """
-        Copies parameters that belong to one operation into a tool table entry.
+        Returns one parameter by its flat database name.
 
-        Names that start with ``tools_`` are copied only when they start with ``prefix``.
-        Every other stored parameter is copied.
+        :param name: name stored in the database file
+        :return: stored value
+        """
+        operation, field = self._locate(name)
+        if operation is None:
+            return getattr(self, name)
+        return getattr(operation, field)
+
+    def set_stored(self, name: str, value: Any) -> None:
+        """
+        Stores one parameter addressed by its flat database name.
+
+        :param name: name stored in the database file
+        :param value: value to store
+        """
+        operation, field = self._locate(name)
+        if operation is None:
+            setattr(self, name, value)
+            return
+        setattr(operation, field, value)
+
+    def copy_into(self, target: dict[str, Any], operation: OperationParameters) -> None:
+        """
+        Copies one operation and the shared parameters into a tool table entry.
 
         :param target: destination parameter dictionary
-        :param prefix: operation prefix to keep, such as ``tools_drill_``
+        :param operation: milling, drilling, or another operation of this tool
         """
         for name, value in self.parameters().items():
-            if name.startswith("tools_") and not name.startswith(prefix):
+            if name.startswith("tools_"):
                 continue
             target[name] = value
+        target.update(operation.flat_parameters())
 
     def omit_where(self, drop: Callable[[str], bool]) -> ToolData:
         """
@@ -166,6 +301,13 @@ class ToolData(BaseModel):
         """
         kept = {key: value for key, value in self.parameters().items() if not drop(key)}
         return ToolData.model_validate(kept)
+
+    def _locate(self, name: str) -> tuple[OperationParameters | None, str]:
+        for operation_name, operation in _OPERATIONS:
+            prefix = operation.prefix
+            if name.startswith(prefix):
+                return getattr(self, operation_name), name.removeprefix(prefix)
+        return None, name
 
 
 class ToolRecord(BaseModel):
@@ -181,6 +323,17 @@ class ToolRecord(BaseModel):
     name: str = ""
     tooldia: float = 0.0
     data: ToolData = Field(default_factory=ToolData)
+
+    def stored(self) -> dict[str, Any]:
+        """
+        Returns this record in the shape written to the database file.
+
+        :return: record fields, with operation parameters under their flat names
+        """
+        dumped = self.model_dump(exclude_unset=True)
+        if "data" in dumped:
+            dumped["data"] = self.data.parameters()
+        return dumped
 
 
 class ToolsDatabase(RootModel[dict[str, ToolRecord]]):
@@ -291,4 +444,9 @@ class ToolsDatabase(RootModel[dict[str, ToolRecord]]):
         from camlib import to_dict
 
         with open(filename, "w", encoding="utf-8") as database_file:
-            json.dump(self.model_dump(exclude_unset=True), database_file, default=to_dict, indent=2)
+            json.dump(
+                {tool_id: record.stored() for tool_id, record in self.root.items()},
+                database_file,
+                default=to_dict,
+                indent=2,
+            )
