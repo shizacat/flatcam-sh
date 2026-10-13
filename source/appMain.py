@@ -599,6 +599,7 @@ class App(QtCore.QObject):
 
         if show_splash and self.cmd_line_headless != 1:
             splash_pix = QtGui.QPixmap(self.resource_location + '/splash.png')
+            self._paint_splash_release(splash_pix)
             # self.splash = QtWidgets.QSplashScreen(splash_pix, Qt.WindowType.WindowStaysOnTopHint)
             self.splash = QtWidgets.QSplashScreen(splash_pix)
             # self.splash.setMask(splash_pix.mask())
@@ -1458,6 +1459,36 @@ class App(QtCore.QObject):
         #         continue
         #     else:
         #         sys.exit(2)
+
+    def _paint_splash_release(self, pixmap: QtGui.QPixmap) -> None:
+        """
+        Draws the release version and year on the splash image.
+
+        The artwork does not contain a version. The line uses ``version`` and the
+        year of ``version_date``.
+
+        :param pixmap: splash image to annotate
+        """
+        if pixmap.isNull():
+            return
+
+        year = ""
+        for char in str(self.version_date):
+            if char.isdigit():
+                year += char
+                if len(year) == 4:
+                    break
+            elif year:
+                break
+
+        painter = QtGui.QPainter(pixmap)
+        painter.setPen(QtGui.QColor(243, 243, 243))
+        font = QtGui.QFont(QtWidgets.QApplication.font())
+        font.setPixelSize(13)
+        font.setBold(False)
+        painter.setFont(font)
+        painter.drawText(18, 110, "v.%s ~ %s" % (self.version, year))
+        painter.end()
 
     def user_settings_folder(self) -> Path | None:
         """
