@@ -1210,37 +1210,23 @@ class ToolDrilling(Excellon, AppTool):
                 # look in database tools
                 for db_tool, db_tool_val in self.tools_db_dict.items():
                     db_tooldia = db_tool_val.tooldia
-                    low_limit = float(db_tool_val.data['tol_min'])
-                    high_limit = float(db_tool_val.data['tol_max'])
+                    low_limit = float(db_tool_val.data.tol_min)
+                    high_limit = float(db_tool_val.data.tol_max)
 
                     # test if the targeted tool is Drilling Tool, if not, skip to next tool
-                    targeted_tool = db_tool_val.data['tool_target']
+                    targeted_tool = db_tool_val.data.tool_target
                     if targeted_tool != _("Drilling"):
                         continue
 
                     # if we find a tool with the same diameter in the Tools DB just update it's data
                     if orig_tooldia == db_tooldia:
                         tool_found += 1
-                        for d in db_tool_val.data:
-                            if d.find('tools_drill_') == 0:
-                                new_tools_dict[orig_tool]['data'][d] = db_tool_val.data[d]
-                            elif d.find('tools_') == 0:
-                                # don't need data for other App Tools; this tests after 'tools_drill_'
-                                continue
-                            else:
-                                new_tools_dict[orig_tool]['data'][d] = db_tool_val.data[d]
+                        db_tool_val.data.copy_into(new_tools_dict[orig_tool]['data'], prefix="tools_drill_")
                     # search for a tool that has a tolerance that the tool fits in
                     elif high_limit >= orig_tooldia >= low_limit:
                         tool_found += 1
                         new_tools_dict[orig_tool]['tooldia'] = db_tooldia
-                        for d in db_tool_val.data:
-                            if d.find('tools_drill_') == 0:
-                                new_tools_dict[orig_tool]['data'][d] = db_tool_val.data[d]
-                            elif d.find('tools_') == 0:
-                                # don't need data for other App Tools; this tests after 'tools_drill_'
-                                continue
-                            else:
-                                new_tools_dict[orig_tool]['data'][d] = db_tool_val.data[d]
+                        db_tool_val.data.copy_into(new_tools_dict[orig_tool]['data'], prefix="tools_drill_")
 
                 if tool_found > 1:
                     self.app.inform.emit(

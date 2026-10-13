@@ -2128,36 +2128,22 @@ class ToolMilling(Excellon, AppTool):
         # look in database tools
         for db_tool, db_tool_val in tools_db_dict.items():
             db_tooldia = db_tool_val.tooldia
-            low_limit = float(db_tool_val.data['tol_min'])
-            high_limit = float(db_tool_val.data['tol_max'])
+            low_limit = float(db_tool_val.data.tol_min)
+            high_limit = float(db_tool_val.data.tol_max)
 
             # we need only tool marked for Milling Tool (Geometry Object)
-            if db_tool_val.data['tool_target'] != 1:     # _('Milling')
+            if db_tool_val.data.tool_target != 1:     # _('Milling')
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update its data
             if truncated_tooldia == db_tooldia:
                 tool_found += 1
-                for d in db_tool_val.data:
-                    if d.find('tools_mill_') == 0:
-                        new_tools_dict[d] = db_tool_val.data[d]
-                    elif d.find('tools_') == 0:
-                        # don't need data for other App Tools; this tests after 'tools_mill_'
-                        continue
-                    else:
-                        new_tools_dict[d] = db_tool_val.data[d]
+                db_tool_val.data.copy_into(new_tools_dict, prefix="tools_mill_")
             # search for a tool that has a tolerance that the tool fits in
             elif high_limit >= truncated_tooldia >= low_limit:
                 tool_found += 1
                 updated_tooldia = db_tooldia
-                for d in db_tool_val.data:
-                    if d.find('tools_mill_') == 0:
-                        new_tools_dict[d] = db_tool_val.data[d]
-                    elif d.find('tools_') == 0:
-                        # don't need data for other App Tools; this tests after 'tools_mill_'
-                        continue
-                    else:
-                        new_tools_dict[d] = db_tool_val.data[d]
+                db_tool_val.data.copy_into(new_tools_dict, prefix="tools_mill_")
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:
@@ -2320,7 +2306,7 @@ class ToolMilling(Excellon, AppTool):
         self.target_obj.tools.update({
             self.tooluid: {
                 'tooldia': tooldia,
-                'data': deepcopy(tool.data),
+                'data': deepcopy(tool.data.parameters()),
                 'solid_geometry': self.target_obj.solid_geometry
             }
         })

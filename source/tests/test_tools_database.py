@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools_database import ToolRecord, ToolsDatabase
+from tools_database import ToolData, ToolRecord, ToolsDatabase
 
 
 def test_tools_database_loads_records_and_keeps_extra_fields() -> None:
@@ -30,7 +30,7 @@ def test_tools_database_loads_records_and_keeps_extra_fields() -> None:
 
     assert tool.name == "endmill"
     assert tool.tooldia == 1.5
-    assert tool.data["tool_target"] == 1
+    assert tool.data.tool_target == 1
     assert tool.model_extra["tools_mill_offset_value"] == 0.2
     assert database
     assert len(database) == 1
@@ -41,14 +41,36 @@ def test_tools_database_round_trip_writes_the_same_object(tmp_path: Path) -> Non
     path = tmp_path / "tools.json"
     database = ToolsDatabase({})
     database["2"] = ToolRecord(name="drill", tooldia=0.8, data={"tool_target": 2})
-    database["2"].data["tol_max"] = 0.3
+    database["2"].data.tol_max = 0.3
 
     database.write(path)
     loaded = ToolsDatabase.load(path)
 
     assert loaded["2"].name == "drill"
     assert loaded["2"].tooldia == 0.8
-    assert loaded["2"].data["tol_max"] == 0.3
+    assert loaded["2"].data.tol_max == 0.3
+    written = json.loads(path.read_text())
+    assert "tools_mill_cutz" not in written["2"]["data"]
+
+
+def test_tool_data_copy_into_keeps_only_the_requested_operation() -> None:
+    """Verify copying a tool keeps its own operation and the shared parameters."""
+    data = ToolData.model_validate(
+        {
+            "tool_target": "Drilling",
+            "tol_min": 0.1,
+            "tools_drill_cutz": -1.5,
+            "tools_mill_cutz": -0.2,
+        }
+    )
+    target: dict = {}
+
+    data.copy_into(target, prefix="tools_drill_")
+
+    assert target["tool_target"] == "Drilling"
+    assert target["tol_min"] == 0.1
+    assert target["tools_drill_cutz"] == -1.5
+    assert "tools_mill_cutz" not in target
 
 
 def test_tools_database_rejects_a_non_object() -> None:

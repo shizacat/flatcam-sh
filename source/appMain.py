@@ -5371,7 +5371,7 @@ class App(QtCore.QObject):
             return
 
         if obj.kind == 'geometry':
-            if tool.data['tool_target'] not in [0, 1]:  # General, Milling Type
+            if tool.data.tool_target not in [0, 1]:  # General, Milling Type
                 # close the tab and delete it
                 for idx in range(self.ui.plot_tab_area.count()):
                     if self.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
@@ -5392,7 +5392,7 @@ class App(QtCore.QObject):
                     self.ui.plot_tab_area.removeTab(idx)
             self.inform.emit('[success] %s' % _("Tool from DB added in Tool Table."))
         elif obj.kind == 'gerber':
-            if tool.data['tool_target'] not in [0, 3]:  # General, Isolation Type
+            if tool.data.tool_target not in [0, 3]:  # General, Isolation Type
                 # close the tab and delete it
                 for idx in range(self.ui.plot_tab_area.count()):
                     if self.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
