@@ -17,7 +17,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
-import json
+from tools_database import ToolsDatabase
 import sys
 import math
 
@@ -1400,7 +1400,7 @@ class ToolIsolation(Gerber, AppTool):
 
         try:
             # store here the tools from Tools Database when searching in Tools Database
-            tools_db_dict = json.loads(tools)
+            tools_db_dict = ToolsDatabase.loads(tools)
         except Exception:
             e = sys.exc_info()[0]
             self.app.log.error(str(e))
@@ -1412,37 +1412,37 @@ class ToolIsolation(Gerber, AppTool):
 
         # look in database tools
         for db_tool, db_tool_val in tools_db_dict.items():
-            db_tooldia = db_tool_val['tooldia']
-            low_limit = float(db_tool_val['data']['tol_min'])
-            high_limit = float(db_tool_val['data']['tol_max'])
+            db_tooldia = db_tool_val.tooldia
+            low_limit = float(db_tool_val.data['tol_min'])
+            high_limit = float(db_tool_val.data['tol_max'])
 
             # we need only tool marked for Isolation Tool
-            if db_tool_val['data']['tool_target'] != 3:  # _('Isolation')
+            if db_tool_val.data['tool_target'] != 3:  # _('Isolation')
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update it's data
             if truncated_tooldia == db_tooldia:
                 tool_found += 1
-                for d in db_tool_val['data']:
+                for d in db_tool_val.data:
                     if d.find('tools_iso_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
                     elif d.find('tools_') == 0:
                         # don't need data for other App Tools; this tests after 'tools_iso_'
                         continue
                     else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
             # search for a tool that has a tolerance that the tool fits in
             elif high_limit >= truncated_tooldia >= low_limit:
                 tool_found += 1
                 updated_tooldia = db_tooldia
-                for d in db_tool_val['data']:
+                for d in db_tool_val.data:
                     if d.find('tools_iso_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
                     elif d.find('tools_') == 0:
                         # don't need data for other App Tools; this tests after 'tools_iso_'
                         continue
                     else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:
@@ -2950,7 +2950,7 @@ class ToolIsolation(Gerber, AppTool):
         """
         tool_from_db = deepcopy(tool)
 
-        if tool['data']['tool_target'] not in [0, 3]:  # [General, Isolation]
+        if tool.data['tool_target'] not in [0, 3]:  # [General, Isolation]
             for idx in range(self.app.ui.plot_tab_area.count()):
                 if self.app.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
                     wdg = self.app.ui.plot_tab_area.widget(idx)
@@ -2988,7 +2988,7 @@ class ToolIsolation(Gerber, AppTool):
         self.ui_disconnect()
         self.units = self.app.app_units.upper()
 
-        tooldia = float(tool['tooldia'])
+        tooldia = float(tool.tooldia)
 
         # construct a list of all 'tooluid' in the self.tools
         tool_uid_list = [int(tooluid_key) for tooluid_key in self.iso_tools]
@@ -3012,7 +3012,7 @@ class ToolIsolation(Gerber, AppTool):
         self.iso_tools.update({
             tooluid: {
                 'tooldia':          truncated_tooldia,
-                'data':             deepcopy(tool['data']),
+                'data':             deepcopy(tool.data),
                 'solid_geometry':   []
             }
         })

@@ -2,11 +2,10 @@
 from PyQt6 import QtGui, QtCore, QtWidgets
 from appGUI.GUIElements import FCEntry, FCButton, FCDoubleSpinner, FCComboBox, FCCheckBox, FCSpinner, \
     FCTree, RadioSet, FCFileSaveDialog, FCLabel, FCComboBox2, GLay
-from camlib import to_dict
 from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES
+from tools_database import ToolRecord, ToolsDatabase
 
 import sys
-import json
 
 from copy import deepcopy
 from datetime import datetime
@@ -1372,7 +1371,7 @@ class ToolsDB2(QtWidgets.QWidget):
             }
         }
         '''
-        self.db_tool_dict = {}
+        self.db_tool_dict = ToolsDatabase({})
 
         self.old_color = QtGui.QColor('black')
 
@@ -1643,30 +1642,30 @@ class ToolsDB2(QtWidgets.QWidget):
             self.ui.name_entry.set_value(item.text(1))
 
     def on_sort_target(self):
-        ordered_by_target = sorted(self.db_tool_dict.items(), key=lambda x: x[1]['data']['tool_target'])
+        ordered_by_target = sorted(self.db_tool_dict.items(), key=lambda x: x[1].data['tool_target'])
         new_dict = {}
         t_id = 0
         for __, old_dict in ordered_by_target:
             t_id += 1
             new_dict[str(t_id)] = old_dict
 
-        self.db_tool_dict = deepcopy(new_dict)
+        self.db_tool_dict = ToolsDatabase(new_dict)
         self.build_db_ui()
         self.on_tools_db_edited()
 
     def on_sort_dia(self):
-        dias = [tool['tooldia'] for tool in self.db_tool_dict.values()]
+        dias = [tool.tooldia for tool in self.db_tool_dict.values()]
         if dias:
             dias.sort()
 
-        ordered_by_dia = sorted(self.db_tool_dict.items(), key=lambda x: x[1]['tooldia'])
+        ordered_by_dia = sorted(self.db_tool_dict.items(), key=lambda x: x[1].tooldia)
         new_dict = {}
         t_id = 0
         for __, old_dict in ordered_by_dia:
             t_id += 1
             new_dict[str(t_id)] = old_dict
 
-        self.db_tool_dict = deepcopy(new_dict)
+        self.db_tool_dict = ToolsDatabase(new_dict)
         self.build_db_ui()
         self.on_tools_db_edited()
 
@@ -1677,22 +1676,24 @@ class ToolsDB2(QtWidgets.QWidget):
         if column == 3:
             self.on_sort_dia()
 
-    def storage_to_form(self, dict_storage):
+    def storage_to_form(self, tool: ToolRecord) -> None:
+        """
+        Copies a tool record into the database form.
+
+        :param tool: tool whose fields fill the form
+        """
         self.ui_disconnect()
+        stored = {"name": tool.name, "tooldia": tool.tooldia}
+        stored.update(tool.data)
+        if tool.model_extra:
+            stored.update(tool.model_extra)
         for form_key in self.form_fields:
-            for storage_key in dict_storage:
-                if form_key == storage_key:
-                    try:
-                        self.form_fields[form_key].set_value(dict_storage[form_key])
-                    except Exception as e:
-                        print(str(e))
-                if storage_key == 'data':
-                    for data_key in dict_storage[storage_key]:
-                        if form_key == data_key:
-                            try:
-                                self.form_fields[form_key].set_value(dict_storage['data'][data_key])
-                            except Exception as e:
-                                print(str(e))
+            if form_key not in stored:
+                continue
+            try:
+                self.form_fields[form_key].set_value(stored[form_key])
+            except Exception as error:
+                print(str(error))
         self.ui_connect()
 
     def form_to_storage(self, tool):
@@ -1706,10 +1707,12 @@ class ToolsDB2(QtWidgets.QWidget):
         for tooluid_key, tooluid_val in self.db_tool_dict.items():
             if int(tooluid_key) == tooluid_item:
                 new_option_value = self.form_fields[option_changed].get_value()
-                if option_changed in tooluid_val:
-                    tooluid_val[option_changed] = new_option_value
-                if option_changed in tooluid_val['data']:
-                    tooluid_val['data'][option_changed] = new_option_value
+                if option_changed in ("name", "tooldia"):
+                    setattr(tooluid_val, option_changed, new_option_value)
+                elif option_changed in tooluid_val.data:
+                    tooluid_val.data[option_changed] = new_option_value
+                elif option_changed in (tooluid_val.model_extra or {}):
+                    tooluid_val.model_extra[option_changed] = new_option_value
         self.ui_connect()
 
     def setup_db_ui(self):
@@ -1731,7 +1734,7 @@ class ToolsDB2(QtWidgets.QWidget):
             return
 
         try:
-            self.db_tool_dict = json.loads(tools)
+            self.db_tool_dict = ToolsDatabase.loads(tools)
         except Exception:
             e = sys.exc_info()[0]
             self.app.log.error(str(e))
@@ -1755,7 +1758,7 @@ class ToolsDB2(QtWidgets.QWidget):
             row = nr_crt
             nr_crt += 1
 
-            t_name = dict_val['name']
+            t_name = dict_val.name
             op_name = {
                 0: _("General"),
                 1: _("Milling"),
@@ -1764,9 +1767,9 @@ class ToolsDB2(QtWidgets.QWidget):
                 4: _('Paint'),
                 5: _('NCC'),
                 6: _('Cutout')
-            }[dict_val['data']['tool_target']]
+            }[dict_val.data['tool_target']]
 
-            dia = dict_val['tooldia']
+            dia = dict_val.tooldia
 
             try:
                 # self.add_plugin_table_line(row, name=t_name, tooldict=dict_val)
@@ -1796,7 +1799,7 @@ class ToolsDB2(QtWidgets.QWidget):
 
                 # Enable appGUI
                 try:
-                    self.on_tool_target_changed(val=self.db_tool_dict['1']['data']['tool_target'])
+                    self.on_tool_target_changed(val=self.db_tool_dict['1'].data['tool_target'])
                 except KeyError:
                     self.on_tool_target_changed(val=_("General"))
 
@@ -2002,27 +2005,26 @@ class ToolsDB2(QtWidgets.QWidget):
 
         temp = []
         for k, v in self.db_tool_dict.items():
-            if "new_tool_" in v['name']:
-                temp.append(float(v['name'].rpartition('_')[2]))
+            if "new_tool_" in v.name:
+                temp.append(float(v.name.rpartition('_')[2]))
 
         if temp:
             new_name = "new_tool_%d" % int(max(temp) + 1)
         else:
             new_name = "new_tool_1"
 
-        dict_elem = {'name': new_name}
         if isinstance(self.app.options.tools_mill_tooldia, float):
-            dict_elem['tooldia'] = self.app.options.tools_mill_tooldia
+            tooldia = self.app.options.tools_mill_tooldia
         else:
             try:
                 tools_string = self.app.options.tools_mill_tooldia.split(",")
                 tools_diameters = [eval(a) for a in tools_string if a != '']
-                dict_elem['tooldia'] = tools_diameters[0] if tools_diameters else 0.0
+                tooldia = tools_diameters[0] if tools_diameters else 0.0
             except Exception as e:
                 self.app.log.error("ToolDB.on_tool_add() --> %s" % str(e))
                 return
 
-        dict_elem['data'] = default_data
+        dict_elem = ToolRecord(name=new_name, tooldia=tooldia, data=default_data)
 
         new_toolid = len(self.db_tool_dict) + 1
         self.db_tool_dict[str(new_toolid)] = deepcopy(dict_elem)
@@ -2038,7 +2040,7 @@ class ToolsDB2(QtWidgets.QWidget):
             self.ui.tree_widget.setCurrentItem(last_item)
             last_item.setSelected(True)
 
-        self.on_tool_target_changed(val=dict_elem['data']['tool_target'])
+        self.on_tool_target_changed(val=dict_elem.data['tool_target'])
         self.app.inform.emit('[success] %s' % _("Tool added to DB."))
 
     def on_tool_copy(self):
@@ -2094,7 +2096,7 @@ class ToolsDB2(QtWidgets.QWidget):
             self.current_toolid += 1
             new_tool_dict[str(self.current_toolid)] = dict_val
 
-        self.db_tool_dict = deepcopy(new_tool_dict)
+        self.db_tool_dict = ToolsDatabase(new_tool_dict)
 
         self.update_storage()
         self.build_db_ui()
@@ -2154,8 +2156,7 @@ class ToolsDB2(QtWidgets.QWidget):
             try:
                 # Save Tools DB in a file
                 try:
-                    with open(filename, "w") as f:
-                        json.dump(self.db_tool_dict, f, default=to_dict, indent=2)
+                    self.db_tool_dict.write(filename)
                 except Exception as e:
                     self.app.log.error("App.on_save_tools_db() --> %s" % str(e))
                     self.app.inform.emit('[ERROR_NOTCL] %s' % _("Failed to write Tools DB to file."))
@@ -2185,7 +2186,7 @@ class ToolsDB2(QtWidgets.QWidget):
                 return
 
             try:
-                self.db_tool_dict = json.loads(tools_in_db)
+                self.db_tool_dict = ToolsDatabase.loads(tools_in_db)
             except Exception:
                 e = sys.exc_info()[0]
                 self.app.log.error(str(e))
@@ -2209,59 +2210,57 @@ class ToolsDB2(QtWidgets.QWidget):
 
                 # clean the dictionary and leave only keys of interest
                 for tool_id in self.db_tool_dict.keys():
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] != _('General'):
+                    if self.db_tool_dict[tool_id].data['tool_target'] != _('General'):
                         continue
 
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] == _('Milling'):
-                        for k in list(self.db_tool_dict[tool_id]['data'].keys()):
+                    if self.db_tool_dict[tool_id].data['tool_target'] == _('Milling'):
+                        for k in list(self.db_tool_dict[tool_id].data.keys()):
                             if str(k).startswith('tools_'):
-                                self.db_tool_dict[tool_id]['data'].pop(k, None)
+                                self.db_tool_dict[tool_id].data.pop(k, None)
 
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] == _('Drilling'):
-                        for k in list(self.db_tool_dict[tool_id]['data'].keys()):
+                    if self.db_tool_dict[tool_id].data['tool_target'] == _('Drilling'):
+                        for k in list(self.db_tool_dict[tool_id].data.keys()):
                             if str(k).startswith('tools_'):
                                 if str(k).startswith('tools_drill') or str(k).startswith('tools_mill'):
                                     pass
                                 else:
-                                    self.db_tool_dict[tool_id]['data'].pop(k, None)
+                                    self.db_tool_dict[tool_id].data.pop(k, None)
 
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] == _('Isolation'):
-                        for k in list(self.db_tool_dict[tool_id]['data'].keys()):
+                    if self.db_tool_dict[tool_id].data['tool_target'] == _('Isolation'):
+                        for k in list(self.db_tool_dict[tool_id].data.keys()):
                             if str(k).startswith('tools_'):
                                 if str(k).startswith('tools_iso') or str(k).startswith('tools_mill'):
                                     pass
                                 else:
-                                    self.db_tool_dict[tool_id]['data'].pop(k, None)
+                                    self.db_tool_dict[tool_id].data.pop(k, None)
 
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] == _('Paint'):
-                        for k in list(self.db_tool_dict[tool_id]['data'].keys()):
+                    if self.db_tool_dict[tool_id].data['tool_target'] == _('Paint'):
+                        for k in list(self.db_tool_dict[tool_id].data.keys()):
                             if str(k).startswith('tools_'):
                                 if str(k).startswith('tools_paint') or str(k).startswith('tools_mill'):
                                     pass
                                 else:
-                                    self.db_tool_dict[tool_id]['data'].pop(k, None)
+                                    self.db_tool_dict[tool_id].data.pop(k, None)
                                     
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] == _('NCC'):
-                        for k in list(self.db_tool_dict[tool_id]['data'].keys()):
+                    if self.db_tool_dict[tool_id].data['tool_target'] == _('NCC'):
+                        for k in list(self.db_tool_dict[tool_id].data.keys()):
                             if str(k).startswith('tools_'):
                                 if str(k).startswith('tools_ncc') or str(k).startswith('tools_mill'):
                                     pass
                                 else:
-                                    self.db_tool_dict[tool_id]['data'].pop(k, None)
+                                    self.db_tool_dict[tool_id].data.pop(k, None)
 
-                    if self.db_tool_dict[tool_id]['data']['tool_target'] == _('Cutout'):
-                        for k in list(self.db_tool_dict[tool_id]['data'].keys()):
+                    if self.db_tool_dict[tool_id].data['tool_target'] == _('Cutout'):
+                        for k in list(self.db_tool_dict[tool_id].data.keys()):
                             if str(k).startswith('tools_'):
                                 if str(k).startswith('tools_cutout') or str(k).startswith('tools_mill'):
                                     pass
                                 else:
-                                    self.db_tool_dict[tool_id]['data'].pop(k, None)
+                                    self.db_tool_dict[tool_id].data.pop(k, None)
 
                 # Save Tools DB in a file
                 try:
-                    f = open(filename, "w")
-                    json.dump(self.db_tool_dict, f, default=to_dict, indent=2)
-                    f.close()
+                    self.db_tool_dict.write(filename)
                 except Exception as e:
                     self.app.log.error("ToolsDB.on_save_tools_db() --> %s" % str(e))
                     self.app.inform.emit('[ERROR_NOTCL] %s' % _("Failed to write Tools DB to file."))
@@ -2477,155 +2476,155 @@ class ToolsDB2(QtWidgets.QWidget):
             msg = '[ERROR_NOTCL] %s: %s' % \
                   (_("To change tool properties select only one tool. Tools currently selected"), str(len_sel_rows))
             self.app.inform.emit(msg)
-            old_value = self.db_tool_dict[tool_id]['data'][self.name2option[wdg_name]]
+            old_value = self.db_tool_dict[tool_id].data[self.name2option[wdg_name]]
             wdg.set_value(old_value)
             wdg.clearFocus()
             return
         # #############################################################################################################
 
         if wdg_name == "gdb_name":
-            self.db_tool_dict[tool_id]['name'] = val
+            self.db_tool_dict[tool_id].name = val
         elif wdg_name == "gdb_dia":
-            self.db_tool_dict[tool_id]['tooldia'] = val
+            self.db_tool_dict[tool_id].tooldia = val
         elif wdg_name == "gdb_job":
-            self.db_tool_dict[tool_id]['data']['job'] = val
+            self.db_tool_dict[tool_id].data['job'] = val
         elif wdg_name == "gdb_shape":
-            self.db_tool_dict[tool_id]['data']['tools_mill_tool_shape'] = val
+            self.db_tool_dict[tool_id].data['tools_mill_tool_shape'] = val
         else:
             # Milling Tool
             if wdg_name == "gdb_tool_target":
-                self.db_tool_dict[tool_id]['data']['tool_target'] = val
+                self.db_tool_dict[tool_id].data['tool_target'] = val
             elif wdg_name == "gdb_tol_min":
-                self.db_tool_dict[tool_id]['data']['tol_min'] = val
+                self.db_tool_dict[tool_id].data['tol_min'] = val
             elif wdg_name == "gdb_tol_max":
-                self.db_tool_dict[tool_id]['data']['tol_max'] = val
+                self.db_tool_dict[tool_id].data['tol_max'] = val
 
             elif wdg_name == "gdb_tool_offset_type":
-                self.db_tool_dict[tool_id]['data']['tools_mill_offset_type'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_offset_type'] = val
             elif wdg_name == "gdb_custom_offset":
-                self.db_tool_dict[tool_id]['tools_mill_offset_value'] = val
+                self.db_tool_dict[tool_id].tools_mill_offset_value = val
 
             elif wdg_name == "gdb_cutz":
-                self.db_tool_dict[tool_id]['data']['tools_mill_cutz'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_cutz'] = val
             elif wdg_name == "gdb_multidepth":
-                self.db_tool_dict[tool_id]['data']['tools_mill_multidepth'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_multidepth'] = val
             elif wdg_name == "gdb_multidepth_entry":
-                self.db_tool_dict[tool_id]['data']['tools_mill_depthperpass'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_depthperpass'] = val
 
             elif wdg_name == "gdb_travelz":
-                self.db_tool_dict[tool_id]['data']['tools_mill_travelz'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_travelz'] = val
             elif wdg_name == "gdb_frxy":
-                self.db_tool_dict[tool_id]['data']['tools_mill_feedrate'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_feedrate'] = val
             elif wdg_name == "gdb_frz":
-                self.db_tool_dict[tool_id]['data']['tools_mill_feedrate_z'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_feedrate_z'] = val
             elif wdg_name == "gdb_spindle":
-                self.db_tool_dict[tool_id]['data']['tools_mill_spindlespeed'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_spindlespeed'] = val
             elif wdg_name == "gdb_dwell":
-                self.db_tool_dict[tool_id]['data']['tools_mill_dwell'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_dwell'] = val
             elif wdg_name == "gdb_dwelltime":
-                self.db_tool_dict[tool_id]['data']['tools_mill_dwelltime'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_dwelltime'] = val
 
             elif wdg_name == "gdb_vdia":
-                self.db_tool_dict[tool_id]['data']['tools_mill_vtipdia'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_vtipdia'] = val
             elif wdg_name == "gdb_vangle":
-                self.db_tool_dict[tool_id]['data']['tools_mill_vtipangle'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_vtipangle'] = val
             elif wdg_name == "gdb_frapids":
-                self.db_tool_dict[tool_id]['data']['tools_mill_feedrate_rapid'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_feedrate_rapid'] = val
             elif wdg_name == "gdb_ecut":
-                self.db_tool_dict[tool_id]['data']['tools_mill_extracut'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_extracut'] = val
             elif wdg_name == "gdb_ecut_length":
-                self.db_tool_dict[tool_id]['data']['tools_mill_extracut_length'] = val
+                self.db_tool_dict[tool_id].data['tools_mill_extracut_length'] = val
 
             # NCC Tool
             elif wdg_name == "gdb_n_operation":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_operation'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_operation'] = val
             elif wdg_name == "gdb_n_overlap":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_overlap'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_overlap'] = val
             elif wdg_name == "gdb_n_margin":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_margin'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_margin'] = val
             elif wdg_name == "gdb_n_method":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_method'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_method'] = val
             elif wdg_name == "gdb_n_connect":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_connect'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_connect'] = val
             elif wdg_name == "gdb_n_contour":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_contour'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_contour'] = val
             elif wdg_name == "gdb_n_offset":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_offset_choice'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_offset_choice'] = val
             elif wdg_name == "gdb_n_offset_value":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_offset_value'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_offset_value'] = val
             elif wdg_name == "gdb_n_milling_type":
-                self.db_tool_dict[tool_id]['data']['tools_ncc_milling_type'] = val
+                self.db_tool_dict[tool_id].data['tools_ncc_milling_type'] = val
 
             # Paint Tool
             elif wdg_name == "gdb_p_overlap":
-                self.db_tool_dict[tool_id]['data']['tools_paint_overlap'] = val
+                self.db_tool_dict[tool_id].data['tools_paint_overlap'] = val
             elif wdg_name == "gdb_p_offset":
-                self.db_tool_dict[tool_id]['data']['tools_paint_offset'] = val
+                self.db_tool_dict[tool_id].data['tools_paint_offset'] = val
             elif wdg_name == "gdb_p_method":
-                self.db_tool_dict[tool_id]['data']['tools_paint_method'] = val
+                self.db_tool_dict[tool_id].data['tools_paint_method'] = val
             elif wdg_name == "gdb_p_connect":
-                self.db_tool_dict[tool_id]['data']['tools_paint_connect'] = val
+                self.db_tool_dict[tool_id].data['tools_paint_connect'] = val
             elif wdg_name == "gdb_p_contour":
-                self.db_tool_dict[tool_id]['data']['tools_paint_contour'] = val
+                self.db_tool_dict[tool_id].data['tools_paint_contour'] = val
 
             # Isolation Tool
             elif wdg_name == "gdb_i_passes":
-                self.db_tool_dict[tool_id]['data']['tools_iso_passes'] = val
+                self.db_tool_dict[tool_id].data['tools_iso_passes'] = val
             elif wdg_name == "gdb_i_overlap":
-                self.db_tool_dict[tool_id]['data']['tools_iso_overlap'] = val
+                self.db_tool_dict[tool_id].data['tools_iso_overlap'] = val
             elif wdg_name == "gdb_i_milling_type":
-                self.db_tool_dict[tool_id]['data']['tools_iso_milling_type'] = val
+                self.db_tool_dict[tool_id].data['tools_iso_milling_type'] = val
             elif wdg_name == "gdb_i_iso_type":
-                self.db_tool_dict[tool_id]['data']['tools_iso_isotype'] = val
+                self.db_tool_dict[tool_id].data['tools_iso_isotype'] = val
 
             # Drilling Tool
             elif wdg_name == "gdb_e_cutz":
-                self.db_tool_dict[tool_id]['data']['tools_drill_cutz'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_cutz'] = val
             elif wdg_name == "gdb_e_multidepth":
-                self.db_tool_dict[tool_id]['data']['tools_drill_multidepth'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_multidepth'] = val
             elif wdg_name == "gdb_e_depthperpass":
-                self.db_tool_dict[tool_id]['data']['tools_drill_depthperpass'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_depthperpass'] = val
             elif wdg_name == "gdb_e_travelz":
-                self.db_tool_dict[tool_id]['data']['tools_drill_travelz'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_travelz'] = val
 
             elif wdg_name == "gdb_e_feedratez":
-                self.db_tool_dict[tool_id]['data']['tools_drill_feedrate_z'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_feedrate_z'] = val
             elif wdg_name == "gdb_e_fr_rapid":
-                self.db_tool_dict[tool_id]['data']['tools_drill_feedrate_rapid'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_feedrate_rapid'] = val
             elif wdg_name == "gdb_e_spindlespeed":
-                self.db_tool_dict[tool_id]['data']['tools_drill_spindlespeed'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_spindlespeed'] = val
             elif wdg_name == "gdb_e_dwell":
-                self.db_tool_dict[tool_id]['data']['tools_drill_dwell'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_dwell'] = val
             elif wdg_name == "gdb_e_dwelltime":
-                self.db_tool_dict[tool_id]['data']['tools_drill_dwelltime'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_dwelltime'] = val
 
             elif wdg_name == "gdb_e_offset":
-                self.db_tool_dict[tool_id]['data']['tools_drill_offset'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_offset'] = val
             elif wdg_name == "gdb_e_drill_slots":
-                self.db_tool_dict[tool_id]['data']['tools_drill_drill_slots'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_drill_slots'] = val
             elif wdg_name == "gdb_e_drill_slots_over":
-                self.db_tool_dict[tool_id]['data']['tools_drill_drill_overlap'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_drill_overlap'] = val
             elif wdg_name == "gdb_e_drill_last_drill":
-                self.db_tool_dict[tool_id]['data']['tools_drill_last_drill'] = val
+                self.db_tool_dict[tool_id].data['tools_drill_last_drill'] = val
 
             # Cutout Tool
             elif wdg_name == "gdb_ct_margin":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_margin'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_margin'] = val
             elif wdg_name == "gdb_ct_gapsize":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_gapsize'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_gapsize'] = val
             elif wdg_name == "gdb_ct_gaps":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_gaps_ff'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_gaps_ff'] = val
             elif wdg_name == "gdb_ct_convex":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_convexshape'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_convexshape'] = val
 
             elif wdg_name == "gdb_ct_gap_type":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_gap_type'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_gap_type'] = val
             elif wdg_name == "gdb_ct_gap_depth":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_gap_depth'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_gap_depth'] = val
             elif wdg_name == "gdb_ct_mb_dia":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_mb_dia'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_mb_dia'] = val
             elif wdg_name == "gdb_ct_mb_spacing":
-                self.db_tool_dict[tool_id]['data']['tools_cutout_mb_spacing'] = val
+                self.db_tool_dict[tool_id].data['tools_cutout_mb_spacing'] = val
 
         self.on_tools_db_edited()
 

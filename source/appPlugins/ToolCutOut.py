@@ -16,7 +16,7 @@ from camlib import flatten_shapely_geometry
 import math
 import logging
 from copy import deepcopy
-import json
+from tools_database import ToolsDatabase
 import sys
 try:
     from numpy import Inf
@@ -469,7 +469,7 @@ class CutOut(AppTool):
 
         try:
             # store here the tools from Tools Database when searching in Tools Database
-            tools_db_dict = json.loads(tools)
+            tools_db_dict = ToolsDatabase.loads(tools)
         except Exception:
             e = sys.exc_info()[0]
             self.app.log.error(str(e))
@@ -482,37 +482,37 @@ class CutOut(AppTool):
 
         # look in database tools
         for db_tool, db_tool_val in tools_db_dict.items():
-            db_tooldia = db_tool_val['tooldia']
-            low_limit = float(db_tool_val['data']['tol_min'])
-            high_limit = float(db_tool_val['data']['tol_max'])
+            db_tooldia = db_tool_val.tooldia
+            low_limit = float(db_tool_val.data['tol_min'])
+            high_limit = float(db_tool_val.data['tol_max'])
 
             # we need only tool marked for Cutout Tool
-            if db_tool_val['data']['tool_target'] != _('Cutout'):
+            if db_tool_val.data['tool_target'] != _('Cutout'):
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update it's data
             if truncated_tooldia == db_tooldia:
                 tool_found += 1
-                for d in db_tool_val['data']:
+                for d in db_tool_val.data:
                     if d.find('tools_cutout_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
                     elif d.find('tools_') == 0:
                         # don't need data for other App Tools; this tests after 'tools_cutout_'
                         continue
                     else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
             # search for a tool that has a tolerance that the tool fits in
             elif high_limit >= truncated_tooldia >= low_limit:
                 tool_found += 1
                 updated_tooldia = db_tooldia
-                for d in db_tool_val['data']:
+                for d in db_tool_val.data:
                     if d.find('tools_cutout_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
                     elif d.find('tools_') == 0:
                         # don't need data for other App Tools; this tests after 'tools_cutout_'
                         continue
                     else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                        new_tools_dict[d] = db_tool_val.data[d]
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:
@@ -576,7 +576,7 @@ class CutOut(AppTool):
         :return:
         """
 
-        if tool['data']['tool_target'] not in [0, 6]:   # [General, Cutout Tool]
+        if tool.data['tool_target'] not in [0, 6]:   # [General, Cutout Tool]
             for idx in range(self.app.ui.plot_tab_area.count()):
                 if self.app.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
                     wdg = self.app.ui.plot_tab_area.widget(idx)
@@ -585,9 +585,9 @@ class CutOut(AppTool):
             self.app.inform.emit('[ERROR_NOTCL] %s' % _("Selected tool can't be used here. Pick another."))
             return
         tool_from_db = deepcopy(self.default_data)
-        tool_from_db.update(tool)
+        tool_from_db.update(tool.model_dump())
 
-        tool_from_db['data']["tools_cutout_tooldia"] = deepcopy(tool["tooldia"])
+        tool_from_db['data']["tools_cutout_tooldia"] = deepcopy(tool.tooldia)
         tool_from_db['data']["tools_cutout_z"] = deepcopy(tool_from_db['data']["tools_mill_cutz"])
         tool_from_db['data']["tools_cutout_mdepth"] = deepcopy(tool_from_db['data']["tools_mill_multidepth"])
         tool_from_db['data']["tools_cutout_depthperpass"] = deepcopy(tool_from_db['data']["tools_mill_depthperpass"])
@@ -613,13 +613,13 @@ class CutOut(AppTool):
         :return: None
         """
 
-        tooldia = float(tool['tooldia'])
+        tooldia = float(tool.tooldia)
 
         truncated_tooldia = self.app.dec_format(tooldia, self.decimals)
         self.cutout_tools.update({
             1: {
                 'tooldia':          truncated_tooldia,
-                'data':             deepcopy(tool['data']),
+                'data':             deepcopy(tool.data),
                 'solid_geometry':   []
             }
         })
