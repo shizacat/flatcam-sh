@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Changed the startup splash so the version and year are drawn from `App.version` and `App.version_date`
-- Changed the preferences file name to `settings.FlatConfig` so an application update keeps the saved settings
+- Changed the preferences file name to `settings.json` so an application update keeps the saved settings
+- Changed the portable-mode factory defaults file to `factory_defaults.json`
 - Changed portable mode so `App.data_path` is read again from `user_settings_folder()` after the portable flag is saved
 
 ### Fixed

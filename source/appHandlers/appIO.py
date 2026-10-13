@@ -289,7 +289,7 @@ class appIO(QtCore.QObject):
 
         self.log.debug("on_file_open_config()")
 
-        _filter_ = "FlatCAM Config (*.FlatConfig);;FlatCAM Config (*.json);;All Files (*.*)"
+        _filter_ = "FlatCAM Config (*.json);;All Files (*.*)"
         try:
             filename, _f = QtWidgets.QFileDialog.getOpenFileName(caption=_("Open Configuration File"),
                                                                  directory=str(self.app.data_path), filter=_filter_)
@@ -1496,7 +1496,7 @@ class appIO(QtCore.QObject):
         self.log.debug("App.on_import_preferences()")
 
         # Show file chooser
-        filter_ = "Config File (*.FlatConfig);;All Files (*.*)"
+        filter_ = "Config File (*.json);;All Files (*.*)"
         try:
             filename, _f = QtWidgets.QFileDialog.getOpenFileName(caption=_("Import FlatCAM Preferences"),
                                                                  directory=str(self.app.data_path),
@@ -1529,7 +1529,7 @@ class appIO(QtCore.QObject):
         date = str(datetime.today()).rpartition('.')[0]
         date = ''.join(c for c in date if c not in ':-')
         date = date.replace(' ', '_')
-        filter__ = "Config File .FlatConfig (*.FlatConfig);;All Files (*.*)"
+        filter__ = "Config File (*.json);;All Files (*.*)"
         try:
             filename, _f = FCFileSaveDialog.get_saved_filename(
                 caption=_("Export FlatCAM Preferences"),
@@ -2445,7 +2445,7 @@ class appIO(QtCore.QObject):
         Loads a config file from the specified file.
 
         :param filename:        Name of the file from which to load.
-        :param run_from_arg:    if True the FlatConfig file will be open as a command line argument
+        :param run_from_arg:    if True the settings file will be open as a command line argument
         :return:                None
         """
         self.log.debug("Opening config file: " + filename)
@@ -3009,7 +3009,7 @@ class appIO(QtCore.QObject):
     def on_file_save_defaults(self):
         """
         Callback for menu item File->Save Defaults. Saves application default options
-        ``self.options`` to settings.FlatConfig.
+        ``self.options`` to settings.json.
 
         :return: None
         """

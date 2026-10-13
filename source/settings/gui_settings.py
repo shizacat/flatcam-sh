@@ -17,7 +17,7 @@ class GuiSettings:
     """
     Shared handle for ``QSettings("Open Source", "FlatCAM_EVO")``.
 
-    Qt keeps this store outside the FlatConfig file. One instance serves the whole
+    Qt keeps this store outside settings.json. One instance serves the whole
     process, so a later read sees an earlier write without constructing ``QSettings`` again.
     The Qt store is opened on the first read or write. A store opened before
     ``QApplication`` exists is replaced, because Qt deletes it when the application starts.

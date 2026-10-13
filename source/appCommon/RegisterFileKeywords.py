@@ -287,7 +287,7 @@ class Extensions:
     dxf_list = ['dxf']
     pdf_list = ['pdf']
     prj_list = ['flatprj']
-    conf_list = ['flatconfig']
+    conf_list = ['json']
 
 
 class RegisterFK(QtCore.QObject):

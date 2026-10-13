@@ -1309,8 +1309,8 @@ class PreferencesUIManager(QtCore.QObject):
     def save_defaults(self, silent=False, first_time=False):
         """
         Saves application default options
-        ``self.settings`` to settings.FlatConfig file.
-        Save the toolbars visibility status to the preferences file (settings.FlatConfig) to be
+        ``self.settings`` to settings.json file.
+        Save the toolbars visibility status to the preferences file (settings.json) to be
         used at the next launch of the application.
 
         :param silent:      Whether to display a message in status bar or not; boolean

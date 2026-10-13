@@ -4,7 +4,7 @@ FlatCAM keeps its settings in two stores. They differ in where the values live a
 
 | Store | Class | Where it lives | What it holds |
 |---|---|---|---|
-| Preferences file | `Settings`, with the session copy `Options` (`source/settings/models`) | `settings.FlatConfig` in the data folder | units, plotting, Gerber, Excellon, geometry, CNC job, and tool parameters |
+| Preferences file | `Settings`, with the session copy `Options` (`source/settings/models`) | `settings.json` in the data folder | units, plotting, Gerber, Excellon, geometry, CNC job, and tool parameters |
 | GUI store | `GuiSettings` (`source/settings/gui_settings.py`) | Qt `QSettings("Open Source", "FlatCAM_EVO")` | main window layout, widget style, language, font sizes, splash screen |
 
 The Preferences file belongs to the project data. It can be exported, imported, and restored to defaults. The GUI store describes this installation's window and its look. **Clear GUI Settings** in Preferences empties it without touching the Preferences file.
@@ -12,7 +12,7 @@ The Preferences file belongs to the project data. It can be exported, imported, 
 | Question | Read and write |
 |---|---|
 | What should a tool or object use in this session? | `app.options` |
-| What did the user save in Preferences, and what comes back on the next launch? | `app.settings`, file `settings.FlatConfig` |
+| What did the user save in Preferences, and what comes back on the next launch? | `app.settings`, file `settings.json` |
 | Window layout, widget style, language, font sizes? | `GuiSettings()` |
 
 ## Preferences file: `Settings` and `Options`
@@ -21,7 +21,7 @@ The Preferences file belongs to the project data. It can be exported, imported, 
 
 ### `Settings`
 
-Saved application settings. They are loaded from `settings.FlatConfig` and written back when the user saves preferences. A missing file is created from the built-in defaults. A file that cannot be read is deleted and replaced with those defaults; the replacement is written to the log. The file-format `version` and the usage counters in `global_stats` belong here. The application version is not part of the file name, so an update keeps this file.
+Saved application settings. They are loaded from `settings.json` and written back when the user saves preferences. A missing file is created from the built-in defaults. A file that cannot be read is deleted and replaced with those defaults; the replacement is written to the log. The file-format `version` and the usage counters in `global_stats` belong here. The application version is not part of the file name, so an update keeps this file.
 
 ### `Options`
 
@@ -47,7 +47,7 @@ Options do not repeat the settings schema. Shared preference groups are defined 
 
 `App` creates this in `App.__init__` (`source/appMain.py`).
 
-Saved settings are a `Settings` model on `app.settings` (`source/settings`). Field defaults are the built-in starting set. `App.load_settings()` reads `settings.FlatConfig` from the data folder and keeps a field default when a key is absent.
+Saved settings are a `Settings` model on `app.settings` (`source/settings`). Field defaults are the built-in starting set. `App.load_settings()` reads `settings.json` from the data folder and keeps a field default when a key is absent.
 
 Data folder:
 
@@ -55,11 +55,11 @@ Data folder:
 - Windows, portable: `<app>/config`
 - macOS and Linux: `~/.FlatCAM`
 
-The file name is `settings.FlatConfig`. The `version` field inside the file is the data-format version, not the application version. Older `current_defaults_<version>.FlatConfig` files are left unread.
+The file name is `settings.json`. The `version` field inside the file is the data-format version, not the application version. Older `current_defaults_<version>.FlatConfig` files are left unread.
 
 `PreferencesUIManager.current_defaults` is an in-memory `Settings` snapshot used to undo an unsaved Preferences edit. It is not the file.
 
-Startup no longer writes `factory_defaults_<version>.FlatConfig`. Built-in defaults are the field defaults on `Settings`.
+Startup no longer writes `factory_defaults.json`. Built-in defaults are the field defaults on `Settings`. Portable mode still creates an empty `factory_defaults.json` when that file is missing.
 
 ### `app.options`
 
@@ -73,13 +73,13 @@ A new object copies the keys it needs into its own `obj_options`. That dictionar
 
 They are copied only at these points.
 
-**Startup.** `App.load_settings()` reads the FlatConfig file into `Settings`, then `Options.from_settings()` copies the shared fields into `app.options`.
+**Startup.** `App.load_settings()` reads `settings.json` into `Settings`, then `Options.from_settings()` copies the shared fields into `app.options`.
 
 **Apply in Preferences** (`PreferencesUIManager.on_save_button`):
 
 1. `defaults_read_form()` writes the form into `app.settings`. Only keys listed in `settings_from_fields` are read.
 2. `copy_shared(app.options, app.settings)` copies those fields onto the session.
-3. `save_defaults()` writes `app.settings` to `settings.FlatConfig`.
+3. `save_defaults()` writes `app.settings` to `settings.json`.
 
 **File → Save Defaults** (`AppIO.on_file_save_defaults`) copies `app.options` onto `app.settings`, then writes the settings file.
 
@@ -103,7 +103,7 @@ Some color controls write `app.options` as the color changes, before Apply. That
 
 `GuiSettings` is the only way the application reads and writes `QSettings("Open Source", "FlatCAM_EVO")`. It is a process-wide singleton: `GuiSettings()` returns the same object everywhere. Each key has a named getter and a `save_*` method, so call sites do not repeat `contains()` and `value()` with a default. The generic `contains`, `value`, `set_value`, `remove`, `keys`, and `clear` remain for tests and for `clear()` on the first run.
 
-Qt keeps this store outside the FlatConfig file:
+Qt keeps this store outside `settings.json`:
 
 - Windows: registry key `HKEY_CURRENT_USER\Software\Open Source\FlatCAM_EVO`
 - macOS: `~/Library/Preferences/com.open-source.FlatCAM_EVO.plist`
@@ -200,7 +200,7 @@ Style and color are separate settings. Style chooses which Qt style draws the co
 
 The style does not pick light or dark. It only draws buttons, combo boxes, sliders, and the rest of the chrome. The color scheme supplies the palette those controls use. On macOS, the native style follows that palette: Dark uses the system dark drawing, Light uses the system light drawing.
 
-The choice is the `style` key. It is not a field of `Settings` and it is not written to the FlatConfig file. A stored value that is not one of the available style names is ignored, and Qt keeps its default style. `App.__init__` calls `GuiSettings.apply_style()` after the color scheme and before the splash screen, the first widget, so the window is created with the saved style.
+The choice is the `style` key. It is not a field of `Settings` and it is not written to `settings.json`. A stored value that is not one of the available style names is ignored, and Qt keeps its default style. `App.__init__` calls `GuiSettings.apply_style()` after the color scheme and before the splash screen, the first widget, so the window is created with the saved style.
 
 A stylesheet on the application replaces the style object. Setting a new style while a sheet is active leaves the previous style in place. `GuiSettings.set_widget_style()` clears the sheet, calls `QApplication.setStyle()`, then puts the same sheet back.
 
@@ -248,6 +248,6 @@ Tests must not write the user store. `GuiSettings.reset(QSettings(path, QSetting
 
 Use `app.options` when the running tool or object needs the value now.
 
-Also add it as a field on the shared preference model and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.settings`, into `app.options`, and into the FlatConfig file.
+Also add it as a field on the shared preference model and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.settings`, into `app.options`, and into `settings.json`.
 
 Use `GuiSettings` for window chrome, widget style, language, and font sizes. Those keys are not part of `app.settings`. Add a getter and a `save_*` method for the key, with the default the call sites expect, and a test on the temporary store.

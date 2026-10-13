@@ -1371,7 +1371,7 @@ class App(QtCore.QObject):
                 except Exception as e:
                     self.log.error("Could not open FlatCAM project file as App parameter due: %s" % str(e))
 
-            elif '.FlatConfig'.lower() in argument.lower():
+            elif '.json' in argument.lower():
                 try:
                     file_name = str(argument)
 
@@ -1615,9 +1615,9 @@ class App(QtCore.QObject):
         The name does not include the application version, so an update keeps the saved settings.
         The folder is ``data_path``.
 
-        :return: path to ``settings.FlatConfig``
+        :return: path to ``settings.json``
         """
-        return self.data_path / "settings.FlatConfig"
+        return self.data_path / "settings.json"
 
     def recent_files_path(self) -> Path:
         return self.data_path / "recent.json"
@@ -4075,7 +4075,7 @@ class App(QtCore.QObject):
 
         for filename, empty in (
             (self.settings_path(), {}),
-            (str(self.data_path / "factory_defaults.FlatConfig"), {}),
+            (str(self.data_path / "factory_defaults.json"), {}),
             (self.recent_files_path(), []),
             (self.recent_projects_path(), []),
         ):

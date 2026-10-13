@@ -265,7 +265,7 @@ class AppTextEditor(QtWidgets.QWidget):
             except AttributeError:
                 obj_name = 'file'
                 if filt is None:
-                    _filter_ = "FlatConfig Files (*.FlatConfig);;PDF Files (*.pdf);;All Files (*.*)"
+                    _filter_ = "JSON Files (*.json);;PDF Files (*.pdf);;All Files (*.*)"
 
         try:
             filename = str(FCFileSaveDialog.get_saved_filename(
