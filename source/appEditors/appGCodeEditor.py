@@ -176,7 +176,7 @@ class AppGCodeEditor(QtCore.QObject):
         start_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
         self.ui.cnc_tools_table.setItem(row_no, 1, start_item)
 
-        for dia_key, dia_value in self.gcode_obj.tools.items():
+        for dia_key, tooldia, milling in self.gcode_obj.milling_tools():
 
             tool_idx += 1
             row_no += 1
@@ -185,26 +185,26 @@ class AppGCodeEditor(QtCore.QObject):
             # id.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.ui.cnc_tools_table.setItem(row_no, 0, t_id)  # Tool name/id
 
-            dia_item = QtWidgets.QTableWidgetItem('%.*f' % (self.decimals, float(dia_value['tooldia'])))
+            dia_item = QtWidgets.QTableWidgetItem('%.*f' % (self.decimals, float(tooldia)))
 
-            offset_txt = list(str(dia_value['data']['tools_mill_offset_value']))
+            offset_txt = list(str(milling.offset_value))
             offset_txt[0] = offset_txt[0].upper()
             offset_item = QtWidgets.QTableWidgetItem(''.join(offset_txt))
 
             # -------------------- JOB     ------------------------------------- #
             job_item_options = [_('Roughing'), _('Finishing'), _('Isolation'), _('Polishing')]
             try:
-                job_item_txt = job_item_options[dia_value['data']['tools_mill_job_type']]
+                job_item_txt = job_item_options[milling.job_type]
             except TypeError:
-                job_item_txt = dia_value['data']['tools_mill_job_type']
+                job_item_txt = milling.job_type
             job_item = QtWidgets.QTableWidgetItem(job_item_txt)
 
             # -------------------- TOOL SHAPE ------------------------------------- #
             tool_type_item_options = MILL_TOOL_SHAPES
             try:
-                tool_shape_item_txt = tool_type_item_options[dia_value['data']['tools_mill_tool_shape']]
+                tool_shape_item_txt = tool_type_item_options[milling.tool_shape]
             except TypeError:
-                tool_shape_item_txt = dia_value['data']['tools_mill_tool_shape']
+                tool_shape_item_txt = milling.tool_shape
             tool_shape_item = QtWidgets.QTableWidgetItem(tool_shape_item_txt)
 
             t_id.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
