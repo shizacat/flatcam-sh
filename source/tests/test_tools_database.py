@@ -57,7 +57,7 @@ def test_tool_data_copy_into_keeps_only_the_requested_operation() -> None:
     """Verify copying a tool keeps its own operation and the shared parameters."""
     data = ToolData.model_validate(
         {
-            "tool_target": "Drilling",
+            "tool_target": 2,
             "tol_min": 0.1,
             "tools_drill_cutz": -1.5,
             "tools_mill_cutz": -0.2,
@@ -67,10 +67,41 @@ def test_tool_data_copy_into_keeps_only_the_requested_operation() -> None:
 
     data.copy_into(target, prefix="tools_drill_")
 
-    assert target["tool_target"] == "Drilling"
+    assert target["tool_target"] == 2
     assert target["tol_min"] == 0.1
     assert target["tools_drill_cutz"] == -1.5
     assert "tools_mill_cutz" not in target
+
+
+def test_tool_data_coerces_stored_values_to_field_types() -> None:
+    """Verify defaults, form values, and coordinates land in their declared types."""
+    data = ToolData.model_validate(
+        {
+            "tol_min": 1,
+            "tools_mill_tool_shape": "V",
+            "tools_mill_offset_type": 0,
+            "tools_mill_travelz": 2,
+            "tools_mill_dwell": True,
+            "tools_mill_toolchangexy": "1.5, 2",
+            "tools_mill_startz": None,
+            "tools_iso_passes": 3,
+            "tools_cutout_gap_type": "b",
+        }
+    )
+
+    assert data.tol_min == 1.0
+    assert isinstance(data.tol_min, float)
+    assert data.tools_mill_tool_shape == "V"
+    assert data.tools_mill_offset_type == 0
+    assert data.tools_mill_travelz == 2.0
+    assert data.tools_mill_dwell is True
+    assert data.tools_mill_toolchangexy == (1.5, 2.0)
+    assert data.tools_mill_startz is None
+    assert data.tools_iso_passes == 3
+    assert data.tools_cutout_gap_type == "b"
+
+    data.tools_mill_tool_shape = 4
+    assert data.tools_mill_tool_shape == 4
 
 
 def test_tools_database_rejects_a_non_object() -> None:

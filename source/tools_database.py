@@ -9,6 +9,8 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
 
+from settings.st_types import XYPair
+
 
 class ToolData(BaseModel):
     """
@@ -20,97 +22,100 @@ class ToolData(BaseModel):
 
     model_config = ConfigDict(extra="allow", validate_assignment=True)
 
-    plot: Any = None
-    tool_target: Any = 0
-    tol_min: Any = 0.0
-    tol_max: Any = 0.0
-    job: Any = None
+    plot: bool = True
+    tool_target: int = 0
+    tol_min: float = 0.0
+    tol_max: float = 0.0
+    # The job combo stores its label. Defaults do not fill this field.
+    job: str = ""
 
-    tools_mill_tool_shape: Any = None
-    tools_mill_job_type: Any = None
-    tools_mill_offset_type: Any = None
-    tools_mill_offset_value: Any = None
-    tools_mill_cutz: Any = None
-    tools_mill_multidepth: Any = None
-    tools_mill_depthperpass: Any = None
-    tools_mill_vtipdia: Any = None
-    tools_mill_vtipangle: Any = None
-    tools_mill_travelz: Any = None
-    tools_mill_feedrate: Any = None
-    tools_mill_feedrate_z: Any = None
-    tools_mill_feedrate_rapid: Any = None
-    tools_mill_spindlespeed: Any = None
-    tools_mill_dwell: Any = None
-    tools_mill_dwelltime: Any = None
-    tools_mill_ppname_g: Any = None
-    tools_mill_extracut: Any = None
-    tools_mill_extracut_length: Any = None
-    tools_mill_toolchange: Any = None
-    tools_mill_toolchangexy: Any = None
-    tools_mill_toolchangez: Any = None
-    tools_mill_startz: Any = None
-    tools_mill_endz: Any = None
-    tools_mill_endxy: Any = None
-    tools_mill_search_time: Any = None
-    tools_mill_z_p_depth: Any = None
-    tools_mill_f_plunge: Any = None
-    tools_mill_spindledir: Any = None
-    tools_mill_optimization_type: Any = None
-    tools_mill_feedrate_probe: Any = None
-    seg_x: Any = None
-    seg_y: Any = None
-    tools_mill_area_exclusion: Any = None
-    tools_mill_area_shape: Any = None
-    tools_mill_area_strategy: Any = None
-    tools_mill_area_overz: Any = None
-    tools_mill_polish: Any = None
-    tools_mill_polish_margin: Any = None
-    tools_mill_polish_overlap: Any = None
-    tools_mill_polish_method: Any = None
+    # Shape and offset type are a combo index in defaults and a label in the database form.
+    tools_mill_tool_shape: int | str = 0
+    tools_mill_job_type: int = 0
+    tools_mill_offset_type: int | str = 0
+    tools_mill_offset_value: float = 0.0
+    tools_mill_cutz: float = 0.0
+    tools_mill_multidepth: bool = False
+    tools_mill_depthperpass: float = 0.0
+    tools_mill_vtipdia: float = 0.0
+    tools_mill_vtipangle: float = 0.0
+    tools_mill_travelz: float = 0.0
+    tools_mill_feedrate: float = 0.0
+    tools_mill_feedrate_z: float = 0.0
+    tools_mill_feedrate_rapid: float = 0.0
+    tools_mill_spindlespeed: float = 0.0
+    tools_mill_dwell: bool = False
+    tools_mill_dwelltime: float = 0.0
+    tools_mill_ppname_g: str = ""
+    tools_mill_extracut: bool = False
+    tools_mill_extracut_length: float = 0.0
+    tools_mill_toolchange: bool = False
+    tools_mill_toolchangexy: XYPair = (0.0, 0.0)
+    tools_mill_toolchangez: float = 0.0
+    tools_mill_startz: float | None = None
+    tools_mill_endz: float = 0.0
+    tools_mill_endxy: XYPair | None = None
+    tools_mill_search_time: int = 0
+    tools_mill_z_p_depth: float = 0.0
+    tools_mill_f_plunge: bool = False
+    tools_mill_spindledir: str = ""
+    tools_mill_optimization_type: str = ""
+    tools_mill_feedrate_probe: int = 0
+    seg_x: float = 0.0
+    seg_y: float = 0.0
+    tools_mill_area_exclusion: bool = False
+    tools_mill_area_shape: str = ""
+    tools_mill_area_strategy: str = ""
+    tools_mill_area_overz: float = 0.0
+    tools_mill_polish: bool = False
+    tools_mill_polish_margin: float = 0.0
+    tools_mill_polish_overlap: int = 0
+    tools_mill_polish_method: int = 0
 
-    tools_ncc_operation: Any = None
-    tools_ncc_milling_type: Any = None
-    tools_ncc_overlap: Any = None
-    tools_ncc_margin: Any = None
-    tools_ncc_method: Any = None
-    tools_ncc_connect: Any = None
-    tools_ncc_contour: Any = None
-    tools_ncc_offset_choice: Any = None
-    tools_ncc_offset_value: Any = None
+    tools_ncc_operation: str = ""
+    tools_ncc_milling_type: str = ""
+    tools_ncc_overlap: float = 0.0
+    tools_ncc_margin: float = 0.0
+    tools_ncc_method: int = 0
+    tools_ncc_connect: bool = False
+    tools_ncc_contour: bool = False
+    tools_ncc_offset_choice: bool = False
+    tools_ncc_offset_value: float = 0.0
 
-    tools_paint_overlap: Any = None
-    tools_paint_offset: Any = None
-    tools_paint_method: Any = None
-    tools_paint_connect: Any = None
-    tools_paint_contour: Any = None
+    tools_paint_overlap: float = 0.0
+    tools_paint_offset: float = 0.0
+    tools_paint_method: int = 0
+    tools_paint_connect: bool = False
+    tools_paint_contour: bool = False
 
-    tools_iso_passes: Any = None
-    tools_iso_overlap: Any = None
-    tools_iso_milling_type: Any = None
-    tools_iso_isotype: Any = None
+    tools_iso_passes: int = 0
+    tools_iso_overlap: float = 0.0
+    tools_iso_milling_type: str = ""
+    tools_iso_isotype: str = ""
 
-    tools_drill_cutz: Any = None
-    tools_drill_multidepth: Any = None
-    tools_drill_depthperpass: Any = None
-    tools_drill_travelz: Any = None
-    tools_drill_feedrate_z: Any = None
-    tools_drill_feedrate_rapid: Any = None
-    tools_drill_spindlespeed: Any = None
-    tools_drill_dwell: Any = None
-    tools_drill_dwelltime: Any = None
-    tools_drill_offset: Any = None
-    tools_drill_drill_slots: Any = None
-    tools_drill_drill_overlap: Any = None
-    tools_drill_last_drill: Any = None
+    tools_drill_cutz: float = 0.0
+    tools_drill_multidepth: bool = False
+    tools_drill_depthperpass: float = 0.0
+    tools_drill_travelz: float = 0.0
+    tools_drill_feedrate_z: float = 0.0
+    tools_drill_feedrate_rapid: float = 0.0
+    tools_drill_spindlespeed: int = 0
+    tools_drill_dwell: bool = False
+    tools_drill_dwelltime: float = 0.0
+    tools_drill_offset: float = 0.0
+    tools_drill_drill_slots: bool = False
+    tools_drill_drill_overlap: float = 0.0
+    tools_drill_last_drill: bool = False
 
-    tools_cutout_margin: Any = None
-    tools_cutout_gapsize: Any = None
-    tools_cutout_gaps_ff: Any = None
-    tools_cutout_convexshape: Any = None
-    tools_cutout_gap_type: Any = None
-    tools_cutout_gap_depth: Any = None
-    tools_cutout_mb_dia: Any = None
-    tools_cutout_mb_spacing: Any = None
+    tools_cutout_margin: float = 0.0
+    tools_cutout_gapsize: float = 0.0
+    tools_cutout_gaps_ff: str = ""
+    tools_cutout_convexshape: bool = False
+    # Gap type is an index in defaults and a radio value in the database form.
+    tools_cutout_gap_type: int | str = 0
+    tools_cutout_gap_depth: float = 0.0
+    tools_cutout_mb_dia: float = 0.0
+    tools_cutout_mb_spacing: float = 0.0
 
     def parameters(self) -> dict[str, Any]:
         """

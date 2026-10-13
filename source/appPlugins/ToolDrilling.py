@@ -1210,8 +1210,8 @@ class ToolDrilling(Excellon, AppTool):
                 # look in database tools
                 for db_tool, db_tool_val in self.tools_db_dict.items():
                     db_tooldia = db_tool_val.tooldia
-                    low_limit = float(db_tool_val.data.tol_min)
-                    high_limit = float(db_tool_val.data.tol_max)
+                    low_limit = db_tool_val.data.tol_min
+                    high_limit = db_tool_val.data.tol_max
 
                     # test if the targeted tool is Drilling Tool, if not, skip to next tool
                     targeted_tool = db_tool_val.data.tool_target
