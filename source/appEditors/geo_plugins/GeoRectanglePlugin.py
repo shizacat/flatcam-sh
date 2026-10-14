@@ -81,8 +81,9 @@ class RectangleEditorTool(AppToolEditor):
     def set_tool_ui(self):
         # Init appGUI
         self.ui.anchor_radio.set_value('c')
-        self.ui.x_entry.set_value(self.draw_app.snap_x)
-        self.ui.y_entry.set_value(self.draw_app.snap_y)
+        snap = self.draw_app.snap_pos
+        self.ui.x_entry.set_value(None if snap is None else snap.x)
+        self.ui.y_entry.set_value(None if snap is None else snap.y)
         self.ui.corner_radio.set_value('r')
         self.ui.radius_entry.set_value(1)
         self.ui.length_entry.set_value(0.0)

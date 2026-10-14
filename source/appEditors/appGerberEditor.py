@@ -57,7 +57,7 @@ class PadEditorGrb(ShapeToolEditorGrb):
     Resulting type: Polygon
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: "AppGerberEditor") -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'pad'
         self.draw_app = draw_app
@@ -143,14 +143,16 @@ class PadEditorGrb(ShapeToolEditorGrb):
     def set_plugin_ui(self):
         dia = float(self.draw_app.storage_dict[self.draw_app.last_aperture_selected]['size'])
         self.ui.dia_entry.set_value(dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
     def click(self, point):
         self.points = point
         self.draw_app.last_length = self.pad_tool.length
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
         self.make()
         return "Done."
 
@@ -305,7 +307,7 @@ class PadEditorGrb(ShapeToolEditorGrb):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -497,7 +499,7 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
         self.ui = self.parray_tool.ui
         self.parray_tool.run()
 
-        geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y), static=True)
+        geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None), static=True)
 
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             self.draw_app.draw_utility_geometry(geo_shape=geo)
@@ -506,10 +508,8 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
             self.draw_app.app.plotcanvas.view.camera.zoom_callback = self.draw_cursor_data
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Pad Array"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -532,8 +532,9 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
     def set_plugin_ui(self):
         dia = float(self.draw_app.storage_dict[self.draw_app.last_aperture_selected]['size'])
         self.ui.dia_entry.set_value(dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
         self.ui.array_type_radio.set_value(self.draw_app.last_parray_type)
         self.ui.on_array_type_radio(val=self.ui.array_type_radio.get_value())
@@ -549,12 +550,14 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
     def click(self, point):
         if self.ui.array_type_radio.get_value() == 'linear':  # 'Linear'
             self.make()
-            self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-            self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+            snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+            self.ui.x_entry.set_value(float(snap.x))
+            self.ui.y_entry.set_value(float(snap.y))
             return
 
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
         if self.flag_for_circ_array is None:
             self.draw_app.in_action = True
             self.pt.append(point)
@@ -901,7 +904,7 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -910,7 +913,8 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
             return
 
         if not self.points:
-            self.points = self.draw_app.snap_x, self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            self.points = snap if snap is not None else (None, None)
 
         # font size
         fsize = GuiSettings().hud_font_size()
@@ -968,7 +972,7 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
                     self.ui.pad_axis_radio.set_value('X')
 
                 # ## Utility geometry (animated)
-                self.draw_app.update_utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                self.draw_app.update_utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
 
             elif key == 'C' or key == QtCore.Qt.Key.Key_C:
                 self.cursor_data_control = not self.cursor_data_control
@@ -978,11 +982,10 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
         self.array_type = self.ui.array_type_radio.get_value()
 
         curr_pos = self.draw_app.app.geo_editor.snap(array_pos[0], array_pos[1])
-        self.draw_app.snap_x = curr_pos[0]
-        self.draw_app.snap_y = curr_pos[1]
+        self.draw_app.snap_pos = curr_pos
 
-        self.points = [self.draw_app.snap_x, self.draw_app.snap_y]
-        self.origin = [self.draw_app.snap_x, self.draw_app.snap_y]
+        self.points = [curr_pos.x, curr_pos.y]
+        self.origin = [curr_pos.x, curr_pos.y]
         self.destination = ((self.origin[0] + self.radius), self.origin[1])
         self.flag_for_circ_array = True
         self.make()
@@ -1186,8 +1189,9 @@ class RegionEditorGrb(ShapeToolEditorGrb):
     def set_plugin_ui(self):
         dia = float(self.draw_app.storage_dict[self.draw_app.last_aperture_selected]['size'])
         self.ui.dia_entry.set_value(dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
     def click(self, point):
         self.draw_app.in_action = True
@@ -1196,8 +1200,9 @@ class RegionEditorGrb(ShapeToolEditorGrb):
             self.points.append(self.inter_point)
         self.points.append(point)
         self.draw_app.last_length = self.reg_tool.length
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
         if len(self.points) > 0:
             self.draw_app.app.inform.emit(_("Click on next Point or click right mouse button to complete ..."))
@@ -1432,7 +1437,7 @@ class RegionEditorGrb(ShapeToolEditorGrb):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -1492,7 +1497,7 @@ class RegionEditorGrb(ShapeToolEditorGrb):
                     self.points = self.points[0:-2]
                 # Remove any previous utility shape
                 self.draw_app.tool_shape.clear(update=False)
-                geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
                 self.draw_app.draw_utility_geometry(geo_shape=geo)
                 return _("Backtracked one point ...")
 
@@ -1515,7 +1520,7 @@ class RegionEditorGrb(ShapeToolEditorGrb):
 
             # Remove any previous utility shape
             self.draw_app.tool_shape.clear(update=False)
-            geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+            geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
             self.draw_app.draw_utility_geometry(geo_shape=geo)
 
             return msg
@@ -1539,7 +1544,7 @@ class RegionEditorGrb(ShapeToolEditorGrb):
 
             # Remove any previous utility shape
             self.draw_app.tool_shape.clear(update=False)
-            geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+            geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
             self.draw_app.draw_utility_geometry(geo_shape=geo)
 
             return msg
@@ -1665,10 +1670,8 @@ class TrackEditorGrb(ShapeToolEditorGrb):
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
         self.track_tool.length = self.draw_app.last_length
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Track"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -1689,8 +1692,9 @@ class TrackEditorGrb(ShapeToolEditorGrb):
 
     def set_plugin_ui(self):
         self.ui.dia_entry.set_value(self.size_ap)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
     def click(self, point):
         self.draw_app.in_action = True
@@ -1699,8 +1703,9 @@ class TrackEditorGrb(ShapeToolEditorGrb):
         if not self.points or point != self.points[-1]:
             self.points.append(point)
             self.draw_app.last_length = self.track_tool.length
-            self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-            self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+            snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+            self.ui.x_entry.set_value(float(snap.x))
+            self.ui.y_entry.set_value(float(snap.y))
         else:
             return
 
@@ -1840,7 +1845,7 @@ class TrackEditorGrb(ShapeToolEditorGrb):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -1852,8 +1857,9 @@ class TrackEditorGrb(ShapeToolEditorGrb):
         fsize = GuiSettings().hud_font_size()
 
         if not self.points:
-            old_x = self.draw_app.snap_x
-            old_y = self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            old_x = None if snap is None else snap.x
+            old_y = None if snap is None else snap.y
         else:
             old_x = self.points[-1][0]
             old_y = self.points[-1][1]
@@ -1894,7 +1900,7 @@ class TrackEditorGrb(ShapeToolEditorGrb):
                 self.temp_points = self.points[0:-1]
                 # Remove any previous utility shape
                 self.draw_app.tool_shape.clear(update=False)
-                geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
                 self.draw_app.draw_utility_geometry(geo_shape=geo)
                 return _("Backtracked one point ...")
 
@@ -1943,7 +1949,7 @@ class TrackEditorGrb(ShapeToolEditorGrb):
 
             # Remove any previous utility shape
             self.draw_app.tool_shape.clear(update=False)
-            geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+            geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
             self.draw_app.draw_utility_geometry(geo_shape=geo)
 
             return msg
@@ -1982,7 +1988,7 @@ class TrackEditorGrb(ShapeToolEditorGrb):
 
             # Remove any previous utility shape
             self.draw_app.tool_shape.clear(update=False)
-            geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+            geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
             self.draw_app.draw_utility_geometry(geo_shape=geo)
 
             return msg
@@ -2014,7 +2020,9 @@ class TrackEditorGrb(ShapeToolEditorGrb):
                     return _("Failed.")
 
                 first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
-                last_pt = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+                last_pt = self.draw_app.snap_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -3406,8 +3414,7 @@ class ImportEditorGrb(QtCore.QObject, DrawTool):
 
         self.cursor_pos: PointXY | None = None
         self.pos: PointXY | tuple[float, float] | None = None
-        self.snap_x: float | None = None
-        self.snap_y: float | None = None
+        self.snap_pos: PointXY | None = None
 
         try:
             self.draw_app.ui.apertures_table.clearSelection()
@@ -3531,17 +3538,18 @@ class ImportEditorGrb(QtCore.QObject, DrawTool):
 
         # Snap coordinates
         if self.app.grid_status():
-            x, y = self.app.geo_editor.snap(x, y)
+            self.snap_pos = self.app.geo_editor.snap(x, y)
+        else:
+            self.snap_pos = PointXY(x, y)
+        x, y = self.snap_pos
 
-            # Update cursor
+        # Update cursor
+        if self.app.grid_status():
             self.app.app_cursor.set_data(np.asarray([(x, y)]), symbol='++', edge_color=self.app.plotcanvas.cursor_color,
                                          edge_width=self.app.options.global_cursor_width,
                                          size=self.app.options.global_cursor_size)
 
-        self.snap_x = x
-        self.snap_y = y
-
-        self.app.mouse_pos = PointXY(x, y)
+        self.app.mouse_pos = self.snap_pos
 
         if self.pos is None:
             self.pos = (0, 0)
@@ -3964,8 +3972,7 @@ class AppGerberEditor(QtCore.QObject):
         self.modifiers = None
         self.cursor_pos: PointXY | None = None
         # Current snapped mouse pos
-        self.snap_x = None
-        self.snap_y = None
+        self.snap_pos: PointXY | None = None
         self.pos = None
 
         # #############################################################################################################
@@ -6024,17 +6031,18 @@ class AppGerberEditor(QtCore.QObject):
 
         # # ## Snap coordinates
         if self.app.grid_status():
-            x, y = self.app.geo_editor.snap(x, y)
+            self.snap_pos = self.app.geo_editor.snap(x, y)
+        else:
+            self.snap_pos = PointXY(x, y)
+        x, y = self.snap_pos
 
-            # Update cursor
+        # Update cursor
+        if self.app.grid_status():
             self.app.app_cursor.set_data(np.asarray([(x, y)]), symbol='++', edge_color=self.app.plotcanvas.cursor_color,
                                          edge_width=self.app.options.global_cursor_width,
                                          size=self.app.options.global_cursor_size)
 
-        self.snap_x = x
-        self.snap_y = y
-
-        self.app.mouse_pos = PointXY(x, y)
+        self.app.mouse_pos = self.snap_pos
 
         if self.pos is None:
             self.pos = (0, 0)

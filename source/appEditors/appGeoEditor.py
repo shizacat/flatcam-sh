@@ -149,9 +149,8 @@ class AppGeoEditor(QtCore.QObject):
         self.multigeo_tool = None
 
         # Current snapped mouse pos
-        self.snap_x = None
-        self.snap_y = None
-        self.pos = None
+        self.snap_pos: PointXY | None = None
+        self.pos: PointXY | None = None
 
         # signal that there is an action active like polygon or path
         self.in_action = False
@@ -1168,8 +1167,7 @@ class AppGeoEditor(QtCore.QObject):
                                                    "%.4f&nbsp;&nbsp;&nbsp;&nbsp;" % (0, 0))
 
             # update mouse position with the clicked position
-            self.snap_x = self.pos.x
-            self.snap_y = self.pos.y
+            self.snap_pos = self.pos
 
             modifiers = QtWidgets.QApplication.keyboardModifiers()
             # If the SHIFT key is pressed when LMB is clicked then the coordinates are copied to clipboard
@@ -1318,8 +1316,7 @@ class AppGeoEditor(QtCore.QObject):
                                          edge_width=self.app.options.global_cursor_width,
                                          size=self.app.options.global_cursor_size)
 
-        self.snap_x = x
-        self.snap_y = y
+        self.snap_pos = PointXY(x, y)
         self.app.mouse_pos = PointXY(x, y)
 
         if self.pos is None:
@@ -3141,7 +3138,7 @@ class FCCircle(FCShapeTool):
             return
 
         if pos is None:
-            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0, 0)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3685,7 +3682,7 @@ class FCRectangle(FCShapeTool):
             return
 
         if pos is None:
-            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0, 0)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3902,7 +3899,7 @@ class FCPolygon(FCShapeTool):
             return
 
         if pos is None:
-            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0, 0)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3955,7 +3952,7 @@ class FCPolygon(FCShapeTool):
                 self.points = self.points[0:-1]
                 # Remove any previous utility shape
                 self.draw_app.tool_shape.clear(update=False)
-                geo = self.utility_geometry(data=PointXY(self.draw_app.snap_x, self.draw_app.snap_y))
+                geo = self.utility_geometry(data=self.draw_app.snap_pos)
                 self.draw_app.draw_utility_geometry(geo=geo)
                 if geo:
                     return _("Backtracked one point ...")
@@ -4179,7 +4176,7 @@ class FCPath(FCShapeTool):
             return
 
         if pos is None:
-            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0, 0)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -4232,7 +4229,7 @@ class FCPath(FCShapeTool):
                 self.points = self.points[0:-1]
                 # Remove any previous utility shape
                 self.draw_app.tool_shape.clear(update=False)
-                geo = self.utility_geometry(data=PointXY(self.draw_app.snap_x, self.draw_app.snap_y))
+                geo = self.utility_geometry(data=self.draw_app.snap_pos)
                 self.draw_app.draw_utility_geometry(geo=geo)
                 if geo:
                     return _("Backtracked one point ...")
@@ -4735,7 +4732,7 @@ class FCMove(FCShapeTool):
             return
 
         if pos is None:
-            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0, 0)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -5255,7 +5252,7 @@ class FCCopy(FCShapeTool):
             return
 
         if pos is None:
-            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0, 0)
 
         if delete:
             if self.draw_app.app.use_3d_engine:

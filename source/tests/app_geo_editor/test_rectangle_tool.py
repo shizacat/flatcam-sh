@@ -21,8 +21,7 @@ def _rectangle(corner="s", radius=0.0, steps=8):
             )
         ),
         draw_app=SimpleNamespace(
-            snap_x=0,
-            snap_y=0,
+            snap_pos=PointXY(0, 0),
             app=SimpleNamespace(options=SimpleNamespace(geometry_circle_steps=steps)),
         ),
     )

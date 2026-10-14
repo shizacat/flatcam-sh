@@ -287,16 +287,13 @@ class DrillAdd(FCShapeTool):
         self.ui = self.drill_tool.ui
         self.drill_tool.run()
 
-        point_x = self.draw_app.snap_x
-        point_y = self.draw_app.snap_y
-        if point_x is None and point_y is None:
-            cursor = self.draw_app.cursor_pos
-            point_x = None if cursor is None else cursor.x
-            point_y = None if cursor is None else cursor.y
-        if point_x is None or point_y is None:
+        snap = self.draw_app.snap_pos
+        if snap is None:
+            snap = self.draw_app.cursor_pos
+        if snap is None:
             geo = None
         else:
-            geo = self.utility_geometry(data=PointXY(point_x, point_y))
+            geo = self.utility_geometry(data=snap)
 
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             self.draw_app.draw_utility_geometry(geo=geo)
@@ -306,10 +303,8 @@ class DrillAdd(FCShapeTool):
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
         self.drill_tool.length = self.draw_app.last_length
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Drill"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -334,14 +329,16 @@ class DrillAdd(FCShapeTool):
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
     def click(self, point: PointXY) -> str:
         self.drill_point = point
         self.draw_app.last_length = self.drill_tool.length
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
         self.make()
         return "Done."
 
@@ -370,7 +367,7 @@ class DrillAdd(FCShapeTool):
 
     def make(self) -> None:
         if self.drill_point is None:
-            self.drill_point = (self.draw_app.snap_x, self.draw_app.snap_y)
+            self.drill_point = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
 
         try:
@@ -403,7 +400,7 @@ class DrillAdd(FCShapeTool):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -412,7 +409,8 @@ class DrillAdd(FCShapeTool):
             return
 
         if not self.points:
-            self.points = self.draw_app.snap_x, self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            self.points = snap if snap is not None else (None, None)
 
         # font size
         fsize = GuiSettings().hud_font_size()
@@ -479,7 +477,9 @@ class DrillAdd(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
-                last_pt = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+                last_pt = self.draw_app.snap_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -496,8 +496,7 @@ class DrillAdd(FCShapeTool):
 
     def add_drill(self, drill_pos: PointXY | tuple[float, float]) -> None:
         curr_pos = self.draw_app.app.geo_editor.snap(drill_pos[0], drill_pos[1])
-        self.draw_app.snap_x = curr_pos[0]
-        self.draw_app.snap_y = curr_pos[1]
+        self.draw_app.snap_pos = curr_pos
 
         self.draw_app.on_canvas_click_left_handler(curr_pos)
         if self.draw_app.active_tool.complete:
@@ -586,7 +585,7 @@ class DrillArray(FCShapeTool):
         self.ui = self.darray_tool.ui
         self.darray_tool.run()
 
-        geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y), static=True)
+        geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None), static=True)
 
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             self.draw_app.draw_utility_geometry(geo=geo)
@@ -595,10 +594,8 @@ class DrillArray(FCShapeTool):
             self.draw_app.app.plotcanvas.view.camera.zoom_callback = self.draw_cursor_data
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Drill Array"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -623,8 +620,9 @@ class DrillArray(FCShapeTool):
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
         self.ui.array_type_radio.set_value(self.draw_app.last_darray_type)
         self.ui.on_array_type_radio(val=self.ui.array_type_radio.get_value())
@@ -638,8 +636,9 @@ class DrillArray(FCShapeTool):
         self.ui.radius_entry.set_value(self.draw_app.last_darray_radius)
 
     def click(self, point: PointXY) -> None:
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
         if self.drill_array == 'linear':   # 'Linear'
             self.make()
@@ -672,8 +671,9 @@ class DrillArray(FCShapeTool):
 
         if self.drill_array == 'linear':   # 'Linear'
             if data[0] is None and data[1] is None:
-                dx = self.draw_app.snap_x
-                dy = self.draw_app.snap_y
+                snap = self.draw_app.snap_pos
+                dx = None if snap is None else snap.x
+                dy = None if snap is None else snap.y
             else:
                 dx = data[0]
                 dy = data[1]
@@ -705,8 +705,9 @@ class DrillArray(FCShapeTool):
             return DrawToolUtilityShape(geo_list)
         elif self.drill_array == 'circular':  # 'Circular'
             if data[0] is None and data[1] is None:
-                cdx = self.draw_app.snap_x
-                cdy = self.draw_app.snap_y
+                snap = self.draw_app.snap_pos
+                cdx = None if snap is None else snap.x
+                cdy = None if snap is None else snap.y
             else:
                 cdx = data[0]
                 cdy = data[1]
@@ -869,7 +870,7 @@ class DrillArray(FCShapeTool):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -878,7 +879,8 @@ class DrillArray(FCShapeTool):
             return
 
         if not self.points:
-            self.points = self.draw_app.snap_x, self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            self.points = snap if snap is not None else (None, None)
 
         # font size
         fsize = GuiSettings().hud_font_size()
@@ -934,7 +936,7 @@ class DrillArray(FCShapeTool):
                     self.ui.axis_radio.set_value('X')
 
                 # ## Utility geometry (animated)
-                self.draw_app.update_utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                self.draw_app.update_utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
 
             if key == 'C' or key == QtCore.Qt.Key.Key_C:
                 self.cursor_data_control = not self.cursor_data_control
@@ -948,11 +950,10 @@ class DrillArray(FCShapeTool):
         self.drill_array = self.ui.array_type_radio.get_value()
 
         curr_pos = self.draw_app.app.geo_editor.snap(array_pos[0], array_pos[1])
-        self.draw_app.snap_x = curr_pos[0]
-        self.draw_app.snap_y = curr_pos[1]
+        self.draw_app.snap_pos = curr_pos
 
-        self.points = [self.draw_app.snap_x, self.draw_app.snap_y]
-        self.origin = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+        self.points = [curr_pos.x, curr_pos.y]
+        self.origin = curr_pos
         self.destination = self.origin + PointXY(self.drill_radius, 0)
         self.flag_for_circ_array = True
         self.make()
@@ -1035,7 +1036,7 @@ class SlotAdd(FCShapeTool):
         self.ui = self.slot_tool.ui
         self.slot_tool.run()
 
-        geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+        geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             self.draw_app.draw_utility_geometry(geo=geo)
 
@@ -1044,10 +1045,8 @@ class SlotAdd(FCShapeTool):
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
         self.slot_tool.length = self.draw_app.last_length
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Slot"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -1077,14 +1076,16 @@ class SlotAdd(FCShapeTool):
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
     def click(self, point: PointXY) -> str:
         self.slot_point = point
         self.draw_app.last_length = self.slot_tool.length
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
         self.make()
         return "Done."
 
@@ -1174,7 +1175,7 @@ class SlotAdd(FCShapeTool):
 
     def make(self) -> None:
         if self.slot_point is None:
-            self.slot_point = (self.draw_app.snap_x, self.draw_app.snap_y)
+            self.slot_point = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
 
         try:
@@ -1214,7 +1215,7 @@ class SlotAdd(FCShapeTool):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -1223,7 +1224,8 @@ class SlotAdd(FCShapeTool):
             return
 
         if not self.points:
-            self.points = self.draw_app.snap_x, self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            self.points = snap if snap is not None else (None, None)
 
         # font size
         fsize = GuiSettings().hud_font_size()
@@ -1273,7 +1275,7 @@ class SlotAdd(FCShapeTool):
                 self.ui.slot_direction_radio.set_value('X')
 
             # ## Utility geometry (animated)
-            self.draw_app.update_utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+            self.draw_app.update_utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
 
         if key in [str(i) for i in range(10)] + ['.', ',', '+', '-', '/', '*'] or \
                 key in [QtCore.Qt.Key.Key_0, QtCore.Qt.Key.Key_0, QtCore.Qt.Key.Key_1, QtCore.Qt.Key.Key_2,
@@ -1302,7 +1304,9 @@ class SlotAdd(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
-                last_pt = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+                last_pt = self.draw_app.snap_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -1319,8 +1323,7 @@ class SlotAdd(FCShapeTool):
 
     def add_slot(self, slot_pos: PointXY | tuple[float, float]) -> None:
         curr_pos = self.draw_app.app.geo_editor.snap(slot_pos[0], slot_pos[1])
-        self.draw_app.snap_x = curr_pos[0]
-        self.draw_app.snap_y = curr_pos[1]
+        self.draw_app.snap_pos = curr_pos
 
         self.draw_app.on_canvas_click_left_handler(curr_pos)
         if self.draw_app.active_tool.complete:
@@ -1416,7 +1419,7 @@ class SlotArray(FCShapeTool):
         self.ui = self.sarray_tool.ui
         self.sarray_tool.run()
 
-        geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y), static=True)
+        geo = self.utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None), static=True)
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             self.draw_app.draw_utility_geometry(geo=geo)
 
@@ -1424,10 +1427,8 @@ class SlotArray(FCShapeTool):
             self.draw_app.app.plotcanvas.view.camera.zoom_callback = self.draw_cursor_data
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Slot Array"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -1448,8 +1449,9 @@ class SlotArray(FCShapeTool):
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
         # Slot set-up
         self.ui.slot_length_entry.set_value(self.draw_app.last_slot_length)
@@ -1472,8 +1474,9 @@ class SlotArray(FCShapeTool):
         self.ui.on_slot_array_linear_angle_radio()
 
     def click(self, point: PointXY) -> None:
-        self.ui.x_entry.set_value(float(self.draw_app.snap_x))
-        self.ui.y_entry.set_value(float(self.draw_app.snap_y))
+        snap = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else PointXY(0.0, 0.0)
+        self.ui.x_entry.set_value(float(snap.x))
+        self.ui.y_entry.set_value(float(snap.y))
 
         if self.slot_array == 'linear':    # 'Linear'
             self.make()
@@ -1800,7 +1803,7 @@ class SlotArray(FCShapeTool):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -1809,7 +1812,8 @@ class SlotArray(FCShapeTool):
             return
 
         if not self.points:
-            self.points = self.draw_app.snap_x, self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            self.points = snap if snap is not None else (None, None)
 
         # font size
         fsize = GuiSettings().hud_font_size()
@@ -1865,7 +1869,7 @@ class SlotArray(FCShapeTool):
                     self.ui.array_axis_radio.set_value('X')
 
                 # ## Utility geometry (animated)
-                self.draw_app.update_utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                self.draw_app.update_utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
         elif mod_key is None:
             if key == 'C' or key == QtCore.Qt.Key.Key_C:
                 self.cursor_data_control = not self.cursor_data_control
@@ -1884,7 +1888,7 @@ class SlotArray(FCShapeTool):
                     self.ui.slot_direction_radio.set_value('X')
 
                 # ## Utility geometry (animated)
-                self.draw_app.update_utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                self.draw_app.update_utility_geometry(data=self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None))
 
     def add_slot_array(self, array_pos: PointXY | tuple[float, float]) -> None:
         self.array_radius = self.ui.radius_entry.get_value()
@@ -1899,11 +1903,10 @@ class SlotArray(FCShapeTool):
         self.slot_angle = float(self.ui.array_angle_entry.get_value())
 
         curr_pos = self.draw_app.app.geo_editor.snap(array_pos[0], array_pos[1])
-        self.draw_app.snap_x = curr_pos[0]
-        self.draw_app.snap_y = curr_pos[1]
+        self.draw_app.snap_pos = curr_pos
 
-        self.points = [self.draw_app.snap_x, self.draw_app.snap_y]
-        self.origin = [self.draw_app.snap_x, self.draw_app.snap_y]
+        self.points = [curr_pos.x, curr_pos.y]
+        self.origin = [curr_pos.x, curr_pos.y]
         self.destination = ((self.origin[0] + self.array_radius), self.origin[1])
         self.flag_for_circ_array = True
         self.make()
@@ -1973,10 +1976,8 @@ class ResizeEditorExc(FCShapeTool):
             self.draw_app.app.plotcanvas.view.camera.zoom_callback = self.draw_cursor_data
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-        if not self.draw_app.snap_x:
-            self.draw_app.snap_x = 0.0
-        if not self.draw_app.snap_y:
-            self.draw_app.snap_y = 0.0
+        if self.draw_app.snap_pos is None:
+            self.draw_app.snap_pos = PointXY(0.0, 0.0)
 
         self.app.ui.notebook.setTabText(2, _("Resize"))
         if self.app.ui.splitter.sizes()[0] == 0:
@@ -2233,7 +2234,7 @@ class ResizeEditorExc(FCShapeTool):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -2242,7 +2243,8 @@ class ResizeEditorExc(FCShapeTool):
             return
 
         if not self.points:
-            self.points = self.draw_app.snap_x, self.draw_app.snap_y
+            snap = self.draw_app.snap_pos
+            self.points = snap if snap is not None else (None, None)
 
         # font size
         fsize = GuiSettings().hud_font_size()
@@ -2828,7 +2830,7 @@ class CopyEditorExc(FCShapeTool):
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = self.draw_app.snap_pos if self.draw_app.snap_pos is not None else (None, None)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3032,8 +3034,7 @@ class AppExcEditor(QtCore.QObject):
         self.modifiers = None
         self.cursor_pos: PointXY | None = None
         # Current snapped mouse clicked_pos
-        self.snap_x = None
-        self.snap_y = None
+        self.snap_pos: PointXY | None = None
         self.clicked_pos: PointXY | None = None
 
         # #############################################################################################################
@@ -4674,15 +4675,16 @@ class AppExcEditor(QtCore.QObject):
 
         # ## Snap coordinates
         if self.app.grid_status():
-            x, y = self.app.geo_editor.snap(x, y)
+            self.snap_pos = self.app.geo_editor.snap(x, y)
+        else:
+            self.snap_pos = PointXY(x, y)
+        x, y = self.snap_pos
 
-            # Update cursor
+        # Update cursor
+        if self.app.grid_status():
             self.app.app_cursor.set_data(np.asarray([(x, y)]), symbol='++', edge_color=self.app.plotcanvas.cursor_color,
                                          edge_width=self.app.options.global_cursor_width,
                                          size=self.app.options.global_cursor_size)
-
-        self.snap_x = deepcopy(x)
-        self.snap_y = deepcopy(y)
 
         if self.clicked_pos is None:
             self.clicked_pos = PointXY(0, 0)

@@ -3603,12 +3603,12 @@ class MainGUI(QtWidgets.QMainWindow):
                 # Zoom Out
                 if key == QtCore.Qt.Key.Key_Minus or key == '-':
                     self.app.plotcanvas.zoom(1 / self.app.settings.global_zoom_ratio,
-                                             [self.app.geo_editor.snap_x, self.app.geo_editor.snap_y])
+                                             self.app.geo_editor.snap_pos)
 
                 # Zoom In
                 if key == QtCore.Qt.Key.Key_Equal or key == '=':
                     self.app.plotcanvas.zoom(self.app.settings.global_zoom_ratio,
-                                             [self.app.geo_editor.snap_x, self.app.geo_editor.snap_y])
+                                             self.app.geo_editor.snap_pos)
 
                 # # Switch to Project Tab
                 # if key == QtCore.Qt.Key.Key_1 or key == '1':
@@ -3843,13 +3843,13 @@ class MainGUI(QtWidgets.QMainWindow):
                 if key == QtCore.Qt.Key.Key_Minus or key == '-':
                     self.app.grb_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(1 / self.app.settings.global_zoom_ratio,
-                                             [self.app.grb_editor.snap_x, self.app.grb_editor.snap_y])
+                                             self.app.grb_editor.snap_pos)
                     return
 
                 if key == QtCore.Qt.Key.Key_Equal or key == '=':
                     self.app.grb_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(self.app.settings.global_zoom_ratio,
-                                             [self.app.grb_editor.snap_x, self.app.grb_editor.snap_y])
+                                             self.app.grb_editor.snap_pos)
                     return
 
                 # toggle display of Notebook area
@@ -3914,7 +3914,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.grb_editor.on_tool_select('copy')
                             if self.app.grb_editor.active_tool is not None:
                                 self.app.grb_editor.active_tool.set_origin(
-                                    (self.app.grb_editor.snap_x, self.app.grb_editor.snap_y))
+                                    self.app.grb_editor.snap_pos
+                                    if self.app.grb_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -3961,7 +3962,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.grb_editor.on_tool_select('move')
                             if self.app.grb_editor.active_tool is not None:
                                 self.app.grb_editor.active_tool.set_origin(
-                                    (self.app.grb_editor.snap_x, self.app.grb_editor.snap_y))
+                                    self.app.grb_editor.snap_pos
+                                    if self.app.grb_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -4076,7 +4078,7 @@ class MainGUI(QtWidgets.QMainWindow):
                                 and self.app.exc_editor.active_tool.copy_tool.length != 0.0:
                             pass
                         else:
-                            curr_pos = self.app.exc_editor.snap_x, self.app.exc_editor.snap_y
+                            curr_pos = self.app.exc_editor.snap_pos if self.app.exc_editor.snap_pos is not None else (None, None)
                             self.app.exc_editor.on_canvas_click_left_handler(curr_pos)
 
                             if self.app.exc_editor.active_tool.complete:
@@ -4102,13 +4104,13 @@ class MainGUI(QtWidgets.QMainWindow):
                 if key == QtCore.Qt.Key.Key_Minus or key == '-':
                     self.app.exc_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(1 / self.app.settings.global_zoom_ratio,
-                                             [self.app.exc_editor.snap_x, self.app.exc_editor.snap_y])
+                                             self.app.exc_editor.snap_pos)
                     return
 
                 if key == QtCore.Qt.Key.Key_Equal or key == '=':
                     self.app.exc_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(self.app.settings.global_zoom_ratio,
-                                             [self.app.exc_editor.snap_x, self.app.exc_editor.snap_y])
+                                             self.app.exc_editor.snap_pos)
                     return
 
                 # toggle display of Notebook area
@@ -4202,7 +4204,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.exc_editor.on_tool_select('drill_copy')
                             if self.app.exc_editor.active_tool is not None:
                                 self.app.exc_editor.active_tool.set_origin(
-                                    (self.app.exc_editor.snap_x, self.app.exc_editor.snap_y))
+                                    self.app.exc_editor.snap_pos
+                                    if self.app.exc_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -4231,7 +4234,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.exc_editor.on_tool_select('drill_move')
                             if self.app.exc_editor.active_tool is not None:
                                 self.app.exc_editor.active_tool.set_origin(
-                                    (self.app.exc_editor.snap_x, self.app.exc_editor.snap_y))
+                                    self.app.exc_editor.snap_pos
+                                    if self.app.exc_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
