@@ -5,6 +5,8 @@
 # MIT Licence                                              #
 # ##########################################################
 
+from __future__ import annotations
+
 from camlib import distance, arc, AppRTreeStorage
 
 from PyQt6 import QtCore, QtWidgets, QtGui
@@ -31,12 +33,19 @@ from rtree import index as rtindex
 import traceback
 import math
 import logging
+from collections.abc import Sequence
 from copy import deepcopy
 
 import gettext
 import appTranslation as fcTranslate
 import builtins
+from typing import TYPE_CHECKING
+
 from settings.gui_settings import GuiSettings
+from settings.st_types import PointXY
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -46,7 +55,7 @@ log = logging.getLogger('base')
 
 
 class SelectEditorExc(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'drill_select'
 
@@ -240,7 +249,7 @@ class DrillAdd(FCShapeTool):
     Resulting type: MultiLineString
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'drill_add'
         self.draw_app = draw_app
@@ -512,7 +521,7 @@ class DrillArray(FCShapeTool):
     Resulting type: MultiLineString
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'drill_array'
         self.draw_app = draw_app
@@ -530,8 +539,8 @@ class DrillArray(FCShapeTool):
         self.drill_direction = None
         self.drill_radius = None
 
-        self.origin = None
-        self.destination = None
+        self.origin: PointXY | None = None
+        self.destination: PointXY | None = None
         self.flag_for_circ_array = None
 
         self.last_dx = 0
@@ -618,7 +627,7 @@ class DrillArray(FCShapeTool):
         self.ui.circular_angle_entry.set_value(self.draw_app.last_darray_circ_angle)
         self.ui.radius_entry.set_value(self.draw_app.last_darray_radius)
 
-    def click(self, point):
+    def click(self, point: PointXY) -> None:
         self.ui.x_entry.set_value(float(self.draw_app.snap_x))
         self.ui.y_entry.set_value(float(self.draw_app.snap_y))
 
@@ -638,7 +647,7 @@ class DrillArray(FCShapeTool):
             self.make()
             self.flag_for_circ_array = None
 
-    def set_origin(self, origin):
+    def set_origin(self, origin: PointXY) -> None:
         self.origin = origin
 
     def utility_geometry(self, data=None, static=None):
@@ -932,8 +941,8 @@ class DrillArray(FCShapeTool):
         self.draw_app.snap_y = curr_pos[1]
 
         self.points = [self.draw_app.snap_x, self.draw_app.snap_y]
-        self.origin = [self.draw_app.snap_x, self.draw_app.snap_y]
-        self.destination = ((self.origin[0] + self.drill_radius), self.origin[1])
+        self.origin = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
+        self.destination = PointXY(self.origin.x + self.drill_radius, self.origin.y)
         self.flag_for_circ_array = True
         self.make()
 
@@ -973,7 +982,7 @@ class SlotAdd(FCShapeTool):
     Resulting type: Polygon
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'slot_add'
         self.draw_app = draw_app
@@ -1337,7 +1346,7 @@ class SlotArray(FCShapeTool):
     Resulting type: MultiPolygon
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'slot_array'
         self.draw_app = draw_app
@@ -1920,7 +1929,7 @@ class SlotArray(FCShapeTool):
 
 
 class ResizeEditorExc(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'drill_resize'
         self.draw_app = draw_app
@@ -2277,7 +2286,7 @@ class ResizeEditorExc(FCShapeTool):
 
 
 class MoveEditorExc(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'drill_move'
 
@@ -2430,7 +2439,7 @@ class MoveEditorExc(FCShapeTool):
 
 
 class CopyEditorExc(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppExcEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'drill_copy'
         self.draw_app = draw_app
@@ -2897,7 +2906,7 @@ class CopyEditorExc(FCShapeTool):
                     return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
 
                 if self.points[-1] != (new_x, new_y):
-                    self.points.append((new_x, new_y))
+                    self.points.append(PointXY(new_x, new_y))
                     self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
                     self.destination = (new_x, new_y)
                     self.make()
@@ -2925,7 +2934,7 @@ class AppExcEditor(QtCore.QObject):
 
     draw_shape_idx = -1
 
-    def __init__(self, app):
+    def __init__(self, app: App) -> None:
         # assert isinstance(app, FlatCAMApp.App), "Expected the app to be a FlatCAMApp.App, got %s" % type(app)
 
         super(AppExcEditor, self).__init__()
@@ -3016,7 +3025,7 @@ class AppExcEditor(QtCore.QObject):
         # Current snapped mouse clicked_pos
         self.snap_x = None
         self.snap_y = None
-        self.clicked_pos = None
+        self.clicked_pos: PointXY | None = None
 
         # #############################################################################################################
         # Plugin Attributes
@@ -4465,19 +4474,24 @@ class AppExcEditor(QtCore.QObject):
             # right_button = 3
 
         if event.button == 1:
-            self.clicked_pos = self.canvas.translate_coords(event_pos)
+            canvas_pos = self.canvas.translate_coords(event_pos)
             if self.app.grid_status():
-                self.clicked_pos = self.app.geo_editor.snap(self.clicked_pos[0], self.clicked_pos[1])
+                self.clicked_pos = self.app.geo_editor.snap(canvas_pos[0], canvas_pos[1])
             else:
-                self.clicked_pos = (self.clicked_pos[0], self.clicked_pos[1])
+                self.clicked_pos = PointXY(canvas_pos[0], canvas_pos[1])
 
             self.on_canvas_click_left_handler()
 
-    def on_canvas_click_left_handler(self, custom_pos=None):
+    def on_canvas_click_left_handler(self, custom_pos: PointXY | tuple[float, float] | None = None) -> None:
         self.app.ui.rel_position_label.setText("<b>Dx</b>: %.4f&nbsp;&nbsp;  <b>Dy</b>: "
                                                "%.4f&nbsp;&nbsp;&nbsp;&nbsp;" % (0, 0))
 
-        click_position = custom_pos if custom_pos is not None else self.clicked_pos
+        if custom_pos is None:
+            click_position = self.clicked_pos
+        elif isinstance(custom_pos, PointXY):
+            click_position = custom_pos
+        else:
+            click_position = PointXY(custom_pos[0], custom_pos[1])
         if self.active_tool is not None:
             # Dispatch event to active_tool
             self.active_tool.click(click_position)
@@ -4660,7 +4674,7 @@ class AppExcEditor(QtCore.QObject):
         self.snap_y = deepcopy(y)
 
         if self.clicked_pos is None:
-            self.clicked_pos = (0, 0)
+            self.clicked_pos = PointXY(0, 0)
         self.app.dx = x - self.clicked_pos[0]
         self.app.dy = y - self.clicked_pos[1]
 
@@ -5177,7 +5191,7 @@ class AppExcEditor(QtCore.QObject):
 
 
 class AppExcEditorUI:
-    def __init__(self, app):
+    def __init__(self, app: App) -> None:
         self.app = app
 
         # Number of decimals used by tools in this class
@@ -5372,7 +5386,7 @@ class AppExcEditorUI:
             self.app.inform[str, bool].emit('[success] %s' % _("Edited value is within limits."), False)
 
 
-def get_shapely_list_bounds(geometry_list):
+def get_shapely_list_bounds(geometry_list: Sequence[BaseGeometry]) -> list[float]:
     xmin = np.inf
     ymin = np.inf
     xmax = -np.inf

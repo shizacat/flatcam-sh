@@ -96,6 +96,7 @@ from appDatabase import ToolsDB2
 from exceptions import SettingsError
 from settings import Options, Settings
 from settings.gui_settings import GuiSettings
+from settings.st_types import PointXY
 from settings.utils import copy_shared, propagate_settings
 
 # App Objects
@@ -4628,7 +4629,11 @@ class App(QtCore.QObject):
             worker_task()
         self.should_we_save = True
 
-    def on_jump_to(self, custom_location=None, fit_center=True):
+    def on_jump_to(
+            self,
+            custom_location: PointXY | None = None,
+            fit_center: bool = True
+    ) -> tuple[float, float] | None:
         """
         Jump to a location by setting the mouse cursor location.
 
