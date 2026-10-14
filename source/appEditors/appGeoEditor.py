@@ -15,7 +15,6 @@ from __future__ import annotations
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import Qt
-# import inspect
 import math
 from collections.abc import Callable, Sequence
 from multiprocessing import Pool
