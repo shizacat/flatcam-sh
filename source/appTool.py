@@ -8,6 +8,8 @@
 
 from typing import TYPE_CHECKING
 
+from settings.st_types import PointXY
+
 from PyQt6 import QtGui, QtWidgets, QtCore
 from shapely import Polygon, LineString
 
@@ -172,10 +174,10 @@ class AppTool(QtWidgets.QWidget):
         if self.app.use_3d_engine:
             s_storage.redraw()
 
-    def draw_selection_shape_polygon(self, points, **kwargs):
+    def draw_selection_shape_polygon(self, points: list[PointXY], **kwargs):
         """
 
-        :param points: a list of points from which to create a Polygon
+        :param points: polygon vertices from which to create a Polygon
         :param kwargs:
         :return:
         """
@@ -229,11 +231,11 @@ class AppTool(QtWidgets.QWidget):
         s_storage.clear()
         s_storage.redraw()
 
-    def draw_moving_selection_shape_poly(self, points, data, **kwargs):
+    def draw_moving_selection_shape_poly(self, points: list[PointXY], data: PointXY, **kwargs):
         """
 
-        :param points:
-        :param data:
+        :param points: polygon vertices already chosen
+        :param data: current cursor point
         :param kwargs:
         :return:
         """

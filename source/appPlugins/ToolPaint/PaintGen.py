@@ -3,6 +3,8 @@ from PyQt6 import QtWidgets     # noqa
 
 from dataclasses import dataclass, field
 
+from settings.st_types import PointXY
+
 from copy import deepcopy
 import numpy as np
 
@@ -87,7 +89,7 @@ class PaintGen:
         self.units = tool.units
         self.select_method = tool.select_method
         self.first_click = tool.first_click
-        self.cursor_pos = tool.cursor_pos
+        self.cursor_pos: PointXY | None = tool.cursor_pos
         self.mouse_is_dragging = tool.mouse_is_dragging
 
         self.temp_shapes = tool.temp_shapes
@@ -108,7 +110,7 @@ class PaintGen:
         self.kp = tool.kp
 
         self.poly_drawn = tool.poly_drawn
-        self.points = tool.points
+        self.points: list[PointXY] = tool.points
 
         self.parent_tool = tool
 

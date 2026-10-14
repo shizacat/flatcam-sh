@@ -15,6 +15,7 @@ from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 # import inspect
 import math
+from typing import TYPE_CHECKING
 
 from camlib import distance, arc, three_point_circle, Geometry, AppRTreeStorage, flatten_shapely_geometry
 from appGUI.GUIElements import FCLabel, GLay, FCDoubleSpinner, FCTree, FCButton, FCFrame, FCCheckBox, FCEntry, \
@@ -49,12 +50,15 @@ from rtree import index as rtindex
 from copy import deepcopy
 # from vispy.io import read_png
 
-from typing import Union
+from settings.st_types import PointXY
 
 import gettext
 import appTranslation as fcTranslate
 import builtins
 from settings.gui_settings import GuiSettings
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -75,7 +79,7 @@ class AppGeoEditor(QtCore.QObject):
 
     draw_shape_idx = -1
 
-    def __init__(self, app, disabled=False):
+    def __init__(self, app: "App", disabled: bool = False) -> None:
         # assert isinstance(app, FlatCAMApp.App), \
         #     "Expected the app to be a FlatCAMApp.App, got %s" % type(app)
 
@@ -1149,20 +1153,20 @@ class AppGeoEditor(QtCore.QObject):
         else:
             event_pos = (event.xdata, event.ydata)
 
-        self.pos = self.canvas.translate_coords(event_pos)
+        canvas_pos = self.canvas.translate_coords(event_pos)
 
         if self.app.grid_status():
-            self.pos = self.app.geo_editor.snap(self.pos[0], self.pos[1])
+            self.pos = self.app.geo_editor.snap(canvas_pos[0], canvas_pos[1])
         else:
-            self.pos = (self.pos[0], self.pos[1])
+            self.pos = PointXY(canvas_pos[0], canvas_pos[1])
 
         if event.button == 1:
             self.app.ui.rel_position_label.setText("<b>Dx</b>: %.4f&nbsp;&nbsp;  <b>Dy</b>: "
                                                    "%.4f&nbsp;&nbsp;&nbsp;&nbsp;" % (0, 0))
 
             # update mouse position with the clicked position
-            self.snap_x = self.pos[0]
-            self.snap_y = self.pos[1]
+            self.snap_x = self.pos.x
+            self.snap_y = self.pos.y
 
             modifiers = QtWidgets.QApplication.keyboardModifiers()
             # If the SHIFT key is pressed when LMB is clicked then the coordinates are copied to clipboard
@@ -1172,7 +1176,7 @@ class AppGeoEditor(QtCore.QObject):
                         and self.active_tool.name != 'path':
                     self.app.clipboard.setText(
                         self.app.options.global_point_clipboard_format %
-                        (self.decimals, self.pos[0], self.decimals, self.pos[1])
+                        (self.decimals, self.pos.x, self.decimals, self.pos.y)
                     )
                     return
 
@@ -1180,7 +1184,7 @@ class AppGeoEditor(QtCore.QObject):
             if self.active_tool is not None:
 
                 # Dispatch event to active_tool
-                self.active_tool.click(self.snap(self.pos[0], self.pos[1]))
+                self.active_tool.click(self.snap(self.pos.x, self.pos.y))
 
                 # If it is a shape generating tool
                 if isinstance(self.active_tool, FCShapeTool) and self.active_tool.complete:
@@ -1208,7 +1212,7 @@ class AppGeoEditor(QtCore.QObject):
         if self.app.grid_status():
             pos = self.snap(pos_canvas[0], pos_canvas[1])
         else:
-            pos = (pos_canvas[0], pos_canvas[1])
+            pos = PointXY(pos_canvas[0], pos_canvas[1])
 
         # if the released mouse button was RMB then test if it was a panning motion or not, if not it was a context
         # canvas menu
@@ -1222,7 +1226,7 @@ class AppGeoEditor(QtCore.QObject):
                 elif isinstance(self.active_tool, FCSelect):
                     # Dispatch event to active_tool
                     # msg = self.active_tool.click(self.snap(event.xdata, event.ydata))
-                    self.active_tool.click_release((self.pos[0], self.pos[1]))
+                    self.active_tool.click_release(self.pos)
                     # self.app.inform.emit(msg)
                     self.plot_all()
             elif event.button == right_button:  # right click
@@ -1314,9 +1318,9 @@ class AppGeoEditor(QtCore.QObject):
         self.app.mouse_pos = [x, y]
 
         if self.pos is None:
-            self.pos = (0, 0)
-        self.app.dx = x - self.pos[0]
-        self.app.dy = y - self.pos[1]
+            self.pos = PointXY(0, 0)
+        self.app.dx = x - self.pos.x
+        self.app.dy = y - self.pos.y
 
         # # update the position label in the infobar since the APP mouse event handlers are disconnected
         # self.app.ui.position_label.setText("&nbsp;<b>X</b>: %.4f&nbsp;&nbsp;   "
@@ -1331,8 +1335,8 @@ class AppGeoEditor(QtCore.QObject):
             if modifier == Qt.KeyboardModifier.ShiftModifier:
                 cl_x = self.active_tool.close_x
                 cl_y = self.active_tool.close_y
-                shift_dx = cl_x - self.pos[0]
-                shift_dy = cl_y - self.pos[1]
+                shift_dx = cl_x - self.pos.x
+                shift_dy = cl_y - self.pos.y
                 self.app.ui.update_location_labels(shift_dx, shift_dy, cl_x, cl_y)
             else:
                 self.app.ui.update_location_labels(self.app.dx, self.app.dy, x, y)
@@ -1351,28 +1355,30 @@ class AppGeoEditor(QtCore.QObject):
             self.update_utility_geometry(data=(x, y))
             if self.active_tool.name in ['path', 'polygon', 'move', 'circle', 'arc', 'rectangle', 'copy']:
                 try:
-                    self.active_tool.draw_cursor_data(pos=(x, y))
+                    self.active_tool.draw_cursor_data(pos=PointXY(x, y))
                 except AttributeError:
                     # this can happen if the method is not implemented yet for the active_tool
                     pass
 
         # ### Selection area on canvas section ###
-        dx = pos[0] - self.pos[0]
+        dx = pos[0] - self.pos.x
         if event_is_dragging and event.button == 1:
             self.app.delete_selection_shape()
             if dx < 0:
-                self.app.draw_moving_selection_shape((self.pos[0], self.pos[1]), (x, y),
+                self.app.draw_moving_selection_shape((self.pos.x, self.pos.y), (x, y),
                                                      color=self.app.options.global_alt_sel_line,
                                                      face_color=self.app.options.global_alt_sel_fill)
                 self.app.selection_type = False
             else:
-                self.app.draw_moving_selection_shape((self.pos[0], self.pos[1]), (x, y))
+                self.app.draw_moving_selection_shape((self.pos.x, self.pos.y), (x, y))
                 self.app.selection_type = True
         else:
             self.app.selection_type = None
 
     def update_utility_geometry(self, data):
         # ### Utility geometry (animated) ###
+        if data is not None and not isinstance(data, PointXY):
+            data = PointXY(data[0], data[1])
         geo = self.active_tool.utility_geometry(data=data)
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             # Remove any previous utility shape
@@ -1387,7 +1393,7 @@ class AppGeoEditor(QtCore.QObject):
         :param sel_type: if True it's a left to right selection (enclosure), if False it's a 'touch' selection
         :return:
         """
-        poly_selection = Polygon([start_pos, (end_pos[0], start_pos[1]), end_pos, (start_pos[0], end_pos[1])])
+        poly_selection = Polygon([start_pos, (end_pos.x, start_pos.y), end_pos, (start_pos.x, end_pos.y)])
 
         key_modifier = QtWidgets.QApplication.keyboardModifiers()
 
@@ -1561,11 +1567,11 @@ class AppGeoEditor(QtCore.QObject):
 
     def on_move_click(self):
         try:
-            x, y = self.snap(self.x, self.y)
+            origin = self.snap(self.x, self.y)
         except TypeError:
             return
         self.on_move()
-        self.active_tool.set_origin((x, y))
+        self.active_tool.set_origin(origin)
 
     def on_copy_click(self):
         if not self.selected:
@@ -1816,7 +1822,7 @@ class AppGeoEditor(QtCore.QObject):
             if nearest_grid_distance < snap_distance:
                 snap_x, snap_y = (snap_x_, snap_y_)
 
-        return snap_x, snap_y
+        return PointXY(snap_x, snap_y)
 
     def edit_geometry(self, fcgeometry, multigeo_tool=None):
         """
@@ -2292,7 +2298,7 @@ class AppGeoEditor(QtCore.QObject):
 
 
 class AppGeoEditorUI:
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         self.app = app
         self.decimals = self.app.decimals
         self.units = self.app.app_units.upper()
@@ -2636,7 +2642,7 @@ class DrawToolShape(object):
                     pts += list(o.coords)
         return pts
 
-    def __init__(self, geo: (BaseGeometry, list)):
+    def __init__(self, geo: BaseGeometry | list[BaseGeometry] | None) -> None:
 
         # Shapely type or list of such
         self.geo = geo
@@ -2894,7 +2900,7 @@ class DrawToolUtilityShape(DrawToolShape):
     point is clicked and the final geometry is created.
     """
 
-    def __init__(self, geo: (BaseGeometry, list)):
+    def __init__(self, geo: BaseGeometry | list[BaseGeometry] | None) -> None:
         super(DrawToolUtilityShape, self).__init__(geo=geo)
         self.utility = True
 
@@ -2907,21 +2913,23 @@ class DrawTool(object):
     and mouse motion.
     """
 
-    def __init__(self, draw_app):
-        self.draw_app = draw_app
-        self.complete = False
-        self.points = []
-        self.geometry = None  # DrawToolShape or None
+    def __init__(self, draw_app: AppGeoEditor) -> None:
+        self.draw_app: AppGeoEditor = draw_app
+        self.complete: bool = False
+        self.points: list[PointXY] = []
+        self.geometry: DrawToolShape | list[DrawToolShape] | None = None
 
-    def click(self, point: Union[list[float, float], tuple[float, float]]):
+    def click(self, point: PointXY) -> str:
         """
-        :param point: [x, y] Coordinate pair.
+        :param point: X, Y coordinate pair
+        :return: status message
         """
         return ""
 
-    def click_release(self, point):
+    def click_release(self, point: PointXY) -> str | None:
         """
-        :param point: [x, y] Coordinate pair.
+        :param point: X, Y coordinate pair
+        :return: status message, or None
         """
         return ""
 
@@ -2968,7 +2976,7 @@ class FCShapeTool(DrawTool):
     Abstract class for tools that create a shape.
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
 
         self.name = None
@@ -2982,7 +2990,7 @@ class FCCircle(FCShapeTool):
     Resulting type: Polygon
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'circle'
 
@@ -3014,7 +3022,7 @@ class FCCircle(FCShapeTool):
         self.draw_app.app.inform.emit(_("Click on Center point ..."))
         self.steps_per_circ = self.draw_app.app.options.geometry_circle_steps
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -3049,8 +3057,8 @@ class FCCircle(FCShapeTool):
 
         self.circle_tool.mode = 'add'
         self.points.append(point)
-        self.circle_tool.ui.x_entry.set_value(point[0])
-        self.circle_tool.ui.y_entry.set_value(point[1])
+        self.circle_tool.ui.x_entry.set_value(point.x)
+        self.circle_tool.ui.y_entry.set_value(point.y)
 
         if len(self.points) == 1:
             if self.ui.radius_link_btn.isChecked():
@@ -3080,7 +3088,7 @@ class FCCircle(FCShapeTool):
                 p1 = self.points[0]
                 p2 = data
 
-                radius = np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+                radius = np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
                 self.ui.radius_x_entry.set_value(radius)
                 util_geo = Point(p1).buffer(radius, int(self.steps_per_circ))
                 self.util_geo = util_geo
@@ -3089,8 +3097,8 @@ class FCCircle(FCShapeTool):
             if len(self.points) == 1:
                 p1 = self.points[0]
                 p2 = data
-                radius = np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
-                angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / math.pi
+                radius = np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+                angle = math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / math.pi
 
                 axis_min_radius = radius * 0.66
                 if axis_min_radius > 3:
@@ -3104,12 +3112,12 @@ class FCCircle(FCShapeTool):
 
                 angle = self.ui.angle_entry.get_value()
                 radius = self.ui.radius_x_entry.get_value()
-                axis_min_radius = np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+                axis_min_radius = np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
                 self.ui.radius_y_entry.set_value(axis_min_radius)
             else:
                 return
 
-            circle_geo = Point((p1[0], p1[1])).buffer(1)
+            circle_geo = Point((p1.x, p1.y)).buffer(1)
             util_geo = scale(circle_geo, radius, axis_min_radius)
             if angle != 0:
                 util_geo = rotate(util_geo, angle)
@@ -3119,13 +3127,13 @@ class FCCircle(FCShapeTool):
 
         return None
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3136,16 +3144,15 @@ class FCCircle(FCShapeTool):
         # font size
         fsize = GuiSettings().hud_font_size()
 
-        x = pos[0]
-        y = pos[1]
         try:
-            length = abs(np.sqrt((pos[0] - self.points[-1][0]) ** 2 + (pos[1] - self.points[-1][1]) ** 2))
+            last = self.points[-1]
+            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
 
-        x_dec = str(self.draw_app.app.dec_format(x, self.draw_app.app.decimals)) if x else '0.0'
-        y_dec = str(self.draw_app.app.dec_format(y, self.draw_app.app.decimals)) if y else '0.0'
+        x_dec = str(self.draw_app.app.dec_format(pos.x, self.draw_app.app.decimals)) if pos.x else '0.0'
+        y_dec = str(self.draw_app.app.dec_format(pos.y, self.draw_app.app.decimals)) if pos.y else '0.0'
         length_dec = str(self.draw_app.app.dec_format(length, self.draw_app.app.decimals)) if length else '0.0'
 
         l1_txt = 'X:   %s [%s]' % (x_dec, units)
@@ -3154,13 +3161,13 @@ class FCCircle(FCShapeTool):
         cursor_text = '%s\n%s\n\n%s' % (l1_txt, l2_txt, l3_txt)
 
         if self.draw_app.app.use_3d_engine:
-            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((x, y))
-            x, y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0]+30, new_pos[1]))
+            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((pos.x, pos.y))
+            text_x, text_y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0] + 30, new_pos[1]))
 
             # text
             self.draw_app.app.plotcanvas.text_cursor.font_size = fsize
             self.draw_app.app.plotcanvas.text_cursor.text = cursor_text
-            self.draw_app.app.plotcanvas.text_cursor.pos = x, y
+            self.draw_app.app.plotcanvas.text_cursor.pos = text_x, text_y
             self.draw_app.app.plotcanvas.text_cursor.anchors = 'left', 'top'
 
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
@@ -3178,8 +3185,8 @@ class FCCircle(FCShapeTool):
                         QtCore.Qt.Key.Key_Plus, QtCore.Qt.Key.Key_Comma, QtCore.Qt.Key.Key_Period,
                         QtCore.Qt.Key.Key_Slash, QtCore.Qt.Key.Key_Asterisk]:
 
-            if self.draw_app.app.mouse_pos[0] != self.points[-1][0] or (
-                    self.draw_app.app.mouse_pos[1] != self.points[-1][1] and
+            if self.draw_app.app.mouse_pos[0] != self.points[-1].x or (
+                    self.draw_app.app.mouse_pos[1] != self.points[-1].y and
                     self.circle_tool.ui.radius_link_btn.isChecked()):
                 try:
                     # VisPy keys
@@ -3194,8 +3201,8 @@ class FCCircle(FCShapeTool):
                     else:
                         self.circle_tool.radius_x = str(self.circle_tool.radius_x) + chr(key)
 
-            if self.draw_app.app.mouse_pos[1] != self.points[-1][1] or (
-                    self.draw_app.app.mouse_pos[0] != self.points[-1][0] and
+            if self.draw_app.app.mouse_pos[1] != self.points[-1].y or (
+                    self.draw_app.app.mouse_pos[0] != self.points[-1].x and
                     self.circle_tool.ui.radius_link_btn.isChecked()):
                 try:
                     # VisPy keys
@@ -3220,7 +3227,7 @@ class FCCircle(FCShapeTool):
                 if self.circle_tool.radius_x == 0 or self.circle_tool.radius_y == 0:
                     return _("Failed.")
 
-            new_pt = (
+            new_pt = PointXY(
                 new_radius_x + self.circle_tool.ui.x_entry.get_value(),
                 self.circle_tool.ui.y_entry.get_value()
             )
@@ -3272,7 +3279,7 @@ class FCCircle(FCShapeTool):
 
 
 class FCArc(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'arc'
 
@@ -3302,7 +3309,7 @@ class FCArc(FCShapeTool):
 
         self.steps_per_circ = self.draw_app.app.options.geometry_circle_steps
 
-    def click(self, point):
+    def click(self, point: PointXY) -> str:
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -3374,9 +3381,9 @@ class FCArc(FCShapeTool):
                 p1 = self.points[1]
                 p2 = data
 
-                radius = np.sqrt((center[0] - p1[0]) ** 2 + (center[1] - p1[1]) ** 2)
-                startangle = np.arctan2(p1[1] - center[1], p1[0] - center[0])
-                stopangle = np.arctan2(p2[1] - center[1], p2[0] - center[0])
+                radius = np.sqrt((center.x - p1.x) ** 2 + (center.y - p1.y) ** 2)
+                startangle = np.arctan2(p1.y - center.y, p1.x - center.x)
+                stopangle = np.arctan2(p2.y - center.y, p2.x - center.x)
 
                 return DrawToolUtilityShape([LineString(arc(center, radius, startangle, stopangle,
                                                             self.direction, self.steps_per_circ)),
@@ -3420,7 +3427,7 @@ class FCArc(FCShapeTool):
 
                 # Which side? Cross product with c.
                 # cross(M-A, B-A), where line is AB and M is the test point.
-                side = (data[0] - p1[0]) * c[1] - (data[1] - p1[1]) * c[0]
+                side = (data.x - p1[0]) * c[1] - (data.y - p1[1]) * c[0]
                 t *= np.sign(side)
 
                 # Center = a + bt
@@ -3444,8 +3451,8 @@ class FCArc(FCShapeTool):
             p2 = self.points[2]
 
             radius = distance(center, p1)
-            startangle = np.arctan2(p1[1] - center[1], p1[0] - center[0])
-            stopangle = np.arctan2(p2[1] - center[1], p2[0] - center[0])
+            startangle = np.arctan2(p1.y - center.y, p1.x - center.x)
+            stopangle = np.arctan2(p2.y - center.y, p2.x - center.x)
             self.geometry = DrawToolShape(LineString(arc(center, radius, startangle, stopangle,
                                                          self.direction, self.steps_per_circ)))
 
@@ -3517,7 +3524,7 @@ class FCRectangle(FCShapeTool):
     Resulting type: Polygon
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'rectangle'
         self.draw_app = draw_app
@@ -3547,7 +3554,7 @@ class FCRectangle(FCShapeTool):
 
         self.draw_app.app.inform.emit(_("Click on 1st corner ..."))
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -3598,8 +3605,8 @@ class FCRectangle(FCShapeTool):
 
             corner_type = self.rect_tool.ui.corner_radio.get_value()
             corner_radius = self.rect_tool.ui.radius_entry.get_value()
-            length = abs(p1[0] - p2[0])
-            width = abs(p1[1] - p2[1])
+            length = abs(p1.x - p2.x)
+            width = abs(p1.y - p2.y)
 
             if corner_radius == 0.0:
                 corner_type = 's'
@@ -3607,7 +3614,7 @@ class FCRectangle(FCShapeTool):
                 length -= 2 * corner_radius
                 width -= 2 * corner_radius
 
-            base_util_geo = Polygon([p1, (p2[0], p1[1]), p2, (p1[0], p2[1])])
+            base_util_geo = Polygon([p1, (p2.x, p1.y), p2, (p1.x, p2.y)])
             center_pt = base_util_geo.centroid
             cx = center_pt.x
             cy = center_pt.y
@@ -3658,13 +3665,13 @@ class FCRectangle(FCShapeTool):
             pass
         self.draw_app.app.inform.emit('[success] %s' % _("Done."))
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3675,16 +3682,15 @@ class FCRectangle(FCShapeTool):
         # font size
         fsize = GuiSettings().hud_font_size()
 
-        x = pos[0]
-        y = pos[1]
         try:
-            length = abs(np.sqrt((pos[0] - self.points[-1][0]) ** 2 + (pos[1] - self.points[-1][1]) ** 2))
+            last = self.points[-1]
+            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
 
-        x_dec = str(self.draw_app.app.dec_format(x, self.draw_app.app.decimals)) if x else '0.0'
-        y_dec = str(self.draw_app.app.dec_format(y, self.draw_app.app.decimals)) if y else '0.0'
+        x_dec = str(self.draw_app.app.dec_format(pos.x, self.draw_app.app.decimals)) if pos.x else '0.0'
+        y_dec = str(self.draw_app.app.dec_format(pos.y, self.draw_app.app.decimals)) if pos.y else '0.0'
         length_dec = str(self.draw_app.app.dec_format(length, self.draw_app.app.decimals)) if length else '0.0'
 
         l1_txt = 'X:   %s [%s]' % (x_dec, units)
@@ -3693,13 +3699,13 @@ class FCRectangle(FCShapeTool):
         cursor_text = '%s\n%s\n\n%s' % (l1_txt, l2_txt, l3_txt)
 
         if self.draw_app.app.use_3d_engine:
-            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((x, y))
-            x, y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0]+30, new_pos[1]))
+            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((pos.x, pos.y))
+            text_x, text_y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0] + 30, new_pos[1]))
 
             # text
             self.draw_app.app.plotcanvas.text_cursor.font_size = fsize
             self.draw_app.app.plotcanvas.text_cursor.text = cursor_text
-            self.draw_app.app.plotcanvas.text_cursor.pos = x, y
+            self.draw_app.app.plotcanvas.text_cursor.pos = text_x, text_y
             self.draw_app.app.plotcanvas.text_cursor.anchors = 'left', 'top'
 
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
@@ -3720,7 +3726,7 @@ class FCRectangle(FCShapeTool):
                         QtCore.Qt.Key.Key_Plus, QtCore.Qt.Key.Key_Comma, QtCore.Qt.Key.Key_Period,
                         QtCore.Qt.Key.Key_Slash, QtCore.Qt.Key.Key_Asterisk]:
 
-            if self.draw_app.app.mouse_pos[0] != self.points[-1][0]:
+            if self.draw_app.app.mouse_pos[0] != self.points[-1].x:
                 try:
                     # VisPy keys
                     if self.rect_tool.length == 0:
@@ -3733,7 +3739,7 @@ class FCRectangle(FCShapeTool):
                         self.rect_tool.length = chr(key)
                     else:
                         self.rect_tool.length = str(self.rect_tool.length) + chr(key)
-            if self.draw_app.app.mouse_pos[1] != self.points[-1][1]:
+            if self.draw_app.app.mouse_pos[1] != self.points[-1].y:
                 try:
                     # VisPy keys
                     if self.rect_tool.width == 0:
@@ -3748,7 +3754,7 @@ class FCRectangle(FCShapeTool):
                         self.rect_tool.width = str(self.rect_tool.width) + chr(key)
 
         if key == 'Enter' or key == QtCore.Qt.Key.Key_Return or key == QtCore.Qt.Key.Key_Enter:
-            new_x, new_y = self.points[-1][0], self.points[-1][1]
+            new_x, new_y = self.points[-1].x, self.points[-1].y
 
             if self.rect_tool.length != 0:
                 target_length = self.rect_tool.length
@@ -3756,7 +3762,7 @@ class FCRectangle(FCShapeTool):
                     self.rect_tool.length = 0.0
                     return _("Failed.")
 
-                new_x = self.points[-1][0] + target_length
+                new_x = self.points[-1].x + target_length
 
             if self.rect_tool.width != 0:
                 target_width = self.rect_tool.width
@@ -3764,7 +3770,7 @@ class FCRectangle(FCShapeTool):
                     self.rect_tool.width = 0.0
                     return _("Failed.")
 
-                new_y = self.points[-1][1] + target_width
+                new_y = self.points[-1].y + target_width
 
             if self.points[-1] != (new_x, new_y):
                 self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
@@ -3794,7 +3800,7 @@ class FCPolygon(FCShapeTool):
     Resulting type: Polygon
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'polygon'
         self.draw_app = draw_app
@@ -3824,7 +3830,7 @@ class FCPolygon(FCShapeTool):
 
         self.draw_app.app.inform.emit(_("Click on 1st corner ..."))
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -3872,13 +3878,13 @@ class FCPolygon(FCShapeTool):
         else:
             return None
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -3889,16 +3895,15 @@ class FCPolygon(FCShapeTool):
         # font size
         fsize = GuiSettings().hud_font_size()
 
-        x = pos[0]
-        y = pos[1]
         try:
-            length = abs(np.sqrt((pos[0] - self.points[-1][0]) ** 2 + (pos[1] - self.points[-1][1]) ** 2))
+            last = self.points[-1]
+            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
 
-        x_dec = str(self.draw_app.app.dec_format(x, self.draw_app.app.decimals)) if x else '0.0'
-        y_dec = str(self.draw_app.app.dec_format(y, self.draw_app.app.decimals)) if y else '0.0'
+        x_dec = str(self.draw_app.app.dec_format(pos.x, self.draw_app.app.decimals)) if pos.x else '0.0'
+        y_dec = str(self.draw_app.app.dec_format(pos.y, self.draw_app.app.decimals)) if pos.y else '0.0'
         length_dec = str(self.draw_app.app.dec_format(length, self.draw_app.app.decimals)) if length else '0.0'
 
         l1_txt = 'X:   %s [%s]' % (x_dec, units)
@@ -3907,13 +3912,13 @@ class FCPolygon(FCShapeTool):
         cursor_text = '%s\n%s\n\n%s' % (l1_txt, l2_txt, l3_txt)
 
         if self.draw_app.app.use_3d_engine:
-            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((x, y))
-            x, y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0]+30, new_pos[1]))
+            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((pos.x, pos.y))
+            text_x, text_y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0] + 30, new_pos[1]))
 
             # text
             self.draw_app.app.plotcanvas.text_cursor.font_size = fsize
             self.draw_app.app.plotcanvas.text_cursor.text = cursor_text
-            self.draw_app.app.plotcanvas.text_cursor.pos = x, y
+            self.draw_app.app.plotcanvas.text_cursor.pos = text_x, text_y
             self.draw_app.app.plotcanvas.text_cursor.anchors = 'left', 'top'
 
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
@@ -3932,7 +3937,7 @@ class FCPolygon(FCShapeTool):
                 self.points = self.points[0:-1]
                 # Remove any previous utility shape
                 self.draw_app.tool_shape.clear(update=False)
-                geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                geo = self.utility_geometry(data=PointXY(self.draw_app.snap_x, self.draw_app.snap_y))
                 self.draw_app.draw_utility_geometry(geo=geo)
                 if geo:
                     return _("Backtracked one point ...")
@@ -3970,19 +3975,19 @@ class FCPolygon(FCShapeTool):
                 first_pt = self.points[-1]
                 last_pt = self.draw_app.app.mouse_pos
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
                 if seg_length == 0.0:
                     return
                 try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
+                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
+                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
                 except ZeroDivisionError as err:
                     self.points = []
                     self.clean_up()
                     return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
 
                 if self.points[-1] != (new_x, new_y):
-                    self.points.append((new_x, new_y))
+                    self.points.append(PointXY(new_x, new_y))
                     self.new_segment = True
                     self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
                     if len(self.points) > 0:
@@ -4011,7 +4016,7 @@ class FCPath(FCShapeTool):
     Resulting type: LineString
     """
 
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.draw_app = draw_app
         self.name = 'path'
@@ -4044,7 +4049,7 @@ class FCPath(FCShapeTool):
 
         self.draw_app.app.inform.emit(_("Click on 1st point ..."))
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -4054,7 +4059,7 @@ class FCPath(FCShapeTool):
         self.draw_app.in_action = True
         modifier = QtWidgets.QApplication.keyboardModifiers()
         if modifier == Qt.KeyboardModifier.ShiftModifier:
-            new_point = self.close_x, self.close_y
+            new_point = PointXY(self.close_x, self.close_y)
             if new_point != self.points[-1:]:
                 self.points.append(new_point)
         else:
@@ -4092,23 +4097,23 @@ class FCPath(FCShapeTool):
                 if not temp_points:
                     return DrawToolUtilityShape(None)
 
-                x_start = temp_points[-1][0]
-                y_start = temp_points[-1][1]
-                x_end = data[0]
-                y_end = data[1]
+                x_start = temp_points[-1].x
+                y_start = temp_points[-1].y
+                x_end = data.x
+                y_end = data.y
                 dx = x_end - x_start
                 dy = y_end - y_start
                 det_angle = self.update_angle(dx, dy)
 
-                new_x, new_y = data
+                new_x, new_y = data.x, data.y
 
                 if 0 <= det_angle <= 10:
-                    new_x = data[0]
+                    new_x = data.x
                     new_y = y_start
 
                 if 80 <= det_angle <= 90:
                     new_x = x_start
-                    new_y = data[1]
+                    new_y = data.y
 
                 if 35 <= det_angle <= 55:
                     new_x, new_y = self.closest_point_to_45_degrees(origin=temp_points[-1], current=data)
@@ -4127,8 +4132,8 @@ class FCPath(FCShapeTool):
     @staticmethod
     def closest_point_to_45_degrees(origin, current):
         # Calculate vector from origin to current point
-        vector_x = current[0] - origin[0]
-        vector_y = current[1] - origin[1]
+        vector_x = current.x - origin.x
+        vector_y = current.y - origin.y
 
         # Calculate the angle between the vector and the x-axis
         angle = math.atan2(vector_y, vector_x)
@@ -4141,8 +4146,8 @@ class FCPath(FCShapeTool):
 
         # Calculate the coordinates of the closest point
         closest_distance = math.sqrt(vector_x ** 2 + vector_y ** 2)
-        closest_point_x = origin[0] + closest_distance * math.cos(closest_angle)
-        closest_point_y = origin[1] + closest_distance * math.sin(closest_angle)
+        closest_point_x = origin.x + closest_distance * math.cos(closest_angle)
+        closest_point_y = origin.y + closest_distance * math.sin(closest_angle)
 
         return closest_point_x, closest_point_y
 
@@ -4156,13 +4161,13 @@ class FCPath(FCShapeTool):
             return None
         return angle
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -4173,16 +4178,15 @@ class FCPath(FCShapeTool):
         # font size
         fsize = GuiSettings().hud_font_size()
 
-        x = pos[0]
-        y = pos[1]
         try:
-            length = abs(np.sqrt((pos[0] - self.points[-1][0]) ** 2 + (pos[1] - self.points[-1][1]) ** 2))
+            last = self.points[-1]
+            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
 
-        x_dec = str(self.draw_app.app.dec_format(x, self.draw_app.app.decimals)) if x else '0.0'
-        y_dec = str(self.draw_app.app.dec_format(y, self.draw_app.app.decimals)) if y else '0.0'
+        x_dec = str(self.draw_app.app.dec_format(pos.x, self.draw_app.app.decimals)) if pos.x else '0.0'
+        y_dec = str(self.draw_app.app.dec_format(pos.y, self.draw_app.app.decimals)) if pos.y else '0.0'
         length_dec = str(self.draw_app.app.dec_format(length, self.draw_app.app.decimals)) if length else '0.0'
 
         l1_txt = 'X:   %s [%s]' % (x_dec, units)
@@ -4191,13 +4195,13 @@ class FCPath(FCShapeTool):
         cursor_text = '%s\n%s\n\n%s' % (l1_txt, l2_txt, l3_txt)
 
         if self.draw_app.app.use_3d_engine:
-            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((x, y))
-            x, y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0]+30, new_pos[1]))
+            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((pos.x, pos.y))
+            text_x, text_y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0] + 30, new_pos[1]))
 
             # text
             self.draw_app.app.plotcanvas.text_cursor.font_size = fsize
             self.draw_app.app.plotcanvas.text_cursor.text = cursor_text
-            self.draw_app.app.plotcanvas.text_cursor.pos = x, y
+            self.draw_app.app.plotcanvas.text_cursor.pos = text_x, text_y
             self.draw_app.app.plotcanvas.text_cursor.anchors = 'left', 'top'
 
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
@@ -4216,7 +4220,7 @@ class FCPath(FCShapeTool):
                 self.points = self.points[0:-1]
                 # Remove any previous utility shape
                 self.draw_app.tool_shape.clear(update=False)
-                geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+                geo = self.utility_geometry(data=PointXY(self.draw_app.snap_x, self.draw_app.snap_y))
                 self.draw_app.draw_utility_geometry(geo=geo)
                 if geo:
                     return _("Backtracked one point ...")
@@ -4262,19 +4266,19 @@ class FCPath(FCShapeTool):
                 first_pt = self.points[-1]
                 last_pt = self.draw_app.app.mouse_pos
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
                 if seg_length == 0.0:
                     return
                 try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
+                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
+                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
                 except ZeroDivisionError as err:
                     self.points = []
                     self.clean_up()
                     return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
 
                 if self.points[-1] != (new_x, new_y):
-                    self.points.append((new_x, new_y))
+                    self.points.append(PointXY(new_x, new_y))
                     self.new_segment = True
                     self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
                     if len(self.points) > 0:
@@ -4301,7 +4305,7 @@ class FCPath(FCShapeTool):
 
 
 class FCSelect(DrawTool):
-    def __init__(self, draw_app: AppGeoEditor):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'select'
         self.draw_app: AppGeoEditor = draw_app
@@ -4326,11 +4330,11 @@ class FCSelect(DrawTool):
         except Exception:
             pass
 
-    def click_release(self, point):
+    def click_release(self, point: PointXY) -> str | None:
         """
 
-        :param point:   The point for which to find the nearest shape
-        :return:
+        :param point: The point for which to find the nearest shape
+        :return: status message, or None when selection is unavailable
         """
 
         # list where we store the overlapped shapes under our mouse left click position
@@ -4340,7 +4344,7 @@ class FCSelect(DrawTool):
             self.draw_app.app.inform.emit('[WARNING_NOTCL] %s' % _("Selection not allowed. Wait ..."))
             return
 
-        # pos[0] and pos[1] are the mouse click coordinates (x, y)
+        # point.x and point.y are the mouse click coordinates
         for ____ in self.storage.get_objects():
             # first method of click selection -> inconvenient
             # minx, miny, maxx, maxy = obj_shape.geo.bounds
@@ -4421,7 +4425,7 @@ class FCSelect(DrawTool):
 
 
 class FCExplode(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'explode'
         self.draw_app = draw_app
@@ -4496,7 +4500,7 @@ class FCExplode(FCShapeTool):
 
 
 class FCMove(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'move'
         self.draw_app = draw_app
@@ -4540,7 +4544,7 @@ class FCMove(FCShapeTool):
         self.draw_app.app.inform.emit(_("Click on destination point ..."))
         self.origin = origin
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -4589,8 +4593,8 @@ class FCMove(FCShapeTool):
     def make(self):
         with self.draw_app.app.proc_container.new('%s...' % _("Moving")):
             # Create new geometry
-            dx = self.destination[0] - self.origin[0]
-            dy = self.destination[1] - self.origin[1]
+            dx = self.destination.x - self.origin.x
+            dy = self.destination.y - self.origin.y
             self.geometry = [DrawToolShape(translate(deepcopy(geom.geo), xoff=dx, yoff=dy))
                              for geom in self.draw_app.get_selected()]
 
@@ -4643,8 +4647,8 @@ class FCMove(FCShapeTool):
         if len(self.draw_app.get_selected()) == 0:
             return None
 
-        dx = data[0] - self.origin[0]
-        dy = data[1] - self.origin[1]
+        dx = data.x - self.origin.x
+        dy = data.y - self.origin.y
 
         if len(self.draw_app.get_selected()) <= self.sel_limit:
             try:
@@ -4714,13 +4718,13 @@ class FCMove(FCShapeTool):
             log.error("[ERROR] Something went bad. %s" % str(e))
             raise
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -4731,16 +4735,15 @@ class FCMove(FCShapeTool):
         # font size
         fsize = GuiSettings().hud_font_size()
 
-        x = pos[0]
-        y = pos[1]
         try:
-            length = abs(np.sqrt((pos[0] - self.points[-1][0]) ** 2 + (pos[1] - self.points[-1][1]) ** 2))
+            last = self.points[-1]
+            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
 
-        x_dec = str(self.draw_app.app.dec_format(x, self.draw_app.app.decimals)) if x else '0.0'
-        y_dec = str(self.draw_app.app.dec_format(y, self.draw_app.app.decimals)) if y else '0.0'
+        x_dec = str(self.draw_app.app.dec_format(pos.x, self.draw_app.app.decimals)) if pos.x else '0.0'
+        y_dec = str(self.draw_app.app.dec_format(pos.y, self.draw_app.app.decimals)) if pos.y else '0.0'
         length_dec = str(self.draw_app.app.dec_format(length, self.draw_app.app.decimals)) if length else '0.0'
 
         l1_txt = 'X:   %s [%s]' % (x_dec, units)
@@ -4749,13 +4752,13 @@ class FCMove(FCShapeTool):
         cursor_text = '%s\n%s\n\n%s' % (l1_txt, l2_txt, l3_txt)
 
         if self.draw_app.app.use_3d_engine:
-            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((x, y))
-            x, y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0]+30, new_pos[1]))
+            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((pos.x, pos.y))
+            text_x, text_y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0] + 30, new_pos[1]))
 
             # text
             self.draw_app.app.plotcanvas.text_cursor.font_size = fsize
             self.draw_app.app.plotcanvas.text_cursor.text = cursor_text
-            self.draw_app.app.plotcanvas.text_cursor.pos = x, y
+            self.draw_app.app.plotcanvas.text_cursor.pos = text_x, text_y
             self.draw_app.app.plotcanvas.text_cursor.anchors = 'left', 'top'
 
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
@@ -4798,21 +4801,21 @@ class FCMove(FCShapeTool):
                 first_pt = self.points[-1]
                 last_pt = self.draw_app.app.mouse_pos
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
                 if seg_length == 0.0:
                     return
                 try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
+                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
+                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
                 except ZeroDivisionError as err:
                     self.points = []
                     self.clean_up()
                     return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
 
                 if self.points[-1] != (new_x, new_y):
-                    self.points.append((new_x, new_y))
+                    self.points.append(PointXY(new_x, new_y))
                     self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.destination = (new_x, new_y)
+                    self.destination = PointXY(new_x, new_y)
                     self.make()
                     self.draw_app.on_shape_complete()
                     self.draw_app.select_tool("select")
@@ -4834,7 +4837,7 @@ class FCMove(FCShapeTool):
 
 
 class FCCopy(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'copy'
         self.draw_app = draw_app
@@ -4883,7 +4886,7 @@ class FCCopy(FCShapeTool):
         self.draw_app.app.inform.emit(_("Click on destination point ..."))
         self.origin = origin
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -4933,7 +4936,7 @@ class FCCopy(FCShapeTool):
     def make(self):
         # Create new geometry
         if len(self.draw_app.get_selected()) > self.sel_limit:
-            self.util_geo = self.array_util_geometry((self.clicked_postion[0], self.clicked_postion[1]))
+            self.util_geo = self.array_util_geometry((self.clicked_postion.x, self.clicked_postion.y))
 
         # when doing circular array we remove the last geometry item in the list because it is the temp_line
         if self.copy_tool.ui.mode_radio.get_value() == 'a' and \
@@ -4983,8 +4986,8 @@ class FCCopy(FCShapeTool):
         if len(self.draw_app.get_selected()) == 0:
             return None
 
-        dx = data[0] - self.origin[0]
-        dy = data[1] - self.origin[1]
+        dx = data.x - self.origin.x
+        dy = data.y - self.origin.y
 
         if len(self.draw_app.get_selected()) <= self.sel_limit:
             copy_mode = self.copy_tool.ui.mode_radio.get_value()
@@ -5031,7 +5034,7 @@ class FCCopy(FCShapeTool):
             dy = pos[1]
 
         geo_list = []
-        self.points = [(dx, dy)]
+        self.points = [PointXY(dx, dy)]
 
         for item in range(array_size):
             if axis == 'X':
@@ -5124,8 +5127,8 @@ class FCCopy(FCShapeTool):
             cdx = self.draw_app.x
             cdy = self.draw_app.y
         else:
-            cdx = pos[0] + self.origin[0]
-            cdy = pos[1] + self.origin[1]
+            cdx = pos[0] + self.origin.x
+            cdy = pos[1] + self.origin.y
 
         utility_list = []
 
@@ -5139,16 +5142,16 @@ class FCCopy(FCShapeTool):
 
         if len(self.points) >= 1 and radius > 0:
             try:
-                if cdx < self.origin[0]:
+                if cdx < self.origin.x:
                     radius = -radius
 
                 # draw the temp geometry
-                initial_angle = math.asin((cdy - self.origin[1]) / radius)
+                initial_angle = math.asin((cdy - self.origin.y) / radius)
                 temp_circular_geo = self.circular_util_shape(radius, initial_angle)
 
                 temp_points = [
-                    (self.origin[0], self.origin[1]),
-                    (self.origin[0] + pos[0], self.origin[1] + pos[1])
+                    (self.origin.x, self.origin.y),
+                    (self.origin.x + pos[0], self.origin.y + pos[1])
                 ]
                 temp_line = LineString(temp_points)
 
@@ -5235,13 +5238,13 @@ class FCCopy(FCShapeTool):
             log.error("[ERROR] Something went bad. %s" % str(e))
             raise
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
 
         if pos is None:
-            pos = self.draw_app.snap_x, self.draw_app.snap_y
+            pos = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
         if delete:
             if self.draw_app.app.use_3d_engine:
@@ -5252,16 +5255,15 @@ class FCCopy(FCShapeTool):
         # font size
         fsize = GuiSettings().hud_font_size()
 
-        x = pos[0]
-        y = pos[1]
         try:
-            length = abs(np.sqrt((pos[0] - self.points[-1][0]) ** 2 + (pos[1] - self.points[-1][1]) ** 2))
+            last = self.points[-1]
+            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
 
-        x_dec = str(self.draw_app.app.dec_format(x, self.draw_app.app.decimals)) if x else '0.0'
-        y_dec = str(self.draw_app.app.dec_format(y, self.draw_app.app.decimals)) if y else '0.0'
+        x_dec = str(self.draw_app.app.dec_format(pos.x, self.draw_app.app.decimals)) if pos.x else '0.0'
+        y_dec = str(self.draw_app.app.dec_format(pos.y, self.draw_app.app.decimals)) if pos.y else '0.0'
         length_dec = str(self.draw_app.app.dec_format(length, self.draw_app.app.decimals)) if length else '0.0'
 
         l1_txt = 'X:   %s [%s]' % (x_dec, units)
@@ -5270,13 +5272,13 @@ class FCCopy(FCShapeTool):
         cursor_text = '%s\n%s\n\n%s' % (l1_txt, l2_txt, l3_txt)
 
         if self.draw_app.app.use_3d_engine:
-            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((x, y))
-            x, y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0]+30, new_pos[1]))
+            new_pos = self.draw_app.app.plotcanvas.translate_coords_2((pos.x, pos.y))
+            text_x, text_y, __, ___ = self.draw_app.app.plotcanvas.translate_coords((new_pos[0] + 30, new_pos[1]))
 
             # text
             self.draw_app.app.plotcanvas.text_cursor.font_size = fsize
             self.draw_app.app.plotcanvas.text_cursor.text = cursor_text
-            self.draw_app.app.plotcanvas.text_cursor.pos = x, y
+            self.draw_app.app.plotcanvas.text_cursor.pos = text_x, text_y
             self.draw_app.app.plotcanvas.text_cursor.anchors = 'left', 'top'
 
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
@@ -5319,21 +5321,21 @@ class FCCopy(FCShapeTool):
                 first_pt = self.points[-1]
                 last_pt = self.draw_app.app.mouse_pos
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
                 if seg_length == 0.0:
                     return
                 try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
+                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
+                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
                 except ZeroDivisionError as err:
                     self.points = []
                     self.clean_up()
                     return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
 
                 if self.points[-1] != (new_x, new_y):
-                    self.points.append((new_x, new_y))
+                    self.points.append(PointXY(new_x, new_y))
                     self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.destination = (new_x, new_y)
+                    self.destination = PointXY(new_x, new_y)
                     self.make()
                     self.draw_app.on_shape_complete()
                     self.draw_app.select_tool("select")
@@ -5355,7 +5357,7 @@ class FCCopy(FCShapeTool):
 
 
 class FCText(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'text'
         self.draw_app = draw_app
@@ -5370,13 +5372,13 @@ class FCText(FCShapeTool):
         self.app = draw_app.app
 
         self.draw_app.app.inform.emit(_("Click on 1st point ..."))
-        self.origin = (0, 0)
+        self.origin = PointXY(0, 0)
 
         self.text_gui = TextInputTool(app=self.app, draw_app=self.draw_app)
         self.text_gui.run()
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -5384,8 +5386,8 @@ class FCText(FCShapeTool):
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
         # Create new geometry
-        dx = point[0]
-        dy = point[1]
+        dx = point.x
+        dy = point.y
 
         if self.text_gui.text_path:
             try:
@@ -5421,8 +5423,8 @@ class FCText(FCShapeTool):
         :return:
         """
 
-        dx = data[0] - self.origin[0]
-        dy = data[1] - self.origin[1]
+        dx = data.x - self.origin.x
+        dy = data.y - self.origin.y
 
         try:
             return DrawToolUtilityShape(translate(self.text_gui.text_path, xoff=dx, yoff=dy))
@@ -5440,7 +5442,7 @@ class FCText(FCShapeTool):
 
 
 class FCBuffer(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'buffer'
 
@@ -5563,7 +5565,7 @@ class FCBuffer(FCShapeTool):
 
 
 class FCSimplification(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'simplify'
 
@@ -5579,7 +5581,7 @@ class FCSimplification(FCShapeTool):
         if self.draw_app.app.ui.splitter.sizes()[0] == 0:
             self.draw_app.app.ui.splitter.setSizes([1, 1])
 
-    def click(self, point):
+    def click(self, point: PointXY):
         for ____ in self.storage.get_objects():
             try:
                 __, closest_shape = self.storage.nearest(point)
@@ -5597,7 +5599,7 @@ class FCSimplification(FCShapeTool):
 
 
 class FCEraser(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         DrawTool.__init__(self, draw_app)
         self.name = 'eraser'
         self.draw_app = draw_app
@@ -5622,7 +5624,7 @@ class FCEraser(FCShapeTool):
     def set_origin(self, origin):
         self.origin = origin
 
-    def click(self, point):
+    def click(self, point: PointXY):
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -5696,8 +5698,8 @@ class FCEraser(FCShapeTool):
         if len(self.draw_app.get_selected()) == 0:
             return None
 
-        dx = data[0] - self.origin[0]
-        dy = data[1] - self.origin[1]
+        dx = data.x - self.origin.x
+        dy = data.y - self.origin.y
 
         try:
             for geom in self.draw_app.get_selected():
@@ -5719,7 +5721,7 @@ class FCEraser(FCShapeTool):
 
 
 class FCPaint(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'paint'
         self.draw_app = draw_app
@@ -5734,7 +5736,7 @@ class FCPaint(FCShapeTool):
 
 
 class FCTransform(FCShapeTool):
-    def __init__(self, draw_app):
+    def __init__(self, draw_app: AppGeoEditor) -> None:
         FCShapeTool.__init__(self, draw_app)
         self.name = 'transformation'
 

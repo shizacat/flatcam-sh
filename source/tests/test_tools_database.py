@@ -104,6 +104,8 @@ def test_tool_data_coerces_stored_values_to_field_types() -> None:
     assert data.milling.travelz == 2.0
     assert data.milling.dwell is True
     assert data.milling.toolchangexy == (1.5, 2.0)
+    assert data.milling.toolchangexy.x == 1.5
+    assert data.milling.toolchangexy.y == 2.0
     assert data.milling.startz is None
     assert data.isolation.passes == 3
     assert data.cutout.gap_type == "b"

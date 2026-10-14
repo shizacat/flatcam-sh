@@ -29,6 +29,7 @@ import builtins
 
 from appParsers.ParseExcellon import Excellon
 from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, fill_missing_mill_fields, milling_tool_diameter
+from settings.st_types import PointXY
 from settings.utils import option_items
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace
@@ -120,11 +121,11 @@ class ToolMilling(Excellon, AppTool):
         self.target_obj = None
 
         self.first_click = False
-        self.cursor_pos = None
+        self.cursor_pos: PointXY | None = None
         self.mouse_is_dragging = False
 
         # store here the points for the "Polygon" area selection shape
-        self.points: list[tuple[float, float]] = []
+        self.points: list[PointXY] = []
 
         self.mm = None
         self.mr = None

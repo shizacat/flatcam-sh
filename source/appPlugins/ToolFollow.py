@@ -7,6 +7,8 @@
 
 from typing import TYPE_CHECKING
 
+from settings.st_types import PointXY
+
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
 from appGUI.GUIElements import (VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, RadioSet,
@@ -56,7 +58,7 @@ class ToolFollow(Gerber, AppTool):
         self.area_sel_disconnect_flag = False
 
         self.first_click = False
-        self.cursor_pos = None
+        self.cursor_pos: PointXY | None = None
         self.mouse_is_dragging = False
 
         self.mm = None
@@ -67,7 +69,7 @@ class ToolFollow(Gerber, AppTool):
         self.sel_rect = []
 
         # store here the points for the "Polygon" area selection shape
-        self.points = []
+        self.points: list[PointXY] = []
         # set this as True when in middle of drawing a "Polygon" area selection shape
         # it is made False by first click to signify that the shape is complete
         self.poly_drawn = False

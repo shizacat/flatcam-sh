@@ -251,3 +251,5 @@ Use `app.options` when the running tool or object needs the value now.
 Also add it as a field on the shared preference model and to `settings_from_fields` when it must survive a restart through Preferences. Apply is what copies the widget into `app.settings`, into `app.options`, and into `settings.json`.
 
 Use `GuiSettings` for window chrome, widget style, language, and font sizes. Those keys are not part of `app.settings`. Add a getter and a `save_*` method for the key, with the default the call sites expect, and a test on the temporary store.
+
+A saved X, Y position uses `XYPair`. A point that is already two numbers uses `PointXY`. Both are described in [Types](./types.md).

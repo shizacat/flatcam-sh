@@ -16,6 +16,8 @@ import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable
 
+from settings.st_types import PointXY
+
 import numpy as np
 from tools_database import MillJobType, ToolTarget, ToolsDatabase
 import sys
@@ -74,11 +76,11 @@ class ToolIsolation(Gerber, AppTool):
         self.sel_rect = []
 
         self.first_click = False
-        self.cursor_pos = None
+        self.cursor_pos: PointXY | None = None
         self.mouse_is_dragging = False
 
         # store here the points for the "Polygon" area selection shape
-        self.points = []
+        self.points: list[PointXY] = []
 
         # set this as True when in middle of drawing a "Polygon" area selection shape
         # it is made False by first click to signify that the shape is complete

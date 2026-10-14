@@ -17,6 +17,7 @@ from shapely.ops import unary_union
 
 from appGUI.VisPyVisuals import ShapeCollection
 from appTool import AppTool
+from settings.st_types import PointXY
 
 from copy import deepcopy
 import collections
@@ -257,9 +258,9 @@ class ExclusionAreas(QtCore.QObject):
         self.kp = None
 
         # variables to be used in area exclusion
-        self.cursor_pos = (0, 0)
+        self.cursor_pos: PointXY | None = (0, 0)
         self.first_click = False
-        self.points = []
+        self.points: list[PointXY] = []
         self.poly_drawn = False
 
         '''

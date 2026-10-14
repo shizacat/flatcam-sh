@@ -1,7 +1,7 @@
 """Shared annotated types for settings fields."""
 
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, NamedTuple
 
 from pydantic import BeforeValidator
 
@@ -46,27 +46,42 @@ class Theme(StrEnum):
         return self is Theme.LIGHT
 
 
+class PointXY(NamedTuple):
+    """
+    A point on the plane: X then Y, in project units.
+
+    ``x`` and ``y`` name the two coordinates. Index 0 and index 1 are the same numbers.
+    """
+
+    x: float
+    y: float
+
+
 def _xy_pair(value: object) -> object:
     """
-    Turns a comma-separated X, Y text into two numbers.
+    Turns a stored point into a :class:`PointXY`.
 
-    Lists and tuples of two numbers are returned as a pair.
+    Comma-separated X, Y text, and a list or tuple of two numbers, become that point.
     Other values are left for validation.
 
     :param value: stored position
-    :return:      pair of numbers, or the original value
+    :return:      point, or the original value
     """
+    if isinstance(value, PointXY):
+        return value
     if isinstance(value, str):
         parts = [part.strip() for part in value.split(",") if part.strip()]
         if len(parts) != 2:
             return value
-        return float(parts[0]), float(parts[1])
+        return PointXY(float(parts[0]), float(parts[1]))
     if isinstance(value, (list, tuple)) and len(value) == 2:
-        return float(value[0]), float(value[1])
+        return PointXY(float(value[0]), float(value[1]))
     return value
 
 
-XYPair = Annotated[tuple[float, float], BeforeValidator(_xy_pair)]
+# Same point as PointXY, read from settings or the tools database.
+# Both name a point and may be merged later.
+XYPair = Annotated[PointXY, BeforeValidator(_xy_pair)]
 
 
 def _tool_diameters(value: object) -> object:

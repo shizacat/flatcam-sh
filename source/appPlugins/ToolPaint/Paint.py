@@ -7,6 +7,8 @@
 
 from typing import TYPE_CHECKING
 
+from settings.st_types import PointXY
+
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 from PyQt6.QtCore import Qt     # noqa
 
@@ -88,7 +90,7 @@ class ToolPaint(Gerber, AppTool):
         self.tooluid = 0
 
         self.first_click = False
-        self.cursor_pos = None
+        self.cursor_pos: PointXY | None = None
         self.mouse_is_dragging = False
 
         self.mm = None
@@ -112,7 +114,7 @@ class ToolPaint(Gerber, AppTool):
         self.default_data = {}
 
         # store here the points for the "Polygon" area selection shape
-        self.points = []
+        self.points: list[PointXY] = []
         # set this as True when in middle of drawing a "Polygon" area selection shape
         # it is made False by first click to signify that the shape is complete
         self.poly_drawn = False
