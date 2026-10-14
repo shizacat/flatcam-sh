@@ -5,7 +5,7 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
@@ -45,9 +45,9 @@ log = logging.getLogger('base')
 
 
 class HybridGeoExc:
-    def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
+    def __init__(self, app: "App") -> None:
+        self.app: "App" = app
+        self.decimals: int = self.app.decimals
 
         """
         self.tools = {}
@@ -60,9 +60,9 @@ class HybridGeoExc:
                         }
             }
         """
-        self.obj_options = {}
-        self.tools = {}
-        self.solid_geometry = []
+        self.obj_options: dict[str, Any] = {}
+        self.tools: dict[int, dict[str, Any]] = {}
+        self.solid_geometry: list[Any] = []
 
         kind = 'geometry'
         for option in type(self.app.options).model_fields:
@@ -81,8 +81,8 @@ class HybridGeoExc:
         self.obj_options['xmax'] = 0
         self.obj_options['ymax'] = 0
 
-        self.multigeo = True
-        self.multitool = True
+        self.multigeo: bool = True
+        self.multitool: bool = True
 
 
 class ToolMilling(Excellon, AppTool):
@@ -103,7 +103,7 @@ class ToolMilling(Excellon, AppTool):
         # ########################## VARIABLES ########################################
         # #############################################################################
         self.units = ''
-        self.tooluid = 0
+        self.tooluid: int = 0
 
         # dict that holds the object names and the option name
         # the key is the object name (defines in ObjectUI) for each UI element that is a parameter
@@ -114,7 +114,7 @@ class ToolMilling(Excellon, AppTool):
         self.default_data = {}
 
         # store here the Geometry tools selected in the Geo Tools Table
-        self.sel_tools = {}
+        self.sel_tools: dict[int, dict[str, Any]] = {}
 
         self.obj_name = ""
         self.target_obj = None
@@ -124,7 +124,7 @@ class ToolMilling(Excellon, AppTool):
         self.mouse_is_dragging = False
 
         # store here the points for the "Polygon" area selection shape
-        self.points = []
+        self.points: list[tuple[float, float]] = []
 
         self.mm = None
         self.mr = None
