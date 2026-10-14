@@ -33,19 +33,21 @@ from rtree import index as rtindex
 import traceback
 import math
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
+from multiprocessing import Pool
 
 import gettext
 import appTranslation as fcTranslate
 import builtins
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from settings.gui_settings import GuiSettings
 from settings.st_types import PointXY
 
 if TYPE_CHECKING:
     from appMain import App
+    from appObjects.ObjectCollection import ExcellonObject
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -85,7 +87,7 @@ class SelectEditorExc(FCShapeTool):
         except Exception:
             pass
 
-    def click(self, point):
+    def click(self, point: PointXY) -> None:
         key_modifier = QtWidgets.QApplication.keyboardModifiers()
 
         if key_modifier == QtCore.Qt.KeyboardModifier.ShiftModifier:
@@ -100,7 +102,7 @@ class SelectEditorExc(FCShapeTool):
         else:
             self.draw_app.selected = []
 
-    def click_release(self, pos):
+    def click_release(self, pos: PointXY | tuple[float, float]) -> str:
         self.draw_app.ui.tools_table_exc.clearSelection()
         xmin, ymin, xmax, ymax = 0, 0, 0, 0
 
@@ -240,7 +242,7 @@ class SelectEditorExc(FCShapeTool):
         #     log.error("[ERROR] Something went bad. %s" % str(e))
         #     raise
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         pass
 
 
@@ -319,14 +321,14 @@ class DrillAdd(FCShapeTool):
 
         self.draw_app.app.inform.emit(_("Click to place ..."))
 
-    def set_plugin_ui(self):
+    def set_plugin_ui(self) -> None:
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
         self.ui.x_entry.set_value(float(self.draw_app.snap_x))
         self.ui.y_entry.set_value(float(self.draw_app.snap_y))
 
-    def click(self, point):
+    def click(self, point: PointXY) -> str:
         self.drill_point = point
         self.draw_app.last_length = self.drill_tool.length
         self.ui.x_entry.set_value(float(self.draw_app.snap_x))
@@ -334,10 +336,10 @@ class DrillAdd(FCShapeTool):
         self.make()
         return "Done."
 
-    def utility_geometry(self, data=None):
+    def utility_geometry(self, data: PointXY | tuple[float | None, float | None] | None = None) -> DrawToolUtilityShape:
         return DrawToolUtilityShape(self.util_shape(data))
 
-    def util_shape(self, point):
+    def util_shape(self, point: PointXY | tuple[float | None, float | None]) -> MultiLineString:
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
 
         if point[0] is None and point[1] is None:
@@ -354,7 +356,7 @@ class DrillAdd(FCShapeTool):
 
         return MultiLineString([(start_hor_line, stop_hor_line), (start_vert_line, stop_vert_line)])
 
-    def make(self):
+    def make(self) -> None:
         if self.drill_point is None:
             self.drill_point = (self.draw_app.snap_x, self.draw_app.snap_y)
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
@@ -383,7 +385,7 @@ class DrillAdd(FCShapeTool):
 
         self.draw_app.app.inform.emit('[success] %s' % _("Done."))
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | tuple[float, float] | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
@@ -433,7 +435,7 @@ class DrillAdd(FCShapeTool):
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
                 self.draw_app.app.plotcanvas.text_cursor.parent = self.draw_app.app.plotcanvas.view.scene
 
-    def on_key(self, key):
+    def on_key(self, key: QtCore.Qt.Key | str) -> str | None:
         # Jump to coords
         if key == QtCore.Qt.Key.Key_J or key == 'J':
             self.draw_app.app.on_jump_to()
@@ -484,7 +486,7 @@ class DrillAdd(FCShapeTool):
         if key == 'C' or key == QtCore.Qt.Key.Key_C:
             self.cursor_data_control = not self.cursor_data_control
 
-    def add_drill(self, drill_pos):
+    def add_drill(self, drill_pos: PointXY | tuple[float, float]) -> None:
         curr_pos = self.draw_app.app.geo_editor.snap(drill_pos[0], drill_pos[1])
         self.draw_app.snap_x = curr_pos[0]
         self.draw_app.snap_y = curr_pos[1]
@@ -496,12 +498,12 @@ class DrillAdd(FCShapeTool):
         self.drill_point = curr_pos
         self.draw_app.clicked_pos = curr_pos
 
-    def on_add_drill(self):
+    def on_add_drill(self) -> None:
         x = self.ui.x_entry.get_value()
         y = self.ui.y_entry.get_value()
         self.add_drill(drill_pos=(x, y))
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -609,7 +611,7 @@ class DrillArray(FCShapeTool):
             self.draw_app.app.inform.emit(_("Click on the circular array Center position"))
         # self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-    def set_plugin_ui(self):
+    def set_plugin_ui(self) -> None:
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
@@ -650,7 +652,7 @@ class DrillArray(FCShapeTool):
     def set_origin(self, origin: PointXY) -> None:
         self.origin = origin
 
-    def utility_geometry(self, data=None, static=None):
+    def utility_geometry(self, data: PointXY | tuple[float | None, float | None] | None = None, static: bool | None = None) -> DrawToolUtilityShape | None:
         self.drill_axis = self.ui.axis_radio.get_value()
         self.drill_direction = self.ui.array_dir_radio.get_value()
         self.drill_array = self.ui.array_type_radio.get_value()
@@ -735,7 +737,7 @@ class DrillArray(FCShapeTool):
                 except Exception as e:
                     log.error("DrillArray.utility_geometry -- circular -> %s" % str(e))
 
-    def circular_util_shape(self, radius, angle):
+    def circular_util_shape(self, radius: float, angle: float) -> list[DrawToolShape]:
         self.drill_direction = self.ui.array_dir_radio.get_value()
         self.drill_angle = self.ui.circular_angle_entry.get_value()
 
@@ -763,7 +765,7 @@ class DrillArray(FCShapeTool):
 
         return circular_geo
 
-    def util_shape(self, point):
+    def util_shape(self, point: PointXY | tuple[float | None, float | None]) -> MultiLineString:
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
 
         if point[0] is None and point[1] is None:
@@ -780,7 +782,7 @@ class DrillArray(FCShapeTool):
 
         return MultiLineString([(start_hor_line, stop_hor_line), (start_vert_line, stop_vert_line)])
 
-    def make(self):
+    def make(self) -> None:
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
         self.geometry = []
         geo = None
@@ -852,7 +854,7 @@ class DrillArray(FCShapeTool):
         except (AttributeError, TypeError):
             pass
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | tuple[float, float] | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
@@ -902,7 +904,7 @@ class DrillArray(FCShapeTool):
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
                 self.draw_app.app.plotcanvas.text_cursor.parent = self.draw_app.app.plotcanvas.view.scene
 
-    def on_key(self, key):
+    def on_key(self, key: QtCore.Qt.Key | str) -> None:
         key_modifier = QtWidgets.QApplication.keyboardModifiers()
 
         if key_modifier == QtCore.Qt.KeyboardModifier.ShiftModifier:
@@ -932,7 +934,7 @@ class DrillArray(FCShapeTool):
             if key == QtCore.Qt.Key.Key_J or key == 'J':
                 self.draw_app.app.on_jump_to()
 
-    def add_drill_array(self, array_pos):
+    def add_drill_array(self, array_pos: PointXY | tuple[float, float]) -> None:
         self.drill_radius = self.ui.radius_entry.get_value()
         self.drill_array = self.ui.array_type_radio.get_value()
 
@@ -957,12 +959,12 @@ class DrillArray(FCShapeTool):
 
         self.draw_app.clicked_pos = curr_pos
 
-    def on_add_drill_array(self):
+    def on_add_drill_array(self) -> None:
         x = self.ui.x_entry.get_value()
         y = self.ui.y_entry.get_value()
         self.add_drill_array(array_pos=(x, y))
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -1057,7 +1059,7 @@ class SlotAdd(FCShapeTool):
 
         self.draw_app.app.inform.emit(_("Click to place ..."))
 
-    def set_plugin_ui(self):
+    def set_plugin_ui(self) -> None:
         self.ui.slot_length_entry.set_value(self.draw_app.last_slot_length)
         self.ui.slot_direction_radio.set_value(self.draw_app.last_slot_direction)
         self.ui.on_slot_angle_radio()
@@ -1069,7 +1071,7 @@ class SlotAdd(FCShapeTool):
         self.ui.x_entry.set_value(float(self.draw_app.snap_x))
         self.ui.y_entry.set_value(float(self.draw_app.snap_y))
 
-    def click(self, point):
+    def click(self, point: PointXY) -> str:
         self.slot_point = point
         self.draw_app.last_length = self.slot_tool.length
         self.ui.x_entry.set_value(float(self.draw_app.snap_x))
@@ -1077,11 +1079,11 @@ class SlotAdd(FCShapeTool):
         self.make()
         return "Done."
 
-    def utility_geometry(self, data=None):
+    def utility_geometry(self, data: PointXY | tuple[float | None, float | None] | None = None) -> DrawToolUtilityShape | None:
         geo_data = self.util_shape(data)
         return DrawToolUtilityShape(geo_data) if geo_data else None
 
-    def util_shape(self, point):
+    def util_shape(self, point: PointXY | tuple[float | None, float | None]) -> Polygon | None:
         # updating values here allows us to change the aperture on the fly, after the Tool has been started
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
         self.radius = float(self.selected_dia / 2.0)
@@ -1160,7 +1162,7 @@ class SlotAdd(FCShapeTool):
 
             return Polygon(geo)
 
-    def make(self):
+    def make(self) -> None:
         if self.slot_point is None:
             self.slot_point = (self.draw_app.snap_x, self.draw_app.snap_y)
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
@@ -1196,7 +1198,7 @@ class SlotAdd(FCShapeTool):
 
         self.draw_app.app.inform.emit('[success] %s' % _("Done."))
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | tuple[float, float] | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
@@ -1246,7 +1248,7 @@ class SlotAdd(FCShapeTool):
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
                 self.draw_app.app.plotcanvas.text_cursor.parent = self.draw_app.app.plotcanvas.view.scene
 
-    def on_key(self, key):
+    def on_key(self, key: QtCore.Qt.Key | str) -> str | None:
         # Jump to coords
         if key == QtCore.Qt.Key.Key_J or key == 'J':
             self.draw_app.app.on_jump_to()
@@ -1309,7 +1311,7 @@ class SlotAdd(FCShapeTool):
         if key == 'C' or key == QtCore.Qt.Key.Key_C:
             self.cursor_data_control = not self.cursor_data_control
 
-    def add_slot(self, slot_pos):
+    def add_slot(self, slot_pos: PointXY | tuple[float, float]) -> None:
         curr_pos = self.draw_app.app.geo_editor.snap(slot_pos[0], slot_pos[1])
         self.draw_app.snap_x = curr_pos[0]
         self.draw_app.snap_y = curr_pos[1]
@@ -1321,12 +1323,12 @@ class SlotAdd(FCShapeTool):
         self.slot_point = curr_pos
         self.draw_app.clicked_pos = curr_pos
 
-    def on_add_slot(self):
+    def on_add_slot(self) -> None:
         x = self.ui.x_entry.get_value()
         y = self.ui.y_entry.get_value()
         self.add_slot(slot_pos=(x, y))
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -1436,7 +1438,7 @@ class SlotArray(FCShapeTool):
 
         # self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-    def set_plugin_ui(self):
+    def set_plugin_ui(self) -> None:
         curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         self.ui.dia_entry.set_value(tool_dia)
@@ -1463,7 +1465,7 @@ class SlotArray(FCShapeTool):
 
         self.ui.on_slot_array_linear_angle_radio()
 
-    def click(self, point):
+    def click(self, point: PointXY) -> None:
         self.ui.x_entry.set_value(float(self.draw_app.snap_x))
         self.ui.y_entry.set_value(float(self.draw_app.snap_y))
 
@@ -1484,10 +1486,10 @@ class SlotArray(FCShapeTool):
                 self.flag_for_circ_array = None
                 return
 
-    def set_origin(self, origin):
+    def set_origin(self, origin: PointXY) -> None:
         self.origin = origin
 
-    def utility_geometry(self, data=None, static=None):
+    def utility_geometry(self, data: PointXY | tuple[float | None, float | None] | None = None, static: bool | None = None) -> DrawToolUtilityShape | None:
         self.slot_axis = self.ui.array_axis_radio.get_value()
         self.slot_direction = self.ui.array_direction_radio.get_value()
         self.slot_array = self.ui.array_type_radio.get_value()
@@ -1574,7 +1576,7 @@ class SlotArray(FCShapeTool):
                 except Exception as e:
                     log.error("SlotArray.utility_geometry -- circular -> %s" % str(e))
 
-    def circular_util_shape(self, radius, angle):
+    def circular_util_shape(self, radius: float, angle: float) -> list[DrawToolShape]:
         self.slot_direction = self.ui.array_direction_radio.get_value()
         self.slot_angle = self.ui.array_angle_entry.get_value()
         self.slot_array_size = self.ui.array_size_entry.get_value()
@@ -1603,7 +1605,7 @@ class SlotArray(FCShapeTool):
 
         return circular_geo
 
-    def util_shape(self, point):
+    def util_shape(self, point: PointXY | tuple[float | None, float | None]) -> Polygon | None:
         # updating values here allows us to change the aperture on the fly, after the Tool has been started
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
         self.radius = float(self.selected_dia / 2.0)
@@ -1684,7 +1686,7 @@ class SlotArray(FCShapeTool):
         else:
             return Polygon(geo)
 
-    def make(self):
+    def make(self) -> None:
         self.geometry = []
         geo = None
 
@@ -1783,7 +1785,7 @@ class SlotArray(FCShapeTool):
         except (AttributeError, TypeError):
             pass
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | tuple[float, float] | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
@@ -1833,7 +1835,7 @@ class SlotArray(FCShapeTool):
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
                 self.draw_app.app.plotcanvas.text_cursor.parent = self.draw_app.app.plotcanvas.view.scene
 
-    def on_key(self, key):
+    def on_key(self, key: QtCore.Qt.Key | str) -> None:
         key_modifier = QtWidgets.QApplication.keyboardModifiers()
 
         if key_modifier == QtCore.Qt.KeyboardModifier.ShiftModifier:
@@ -1875,7 +1877,7 @@ class SlotArray(FCShapeTool):
                 # ## Utility geometry (animated)
                 self.draw_app.update_utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
 
-    def add_slot_array(self, array_pos):
+    def add_slot_array(self, array_pos: PointXY | tuple[float, float]) -> None:
         self.array_radius = self.ui.radius_entry.get_value()
 
         self.slot_axis = self.ui.array_axis_radio.get_value()
@@ -1908,12 +1910,12 @@ class SlotArray(FCShapeTool):
 
         self.draw_app.clicked_pos = curr_pos
 
-    def on_add_slot_array(self):
+    def on_add_slot_array(self) -> None:
         x = self.ui.x_entry.get_value()
         y = self.ui.y_entry.get_value()
         self.add_slot_array(array_pos=(x, y))
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -1987,20 +1989,20 @@ class ResizeEditorExc(FCShapeTool):
 
         self.draw_app.app.inform.emit(_("Click on the Drill(s) to resize ..."))
 
-    def set_plugin_ui(self):
+    def set_plugin_ui(self) -> None:
         # curr_row = self.draw_app.ui.tools_table_exc.currentRow()
         # tool_dia = float(self.draw_app.ui.tools_table_exc.item(curr_row, 1).text())
         # self.ui.dia_entry.set_value(tool_dia)
 
         self.update_diameters()
 
-    def utility_geometry(self, data=None):
+    def utility_geometry(self, data: PointXY | tuple[float, float] | None = None) -> DrawToolUtilityShape:
         return DrawToolUtilityShape([])
 
-    def click_release(self, point):
+    def click_release(self, point: PointXY | tuple[float, float]) -> None:
         self.update_diameters()
 
-    def update_diameters(self):
+    def update_diameters(self) -> None:
         sel_dia_list = set()
         for index in self.draw_app.ui.tools_table_exc.selectedIndexes():
             row = index.row()
@@ -2014,7 +2016,7 @@ class ResizeEditorExc(FCShapeTool):
 
         self.ui.dia_entry.set_value(', '.join([i for i in list(sel_dia_list)]))
 
-    def make(self):
+    def make(self) -> None:
         self.draw_app.is_modified = True
 
         try:
@@ -2212,11 +2214,11 @@ class ResizeEditorExc(FCShapeTool):
         # MS: always return to the Select Tool
         self.draw_app.select_tool("drill_select")
 
-    def on_resize(self):
+    def on_resize(self) -> None:
         self.make()
         self.clean_up()
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | tuple[float, float] | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
@@ -2266,11 +2268,11 @@ class ResizeEditorExc(FCShapeTool):
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
                 self.draw_app.app.plotcanvas.text_cursor.parent = self.draw_app.app.plotcanvas.view.scene
 
-    def on_key(self, key):
+    def on_key(self, key: QtCore.Qt.Key | str) -> None:
         if key == 'C' or key == QtCore.Qt.Key.Key_C:
             self.cursor_data_control = not self.cursor_data_control
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -2322,10 +2324,10 @@ class MoveEditorExc(FCShapeTool):
             else:
                 self.draw_app.app.inform.emit(_("Click on reference location ..."))
 
-    def set_origin(self, origin):
+    def set_origin(self, origin: PointXY) -> None:
         self.origin = origin
 
-    def click(self, point):
+    def click(self, point: PointXY) -> str | None:
         if not self.draw_app.get_selected():
             self.draw_app.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
             return "Nothing to move."
@@ -2342,7 +2344,7 @@ class MoveEditorExc(FCShapeTool):
             self.draw_app.select_tool("drill_select")
             return
 
-    def make(self):
+    def make(self) -> None:
         # Create new geometry
         dx = self.destination[0] - self.origin[0]
         dy = self.destination[1] - self.origin[1]
@@ -2370,7 +2372,7 @@ class MoveEditorExc(FCShapeTool):
         except TypeError:
             pass
 
-    def selection_bbox(self):
+    def selection_bbox(self) -> Polygon:
         geo_list = []
         for select_shape in self.draw_app.get_selected():
             if isinstance(select_shape.geo, (MultiLineString, MultiPolygon)):
@@ -2393,7 +2395,7 @@ class MoveEditorExc(FCShapeTool):
 
         return Polygon([pt1, pt2, pt3, pt4])
 
-    def utility_geometry(self, data=None):
+    def utility_geometry(self, data: PointXY | tuple[float, float] | None = None) -> DrawToolUtilityShape | None:
         """
         Temporary geometry on screen while using this tool.
 
@@ -2427,7 +2429,7 @@ class MoveEditorExc(FCShapeTool):
                 ss_el = None
             return DrawToolUtilityShape(ss_el)
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -2489,11 +2491,11 @@ class CopyEditorExc(FCShapeTool):
 
         self.draw_app.app.jump_signal.connect(lambda x: self.draw_app.update_utility_geometry(data=x))
 
-    def set_origin(self, origin):
+    def set_origin(self, origin: PointXY) -> None:
         self.draw_app.app.inform.emit(_("Click on destination point ..."))
         self.origin = origin
 
-    def click(self, point):
+    def click(self, point: PointXY) -> str | None:
         try:
             self.draw_app.app.jump_signal.disconnect()
         except (TypeError, AttributeError):
@@ -2516,7 +2518,7 @@ class CopyEditorExc(FCShapeTool):
             self.draw_app.select_tool("drill_select")
             return
 
-    def make(self):
+    def make(self) -> None:
         # Create new geometry
         # dx = self.destination[0] - self.origin[0]
         # dy = self.destination[1] - self.origin[1]
@@ -2571,7 +2573,7 @@ class CopyEditorExc(FCShapeTool):
         except (TypeError, AttributeError):
             pass
 
-    def selection_bbox(self):
+    def selection_bbox(self) -> Polygon:
         geo_list = []
         for select_shape in self.draw_app.get_selected():
             if isinstance(select_shape.geo, (MultiLineString, MultiPolygon)):
@@ -2594,7 +2596,7 @@ class CopyEditorExc(FCShapeTool):
 
         return Polygon([pt1, pt2, pt3, pt4])
 
-    def utility_geometry(self, data=None):
+    def utility_geometry(self, data: PointXY | tuple[float, float] | None = None) -> DrawToolUtilityShape | None:
         """
         Temporary geometry on screen while using this tool.
 
@@ -2634,7 +2636,7 @@ class CopyEditorExc(FCShapeTool):
 
         return self.util_geo
 
-    def array_util_geometry(self, pos, static=None):
+    def array_util_geometry(self, pos: tuple[float | None, float | None], static: bool | None = None) -> DrawToolUtilityShape | None:
         array_type = self.ui.array_type_radio.get_value()      # 'linear', '2D', 'circular'
 
         if array_type == 'linear':  # 'Linear'
@@ -2644,7 +2646,7 @@ class CopyEditorExc(FCShapeTool):
         elif array_type == 'circular':  # 'Circular'
             return self.circular_geo(pos)
 
-    def linear_geo(self, pos, static):
+    def linear_geo(self, pos: tuple[float | None, float | None], static: bool | None) -> DrawToolUtilityShape:
         axis = self.ui.axis_radio.get_value()  # X, Y or A
         pitch = float(self.ui.pitch_entry.get_value())
         linear_angle = float(self.ui.linear_angle_spinner.get_value())
@@ -2677,7 +2679,7 @@ class CopyEditorExc(FCShapeTool):
                     geo_list.append(g.geo)
         return DrawToolUtilityShape(geo_list)
 
-    def dd_geo(self, pos):
+    def dd_geo(self, pos: tuple[float | None, float | None]) -> DrawToolUtilityShape:
         trans_geo = []
         array_2d_type = self.ui.placement_radio.get_value()
 
@@ -2745,7 +2747,7 @@ class CopyEditorExc(FCShapeTool):
 
         return DrawToolUtilityShape(trans_geo)
 
-    def circular_geo(self, pos):
+    def circular_geo(self, pos: tuple[float | None, float | None]) -> DrawToolUtilityShape | None:
         if pos[0] is None and pos[1] is None:
             cdx = self.draw_app.x
             cdy = self.draw_app.y
@@ -2786,7 +2788,7 @@ class CopyEditorExc(FCShapeTool):
             except Exception as e:
                 log.error("DrillArray.utility_geometry -- circular -> %s" % str(e))
 
-    def circular_util_shape(self, radius, ini_angle):
+    def circular_util_shape(self, radius: float, ini_angle: float) -> list[DrawToolShape]:
         direction = self.ui.array_dir_radio.get_value()      # CW or CCW
         angle = self.ui.angle_entry.get_value()
         array_size = int(self.ui.array_size_entry.get_value())
@@ -2809,7 +2811,7 @@ class CopyEditorExc(FCShapeTool):
 
         return circular_geo
 
-    def draw_cursor_data(self, pos=None, delete=False):
+    def draw_cursor_data(self, pos: PointXY | tuple[float, float] | None = None, delete: bool = False) -> None:
         if self.cursor_data_control is False:
             self.draw_app.app.plotcanvas.text_cursor.text = ""
             return
@@ -2857,7 +2859,7 @@ class CopyEditorExc(FCShapeTool):
             if self.draw_app.app.plotcanvas.text_cursor.parent is None:
                 self.draw_app.app.plotcanvas.text_cursor.parent = self.draw_app.app.plotcanvas.view.scene
 
-    def on_key(self, key):
+    def on_key(self, key: QtCore.Qt.Key | str) -> str | None:
         if key == 'C' or key == QtCore.Qt.Key.Key_C:
             self.cursor_data_control = not self.cursor_data_control
 
@@ -2914,7 +2916,7 @@ class CopyEditorExc(FCShapeTool):
                     self.draw_app.select_tool("select")
                     return "Done."
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         self.draw_app.selected.clear()
         self.draw_app.ui.tools_table_exc.clearSelection()
         self.draw_app.plot_all()
@@ -3141,7 +3143,7 @@ class AppExcEditor(QtCore.QObject):
 
         self.app.log.debug("Initialization of the Excellon Editor is finished ...")
 
-    def make_callback(self, thetool):
+    def make_callback(self, thetool: str) -> Callable[[], None]:
         def f():
             self.on_tool_select(thetool)
 
@@ -3163,19 +3165,19 @@ class AppExcEditor(QtCore.QObject):
             self.tools_exc[tool]["button"].triggered.connect(self.make_callback(tool))  # Events
             self.tools_exc[tool]["button"].setCheckable(True)  # Checkable
 
-    def pool_recreated(self, pool):
+    def pool_recreated(self, pool: Pool) -> None:
         self.shapes.pool = pool
         self.tool_shape.pool = pool
 
     @staticmethod
-    def make_storage():
+    def make_storage() -> AppRTreeStorage:
         # ## Shape storage.
         storage = AppRTreeStorage()
         storage.get_points = DrawToolShape.get_pts
 
         return storage
 
-    def set_editor_ui(self):
+    def set_editor_ui(self) -> None:
         # updated units
         self.units = self.app.app_units.upper()
 
@@ -3237,7 +3239,7 @@ class AppExcEditor(QtCore.QObject):
         app_mode = self.app.options.global_app_level
         self.change_level(app_mode)
 
-    def build_ui(self, first_run=None):
+    def build_ui(self, first_run: bool | None = None) -> None:
 
         try:
             # if connected, disconnect the signal from the slot on item_changed as it creates issues
@@ -3453,7 +3455,7 @@ class AppExcEditor(QtCore.QObject):
         self.ui.tools_table_exc.itemChanged.connect(self.on_tool_edit)
         self.ui.tools_table_exc.cellPressed.connect(self.on_row_selected)
 
-    def change_level(self, level):
+    def change_level(self, level: str) -> None:
         """
 
         :param level:   application level: either 'b' or 'a'
@@ -3467,7 +3469,7 @@ class AppExcEditor(QtCore.QObject):
             self.ui.level.setChecked(False)
         self.on_level_changed(self.ui.level.isChecked())
 
-    def on_level_changed(self, checked):
+    def on_level_changed(self, checked: bool) -> None:
         if not checked:
             self.ui.level.setText('%s' % _('Beginner'))
             self.ui.level.setStyleSheet("""
@@ -3491,7 +3493,7 @@ class AppExcEditor(QtCore.QObject):
             # Context Menu section
             # self.ui.tools_table_exc.setupContextMenu()
 
-    def on_tool_add(self, tooldia=None):
+    def on_tool_add(self, tooldia: float | None = None) -> None:
         self.is_modified = True
         if tooldia:
             tool_dia = tooldia
@@ -3538,7 +3540,7 @@ class AppExcEditor(QtCore.QObject):
         except TypeError as e:
             self.app.log.debug("AppExcEditor.on_tool_add() --> %s" % str(e))
 
-    def on_tool_delete(self, dia=None):
+    def on_tool_delete(self, dia: float | bool | None = None) -> None:
         self.is_modified = True
         deleted_tool_dia_list = []
 
@@ -3593,7 +3595,7 @@ class AppExcEditor(QtCore.QObject):
 
         self.build_ui()
 
-    def on_tool_edit(self, item_changed):
+    def on_tool_edit(self, item_changed: QtWidgets.QTableWidgetItem) -> None:
         # if connected, disconnect the signal from the slot on item_changed as it creates issues
         try:
             self.ui.tools_table_exc.itemChanged.disconnect()
@@ -3737,10 +3739,10 @@ class AppExcEditor(QtCore.QObject):
 
         # self.ui.tools_table_exc.selectionModel().currentChanged.connect(self.on_row_selected)
 
-    def on_name_activate(self):
+    def on_name_activate(self) -> None:
         self.edited_obj_name = self.ui.name_entry.get_value()
 
-    def activate(self):
+    def activate(self) -> None:
         # adjust the status of the menu entries related to the editor
         self.app.ui.menueditedit.setDisabled(True)
         self.app.ui.menueditok.setDisabled(False)
@@ -3796,7 +3798,7 @@ class AppExcEditor(QtCore.QObject):
         # show the UI
         self.ui.drills_frame.show()
 
-    def deactivate(self):
+    def deactivate(self) -> None:
         try:
             QtGui.QGuiApplication.restoreOverrideCursor()
         except Exception:
@@ -3849,7 +3851,7 @@ class AppExcEditor(QtCore.QObject):
         # hide the UI
         self.ui.drills_frame.hide()
 
-    def connect_canvas_event_handlers(self):
+    def connect_canvas_event_handlers(self) -> None:
         # ## Canvas events
 
         # first connect to new, then disconnect the old handlers
@@ -3885,7 +3887,7 @@ class AppExcEditor(QtCore.QObject):
         self.app.ui.drill.triggered.connect(self.exc_add_drill)
         self.app.ui.drill_array.triggered.connect(self.exc_add_drill_array)
 
-    def disconnect_canvas_event_handlers(self):
+    def disconnect_canvas_event_handlers(self) -> None:
         # we restore the key and mouse control to FlatCAMApp method
         # first connect to new, then disconnect the old handlers
         # don't ask why but if there is nothing connected I've seen issues
@@ -3941,7 +3943,7 @@ class AppExcEditor(QtCore.QObject):
         except (TypeError, AttributeError):
             pass
 
-    def clear(self):
+    def clear(self) -> None:
         self.active_tool = None
         # self.shape_buffer = []
         self.selected.clear()
@@ -3957,7 +3959,7 @@ class AppExcEditor(QtCore.QObject):
         # self.storage = AppExcEditor.make_storage()
         self.replot()
 
-    def edit_fcexcellon(self, edited_obj):
+    def edit_fcexcellon(self, edited_obj: ExcellonObject) -> None:
         """
         Imports the geometry from the given FlatCAM Excellon object into the editor.
 
@@ -4118,7 +4120,7 @@ class AppExcEditor(QtCore.QObject):
         if not self.tool2tooldia:
             self.on_tool_add(self.dec_format(float(self.app.options.excellon_editor_newdia)))
 
-    def update_fcexcellon(self, exc_obj):
+    def update_fcexcellon(self, exc_obj: ExcellonObject) -> str:
         """
         Create a new Excellon object that contain the edited content of the source Excellon object
 
@@ -4310,7 +4312,7 @@ class AppExcEditor(QtCore.QObject):
         return self.edited_obj_name
 
     @staticmethod
-    def update_options(obj):
+    def update_options(obj: ExcellonObject) -> bool:
         try:
             if not obj.obj_options:
                 obj.obj_options = {'xmin': 0, 'ymin': 0, 'xmax': 0, 'ymax': 0}
@@ -4321,7 +4323,7 @@ class AppExcEditor(QtCore.QObject):
             obj.obj_options = {}
             return True
 
-    def new_edited_excellon(self, outname,  n_tools):
+    def new_edited_excellon(self, outname: str | None, n_tools: dict) -> None:
         """
         Creates a new Excellon object for the edited Excellon. Thread-safe.
 
@@ -4386,7 +4388,7 @@ class AppExcEditor(QtCore.QObject):
 
             self.app.inform.emit('[success] %s' % _("Excellon editing finished."))
 
-    def on_tool_select(self, tool):
+    def on_tool_select(self, tool: str) -> None:
         """
         Behavior of the toolbar. Tool initialization.
 
@@ -4421,7 +4423,7 @@ class AppExcEditor(QtCore.QObject):
                 self.select_tool('drill_select')
                 self.active_tool = SelectEditorExc(self)
 
-    def on_row_selected(self, row, col):
+    def on_row_selected(self, row: int, col: int) -> None:
         key_modifier = QtWidgets.QApplication.keyboardModifiers()
         if self.app.options.global_mselect_key == 'Control':
             modifier_to_use = Qt.KeyboardModifier.ControlModifier
@@ -4444,7 +4446,7 @@ class AppExcEditor(QtCore.QObject):
 
         self.replot()
 
-    def on_table_selection(self):
+    def on_table_selection(self) -> bool:
         selected_rows = self.ui.tools_table_exc.selectionModel().selectedRows(0)
 
         if len(selected_rows) == self.ui.tools_table_exc.rowCount():
@@ -4456,7 +4458,7 @@ class AppExcEditor(QtCore.QObject):
             return True
         return False
 
-    def on_canvas_click(self, event):
+    def on_canvas_click(self, event: Any) -> None:
         """
         event.x and .y have canvas coordinates
         event.xdata and .ydata have plot coordinates
@@ -4527,7 +4529,7 @@ class AppExcEditor(QtCore.QObject):
         else:
             self.app.log.debug("No active tool to respond to click!")
 
-    def on_exc_click_release(self, event):
+    def on_exc_click_release(self, event: Any) -> None:
         """
         Handler of the "mouse_release" event.
         It will pop-up the context menu on right mouse click unless there was a panning move (decided in the
@@ -4610,7 +4612,7 @@ class AppExcEditor(QtCore.QObject):
                 except AttributeError:
                     pass
 
-    def on_canvas_move(self, event):
+    def on_canvas_move(self, event: Any) -> None:
         """
         Called on 'mouse_move' event.
         It updates the mouse cursor if the grid snapping is ON.
@@ -4731,7 +4733,7 @@ class AppExcEditor(QtCore.QObject):
                                      edge_width=self.app.options.global_cursor_width,
                                      size=self.app.options.global_cursor_size)
 
-    def add_exc_shape(self, shp, storage):
+    def add_exc_shape(self, shp: DrawToolShape | list[DrawToolShape], storage: AppRTreeStorage) -> None:
         """
         Adds a shape to a specified shape storage.
 
@@ -4760,7 +4762,7 @@ class AppExcEditor(QtCore.QObject):
         else:
             storage.insert(shp)  # TODO: Check performance
 
-    def add_shape(self, shp):
+    def add_shape(self, shp: DrawToolShape | list[DrawToolShape]) -> None:
         """
         Adds a shape to the shape storage.
 
@@ -4789,7 +4791,7 @@ class AppExcEditor(QtCore.QObject):
         # else:
         #     self.storage.insert(shape)
 
-    def on_exc_shape_complete(self, storage):
+    def on_exc_shape_complete(self, storage: AppRTreeStorage) -> None:
         self.app.log.debug("on_shape_complete()")
 
         # Add shape
@@ -4807,7 +4809,7 @@ class AppExcEditor(QtCore.QObject):
         self.replot()
         # self.active_tool = type(self.active_tool)(self)
 
-    def draw_selection_area_handler(self, start, end, sel_type):
+    def draw_selection_area_handler(self, start: PointXY, end: PointXY, sel_type: bool) -> None:
         """
         This function is called whenever we have a left mouse click release and only we have a left mouse click drag,
         be it from left to right or from right to left. The direction of the drag is decided in the "mouse_move"
@@ -4891,7 +4893,7 @@ class AppExcEditor(QtCore.QObject):
         self.ui.tools_table_exc.cellPressed.connect(self.on_row_selected)
         self.replot()
 
-    def update_utility_geometry(self, data):
+    def update_utility_geometry(self, data: PointXY | tuple[float, float] | None) -> None:
         # ### Utility geometry (animated) ###
         geo = self.active_tool.utility_geometry(data=data)
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
@@ -4902,7 +4904,7 @@ class AppExcEditor(QtCore.QObject):
     # def on_canvas_key_release(self, event):
     #     self.key = None
 
-    def draw_utility_geometry(self, geo):
+    def draw_utility_geometry(self, geo: DrawToolShape) -> None:
         # Add the new utility shape
 
         if isinstance(geo.geo, (MultiLineString, MultiPolygon)):
@@ -4939,7 +4941,7 @@ class AppExcEditor(QtCore.QObject):
         # print(self.tool_shape.data)
         self.tool_shape.redraw()
 
-    def get_draw_color(self):
+    def get_draw_color(self) -> str:
         orig_color = self.app.options.global_draw_color
 
         if self.app.options.global_theme.is_light():
@@ -4954,13 +4956,13 @@ class AppExcEditor(QtCore.QObject):
         new_color = ''.join([color_dict[j] for j in lowered_color])
         return new_color
 
-    def get_sel_color(self):
+    def get_sel_color(self) -> str:
         return self.app.options.global_sel_draw_color
 
-    def replot(self):
+    def replot(self) -> None:
         self.plot_all()
 
-    def plot_all(self):
+    def plot_all(self) -> None:
         """
         Plots all shapes in the editor.
 
@@ -4988,7 +4990,7 @@ class AppExcEditor(QtCore.QObject):
 
         self.shapes.redraw()
 
-    def plot_shape(self, geometry=None, color='0x000000FF', linewidth=1):
+    def plot_shape(self, geometry: BaseGeometry | DrawToolShape | list | None = None, color: str = '0x000000FF', linewidth: int = 1) -> list:
         """
         Plots a geometric object or list of objects without rendering. Plotted objects
         are returned as a list. This allows for efficient/animated rendering.
@@ -5032,7 +5034,7 @@ class AppExcEditor(QtCore.QObject):
 
         return plot_elements
 
-    def on_shape_complete(self):
+    def on_shape_complete(self) -> None:
         # Add shape
         self.add_shape(self.active_tool.geometry)
 
@@ -5044,7 +5046,7 @@ class AppExcEditor(QtCore.QObject):
         self.replot()
         # self.active_tool = type(self.active_tool)(self)
 
-    def get_selected(self):
+    def get_selected(self) -> list[DrawToolShape]:
         """
         Returns list of shapes that are selected in the editor.
 
@@ -5052,7 +5054,7 @@ class AppExcEditor(QtCore.QObject):
         """
         return self.selected
 
-    def delete_selected(self):
+    def delete_selected(self) -> None:
         temp_ref = [s for s in self.selected]
         for shape_sel in temp_ref:
             self.delete_shape(shape_sel)
@@ -5061,7 +5063,7 @@ class AppExcEditor(QtCore.QObject):
         self.build_ui()
         self.app.inform.emit('[success] %s' % _("Done."))
 
-    def delete_shape(self, del_shape):
+    def delete_shape(self, del_shape: DrawToolShape | list[DrawToolShape]) -> None:
         self.is_modified = True
 
         if del_shape in self.utility:
@@ -5090,7 +5092,7 @@ class AppExcEditor(QtCore.QObject):
         if del_shape in self.selected:
             self.selected.remove(del_shape)
 
-    def delete_utility_geometry(self):
+    def delete_utility_geometry(self) -> None:
         for_deletion = [util_shape for util_shape in self.utility]
         for util_shape in for_deletion:
             self.delete_shape(util_shape)
@@ -5098,11 +5100,11 @@ class AppExcEditor(QtCore.QObject):
         self.tool_shape.clear(update=True)
         self.tool_shape.redraw()
 
-    def on_delete_btn(self):
+    def on_delete_btn(self) -> None:
         self.delete_selected()
         self.replot()
 
-    def select_tool(self, pluginName):
+    def select_tool(self, pluginName: str) -> None:
         """
         Selects a drawing tool. Impacts the object and appGUI.
 
@@ -5112,7 +5114,7 @@ class AppExcEditor(QtCore.QObject):
         self.tools_exc[pluginName]["button"].setChecked(True)
         self.on_tool_select(pluginName)
 
-    def set_selected(self, sel_shape):
+    def set_selected(self, sel_shape: DrawToolShape) -> None:
 
         # Remove and add to the end.
         if sel_shape in self.selected:
@@ -5120,39 +5122,39 @@ class AppExcEditor(QtCore.QObject):
 
         self.selected.append(sel_shape)
 
-    def set_unselected(self, unsel_shape):
+    def set_unselected(self, unsel_shape: DrawToolShape) -> None:
         if unsel_shape in self.selected:
             self.selected.remove(unsel_shape)
 
-    def exc_add_drill(self):
+    def exc_add_drill(self) -> None:
         self.select_tool('drill_add')
         return
 
-    def exc_add_drill_array(self):
+    def exc_add_drill_array(self) -> None:
         self.select_tool('drill_array')
         return
 
-    def exc_add_slot(self):
+    def exc_add_slot(self) -> None:
         self.select_tool('slot_add')
         return
 
-    def exc_add_slot_array(self):
+    def exc_add_slot_array(self) -> None:
         self.select_tool('slot_array')
         return
 
-    def exc_resize_drills(self):
+    def exc_resize_drills(self) -> None:
         self.select_tool('drill_resize')
         return
 
-    def exc_copy_drills(self):
+    def exc_copy_drills(self) -> None:
         self.select_tool('drill_copy')
         return
 
-    def exc_move_drills(self):
+    def exc_move_drills(self) -> None:
         self.select_tool('drill_move')
         return
 
-    def on_slots_conversion(self):
+    def on_slots_conversion(self) -> None:
         # selected rows
         selected_rows = set()
         for it in self.ui.tools_table_exc.selectedItems():
@@ -5368,7 +5370,7 @@ class AppExcEditorUI:
         # ############################ FINSIHED GUI ###################################
         # #############################################################################
 
-    def confirmation_message(self, accepted, minval, maxval):
+    def confirmation_message(self, accepted: bool, minval: float, maxval: float) -> None:
         if accepted is False:
             self.app.inform[str, bool].emit('[WARNING_NOTCL] %s: [%.*f, %.*f]' % (_("Edited value is out of range"),
                                                                                   self.decimals,
@@ -5378,7 +5380,7 @@ class AppExcEditorUI:
         else:
             self.app.inform[str, bool].emit('[success] %s' % _("Edited value is within limits."), False)
 
-    def confirmation_message_int(self, accepted, minval, maxval):
+    def confirmation_message_int(self, accepted: bool, minval: int, maxval: int) -> None:
         if accepted is False:
             self.app.inform[str, bool].emit('[WARNING_NOTCL] %s: [%d, %d]' %
                                             (_("Edited value is out of range"), minval, maxval), False)
