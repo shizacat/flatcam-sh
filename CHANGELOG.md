@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed CNC job tool ids loaded from a project staying strings, so the tool table matches the saved tools
 - Fixed the Programmers and Translators tabs in About appearing empty with the dark color, where white text was drawn on a forced white background
 
 ## [1.9.10] - 2026-10-08

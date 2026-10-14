@@ -160,7 +160,7 @@ class CNCJobObject(FlatCAMObj, CNCjob):
            it's done in camlib.CNCJob.tcl_gcode_from_excellon_by_tool()
            BEWARE: I rely on the ordered nature of the Python 3.7 dictionary. Things might change ...
        '''
-        self.tools: dict[int | float | str, dict[str, Any]] = {}
+        self.tools: dict[int, dict[str, Any]] = {}
 
         # the current tool that is used to generate GCode
         self.tool: float | int | str | None = None
@@ -215,7 +215,7 @@ class CNCJobObject(FlatCAMObj, CNCjob):
 
         # it is possible that the user will process only a few tools not all in the parent object
         # here we store the used tools so the UI will build only those that were generated
-        self.used_tools = []
+        self.used_tools: list[int] = []
 
         # Attributes to be included in serialization
         # Always append to it because it carries contents
@@ -253,7 +253,58 @@ class CNCJobObject(FlatCAMObj, CNCjob):
 
         self.ui_connect()
 
-    def milling_tools(self) -> Iterator[tuple[int | str, float, MillingTool]]:
+    def from_dict(self, d: dict) -> None:
+        """
+        Restores this job from a project dictionary.
+
+        JSON stores dictionary keys as text, so tool ids saved as numbers come back as strings.
+        Integer ids are converted back to integers before the job is used. A key that is not an
+        integer, such as a diameter from an older project, is left unchanged.
+
+        :param d: saved attributes of the job
+        """
+        super().from_dict(d)
+        if isinstance(self.tools, dict):
+            self.tools = {
+                self._loaded_tool_key(tool_id): tool
+                for tool_id, tool in self.tools.items()
+            }
+        if isinstance(self.used_tools, list):
+            self.used_tools = [self._loaded_tool_key(tool_id) for tool_id in self.used_tools]
+
+    @staticmethod
+    def _loaded_tool_key(tool_id: int | str | float) -> int | str | float:
+        """
+        Returns a tool id with an integer string converted to ``int``.
+
+        A diameter key from an older project is left unchanged. The project loader still accepts
+        that key.
+
+        :param tool_id: tool id from a saved project
+        :return: integer id, or the original id when it is not an integer
+        """
+        try:
+            return CNCJobObject.loaded_tool_id(tool_id)
+        except ValueError:
+            return tool_id
+
+    @staticmethod
+    def loaded_tool_id(tool_id: int | str | float) -> int:
+        """
+        Returns a tool id as an integer.
+
+        A numeric string is the form left by a project file. A value that is already an integer is
+        returned unchanged.
+
+        :param tool_id: tool id from a saved project or from the current job
+        :return: integer tool id
+        :raises ValueError: the id is not an integer
+        """
+        if isinstance(tool_id, bool) or not isinstance(tool_id, (int, str)):
+            raise ValueError("Tool id must be an integer.")
+        return int(tool_id)
+
+    def milling_tools(self) -> Iterator[tuple[int, float, MillingTool]]:
         """
         Yields the milling parameters of each tool stored on this job.
 
