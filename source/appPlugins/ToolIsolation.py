@@ -2718,7 +2718,7 @@ class ToolIsolation(Gerber, AppTool):
                     self.first_click = False
                     return
             else:
-                self.points.append((x1, y1))
+                self.points.append(PointXY(x1, y1))
 
                 if len(self.points) > 1:
                     self.poly_drawn = True
@@ -2736,7 +2736,7 @@ class ToolIsolation(Gerber, AppTool):
                 if self.poly_drawn is True:
                     try:
                         # try to add the point where we last clicked if it is not already in the self.points
-                        last_pt = (x1, y1)
+                        last_pt = PointXY(x1, y1)
                         if last_pt != self.points[-1]:
                             self.points.append(last_pt)
                     except IndexError:

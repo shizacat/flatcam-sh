@@ -17,7 +17,7 @@ A canvas click becomes this pair after `translate_coords` turns pixel coordinate
 Use it for a point that is already two numbers:
 
 - vertices of an exclusion polygon, and the cursor while that polygon is drawn
-- geometry editor clicks: `DrawTool.click`, `DrawTool.click_release`, and `DrawTool.points`
+- the geometry and Excellon editor cursors, and geometry editor clicks: `DrawTool.click`, `DrawTool.click_release`, and `DrawTool.points`
 
 ### `XYPair`
 

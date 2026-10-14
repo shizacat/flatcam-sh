@@ -38,10 +38,14 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 import traceback
+from typing import TYPE_CHECKING
 
 import darkdetect
 from settings.gui_settings import GuiSettings
-from settings.st_types import Theme
+from settings.st_types import PointXY, Theme
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -88,7 +92,7 @@ class MainGUI(QtWidgets.QMainWindow):
             return color
 
     # https://www.w3.org/TR/SVG11/types.html#ColorKeywords
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         super(MainGUI, self).__init__()
         # self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
 
@@ -3562,8 +3566,11 @@ class MainGUI(QtWidgets.QMainWindow):
                                     and self.app.geo_editor.active_tool.copy_tool.width != 0.0:
                                 pass
                             else:
+                                cursor = self.app.geo_editor.cursor_pos
+                                if cursor is None:
+                                    return
                                 self.app.geo_editor.active_tool.click(
-                                    self.app.geo_editor.snap(self.app.geo_editor.x, self.app.geo_editor.y))
+                                    self.app.geo_editor.snap(cursor.x, cursor.y))
 
                                 self.app.geo_editor.active_tool.make()
 
@@ -4159,8 +4166,8 @@ class MainGUI(QtWidgets.QMainWindow):
                     self.app.inform.emit(_("Click on target point."))
                     self.app.ui.add_slot_btn.setChecked(True)
 
-                    self.app.exc_editor.x = self.app.mouse_pos[0]
-                    self.app.exc_editor.y = self.app.mouse_pos[1]
+                    mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
+                    self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
 
                     self.app.exc_editor.select_tool('slot_add')
                     return
@@ -4184,8 +4191,8 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_drill_array_btn.setChecked(True)
 
-                        self.app.exc_editor.x = self.app.mouse_pos[0]
-                        self.app.exc_editor.y = self.app.mouse_pos[1]
+                        mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
+                        self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
 
                         self.app.exc_editor.select_tool('drill_array')
                         return
@@ -4210,8 +4217,8 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit(_("Click on target point."))
                         self.app.ui.add_drill_btn.setChecked(True)
 
-                        self.app.exc_editor.x = self.app.mouse_pos[0]
-                        self.app.exc_editor.y = self.app.mouse_pos[1]
+                        mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
+                        self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
 
                         self.app.exc_editor.select_tool('drill_add')
                         return
@@ -4240,8 +4247,8 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_slot_array_btn.setChecked(True)
 
-                        self.app.exc_editor.x = self.app.mouse_pos[0]
-                        self.app.exc_editor.y = self.app.mouse_pos[1]
+                        mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
+                        self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
 
                         self.app.exc_editor.select_tool('slot_array')
                         return

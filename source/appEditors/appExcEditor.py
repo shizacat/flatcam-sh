@@ -287,7 +287,16 @@ class DrillAdd(FCShapeTool):
         self.ui = self.drill_tool.ui
         self.drill_tool.run()
 
-        geo = self.utility_geometry(data=(self.draw_app.snap_x, self.draw_app.snap_y))
+        point_x = self.draw_app.snap_x
+        point_y = self.draw_app.snap_y
+        if point_x is None and point_y is None:
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
+        if point_x is None or point_y is None:
+            geo = None
+        else:
+            geo = self.utility_geometry(data=PointXY(point_x, point_y))
 
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             self.draw_app.draw_utility_geometry(geo=geo)
@@ -336,15 +345,18 @@ class DrillAdd(FCShapeTool):
         self.make()
         return "Done."
 
-    def utility_geometry(self, data: PointXY | tuple[float | None, float | None] | None = None) -> DrawToolUtilityShape:
+    def utility_geometry(self, data: PointXY | None = None) -> DrawToolUtilityShape | None:
+        if data is None:
+            return None
         return DrawToolUtilityShape(self.util_shape(data))
 
     def util_shape(self, point: PointXY | tuple[float | None, float | None]) -> MultiLineString:
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
 
         if point[0] is None and point[1] is None:
-            point_x = self.draw_app.x
-            point_y = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
         else:
             point_x = point[0]
             point_y = point[1]
@@ -769,8 +781,9 @@ class DrillArray(FCShapeTool):
         self.selected_dia = self.draw_app.tool2tooldia[self.draw_app.last_tool_selected]
 
         if point[0] is None and point[1] is None:
-            point_x = self.draw_app.x
-            point_y = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
         else:
             point_x = point[0]
             point_y = point[1]
@@ -1099,8 +1112,9 @@ class SlotAdd(FCShapeTool):
             self.half_height = slot_length / 2.0
 
         if point[0] is None and point[1] is None:
-            point_x = self.draw_app.x
-            point_y = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
         else:
             point_x = point[0]
             point_y = point[1]
@@ -1501,8 +1515,9 @@ class SlotArray(FCShapeTool):
 
         if self.slot_array == 'linear':    # 'Linear'
             if data[0] is None and data[1] is None:
-                dx = self.draw_app.x
-                dy = self.draw_app.y
+                cursor = self.draw_app.cursor_pos
+                dx = None if cursor is None else cursor.x
+                dy = None if cursor is None else cursor.y
             else:
                 dx = data[0]
                 dy = data[1]
@@ -1532,8 +1547,9 @@ class SlotArray(FCShapeTool):
             return DrawToolUtilityShape(geo_el_list)
         else:   # 'Circular'
             if data[0] is None and data[1] is None:
-                cdx = self.draw_app.x
-                cdy = self.draw_app.y
+                cursor = self.draw_app.cursor_pos
+                cdx = None if cursor is None else cursor.x
+                cdy = None if cursor is None else cursor.y
             else:
                 cdx = data[0]
                 cdy = data[1]
@@ -1622,8 +1638,9 @@ class SlotArray(FCShapeTool):
             self.half_height = slot_length / 2.0
 
         if point[0] is None and point[1] is None:
-            point_x = self.draw_app.x
-            point_y = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
         else:
             point_x = point[0]
             point_y = point[1]
@@ -2653,8 +2670,9 @@ class CopyEditorExc(FCShapeTool):
         array_size = int(self.ui.array_size_entry.get_value())
 
         if pos[0] is None and pos[1] is None:
-            dx = self.draw_app.x
-            dy = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            dx = None if cursor is None else cursor.x
+            dy = None if cursor is None else cursor.y
         else:
             dx = pos[0]
             dy = pos[1]
@@ -2749,8 +2767,9 @@ class CopyEditorExc(FCShapeTool):
 
     def circular_geo(self, pos: tuple[float | None, float | None]) -> DrawToolUtilityShape | None:
         if pos[0] is None and pos[1] is None:
-            cdx = self.draw_app.x
-            cdy = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            cdx = None if cursor is None else cursor.x
+            cdy = None if cursor is None else cursor.y
         else:
             cdx = pos[0] + self.origin[0]
             cdy = pos[1] + self.origin[1]
@@ -3022,8 +3041,7 @@ class AppExcEditor(QtCore.QObject):
 
         self.key = None  # Currently pressed key
         self.modifiers = None
-        self.x = None  # Current mouse cursor clicked_pos
-        self.y = None
+        self.cursor_pos: PointXY | None = None
         # Current snapped mouse clicked_pos
         self.snap_x = None
         self.snap_y = None
@@ -4644,8 +4662,10 @@ class AppExcEditor(QtCore.QObject):
         pos = self.canvas.translate_coords(event_pos)
         event.xdata, event.ydata = pos[0], pos[1]
 
-        self.x = event.xdata
-        self.y = event.ydata
+        if event.xdata is None or event.ydata is None:
+            self.cursor_pos = None
+        else:
+            self.cursor_pos = PointXY(event.xdata, event.ydata)
 
         self.app.ui.popMenu.mouse_is_panning = False
 
@@ -4697,7 +4717,7 @@ class AppExcEditor(QtCore.QObject):
         # ## Utility geometry (animated)
         # self.update_utility_geometry(data=(x, y))
 
-        self.update_utility_geometry(data=(x, y))
+        self.update_utility_geometry(data=PointXY(x, y))
         if self.active_tool.name in [
             'drill_add', 'drill_array', 'slot_add', 'slot_array', 'drill_copy', 'drill_resize', 'drill_move'
         ]:
@@ -4895,6 +4915,8 @@ class AppExcEditor(QtCore.QObject):
 
     def update_utility_geometry(self, data: PointXY | tuple[float, float] | None) -> None:
         # ### Utility geometry (animated) ###
+        if data is not None and not isinstance(data, PointXY):
+            data = PointXY(data[0], data[1])
         geo = self.active_tool.utility_geometry(data=data)
         if isinstance(geo, DrawToolShape) and geo.geo is not None:
             # Remove any previous utility shape

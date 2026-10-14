@@ -143,8 +143,7 @@ class AppGeoEditor(QtCore.QObject):
 
         self.key = None  # Currently, pressed key
         self.geo_key_modifiers = None
-        self.x = None  # Current mouse cursor pos
-        self.y = None
+        self.cursor_pos: PointXY | None = None
 
         # if we edit a multigeo geometry store here the tool number
         self.multigeo_tool = None
@@ -1256,7 +1255,7 @@ class AppGeoEditor(QtCore.QObject):
                         # if right click on canvas and the active tool need to be finished (like Path or Polygon)
                         # right mouse click will finish the action
                         if isinstance(self.active_tool, FCShapeTool):
-                            self.active_tool.click(self.snap(self.x, self.y))
+                            self.active_tool.click(self.snap(self.cursor_pos.x, self.cursor_pos.y))
                             self.active_tool.make()
                             if self.active_tool.complete:
                                 self.on_shape_complete()
@@ -1286,8 +1285,10 @@ class AppGeoEditor(QtCore.QObject):
         pos = self.canvas.translate_coords(event_pos)
         event.xdata, event.ydata = pos[0], pos[1]
 
-        self.x = event.xdata
-        self.y = event.ydata
+        if event.xdata is None or event.ydata is None:
+            self.cursor_pos = None
+        else:
+            self.cursor_pos = PointXY(event.xdata, event.ydata)
 
         self.app.ui.popMenu.mouse_is_panning = False
 
@@ -1571,8 +1572,8 @@ class AppGeoEditor(QtCore.QObject):
 
     def on_move_click(self) -> None:
         try:
-            origin = self.snap(self.x, self.y)
-        except TypeError:
+            origin = self.snap(self.cursor_pos.x, self.cursor_pos.y)
+        except (TypeError, AttributeError):
             return
         self.on_move()
         self.active_tool.set_origin(origin)
@@ -1584,8 +1585,10 @@ class AppGeoEditor(QtCore.QObject):
 
         self.app.ui.geo_copy_btn.setChecked(True)
         self.app.geo_editor.on_tool_select('copy')
-        self.app.geo_editor.active_tool.set_origin(self.app.geo_editor.snap(
-            self.app.geo_editor.x, self.app.geo_editor.y))
+        cursor = self.app.geo_editor.cursor_pos
+        if cursor is None:
+            return
+        self.app.geo_editor.active_tool.set_origin(self.app.geo_editor.snap(cursor.x, cursor.y))
         self.app.inform.emit(_("Click on target point."))
 
     def on_corner_snap(self) -> None:
@@ -5031,8 +5034,9 @@ class FCCopy(FCShapeTool):
         array_size = int(self.copy_tool.ui.array_size_entry.get_value())
 
         if pos[0] is None and pos[1] is None:
-            dx = self.draw_app.x
-            dy = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            dx = None if cursor is None else cursor.x
+            dy = None if cursor is None else cursor.y
         else:
             dx = pos[0]
             dy = pos[1]
@@ -5128,8 +5132,9 @@ class FCCopy(FCShapeTool):
 
     def circular_geo(self, pos: tuple[float | None, float | None]) -> DrawToolUtilityShape | None:
         if pos[0] is None and pos[1] is None:
-            cdx = self.draw_app.x
-            cdy = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            cdx = None if cursor is None else cursor.x
+            cdy = None if cursor is None else cursor.y
         else:
             cdx = pos[0] + self.origin.x
             cdy = pos[1] + self.origin.y

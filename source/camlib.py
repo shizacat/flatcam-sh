@@ -24,6 +24,9 @@ from decimal import Decimal
 from copy import deepcopy
 from collections.abc import Iterable
 from copy import copy
+from typing import Any
+
+from settings.st_types import PointXY
 
 from rtree import index as rtindex
 from lxml import etree as ET
@@ -8599,7 +8602,7 @@ class AppRTreeStorage(AppRTree):
     def get_objects(self):
         return (o for o in self.objects if o is not None)
 
-    def nearest(self, pt):
+    def nearest(self, pt: PointXY | tuple[float, float]) -> tuple[tuple[float, float], Any]:
         """
         Returns the nearest matching points and the object
         it belongs to.
