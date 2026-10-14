@@ -190,8 +190,9 @@ class PadEditorGrb(ShapeToolEditorGrb):
         except KeyError:
             pass
         if point[0] is None and point[1] is None:
-            point_x = self.draw_app.x
-            point_y = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
         else:
             point_x = point[0]
             point_y = point[1]
@@ -603,8 +604,9 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
 
         if self.array_type == 'linear':  # 'Linear'
             if data[0] is None and data[1] is None:
-                dx = self.draw_app.x
-                dy = self.draw_app.y
+                cursor = self.draw_app.cursor_pos
+                dx = None if cursor is None else cursor.x
+                dy = None if cursor is None else cursor.y
             else:
                 dx = data[0]
                 dy = data[1]
@@ -647,8 +649,9 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
             return DrawToolUtilityShape(geo_el_list)
         elif self.array_type == 'circular':  # 'Circular'
             if data[0] is None and data[1] is None:
-                cdx = self.draw_app.x
-                cdy = self.draw_app.y
+                cursor = self.draw_app.cursor_pos
+                cdx = None if cursor is None else cursor.x
+                cdy = None if cursor is None else cursor.y
             else:
                 cdx = data[0]
                 cdy = data[1]
@@ -706,8 +709,9 @@ class PadArrayEditorGrb(ShapeToolEditorGrb):
             pass
 
         if point[0] is None and point[1] is None:
-            point_x = self.draw_app.x
-            point_y = self.draw_app.y
+            cursor = self.draw_app.cursor_pos
+            point_x = None if cursor is None else cursor.x
+            point_y = None if cursor is None else cursor.y
         else:
             point_x = point[0]
             point_y = point[1]
@@ -3400,11 +3404,10 @@ class ImportEditorGrb(QtCore.QObject, DrawTool):
         self.app = self.draw_app.app
         self.canvas = self.draw_app.canvas
 
-        self.x = None
-        self.y = None
-        self.pos = None
-        self.snap_x = None
-        self.snap_y = None
+        self.cursor_pos: PointXY | None = None
+        self.pos: PointXY | tuple[float, float] | None = None
+        self.snap_x: float | None = None
+        self.snap_y: float | None = None
 
         try:
             self.draw_app.ui.apertures_table.clearSelection()
@@ -3508,8 +3511,10 @@ class ImportEditorGrb(QtCore.QObject, DrawTool):
         pos_canvas = self.canvas.translate_coords(event_pos)
         event.xdata, event.ydata = pos_canvas[0], pos_canvas[1]
 
-        self.x = event.xdata
-        self.y = event.ydata
+        if event.xdata is None or event.ydata is None:
+            self.cursor_pos = None
+        else:
+            self.cursor_pos = PointXY(event.xdata, event.ydata)
 
         self.app.ui.popMenu.mouse_is_panning = False
 
@@ -3957,8 +3962,7 @@ class AppGerberEditor(QtCore.QObject):
 
         self.key = None  # Currently pressed key
         self.modifiers = None
-        self.x = None  # Current mouse cursor pos
-        self.y = None
+        self.cursor_pos: PointXY | None = None
         # Current snapped mouse pos
         self.snap_x = None
         self.snap_y = None
@@ -5843,7 +5847,7 @@ class AppGerberEditor(QtCore.QObject):
                             if isinstance(self.active_tool, TrackEditorGrb):
                                 self.active_tool.make()
                             else:
-                                self.active_tool.click(self.app.geo_editor.snap(self.x, self.y))
+                                self.active_tool.click(self.app.geo_editor.snap(self.cursor_pos.x, self.cursor_pos.y))
                                 self.active_tool.make()
 
                             if self.active_tool.complete:
@@ -5997,8 +6001,10 @@ class AppGerberEditor(QtCore.QObject):
         pos_canvas = self.canvas.translate_coords(event_pos)
         event.xdata, event.ydata = pos_canvas[0], pos_canvas[1]
 
-        self.x = event.xdata
-        self.y = event.ydata
+        if event.xdata is None or event.ydata is None:
+            self.cursor_pos = None
+        else:
+            self.cursor_pos = PointXY(event.xdata, event.ydata)
 
         self.app.ui.popMenu.mouse_is_panning = False
 

@@ -316,9 +316,9 @@ class App(QtCore.QObject):
         self.qapp = qapp
 
         # App Editors will be instantiated further below
-        self.exc_editor = None
-        self.grb_editor = None
-        self.geo_editor = None
+        self.exc_editor: AppExcEditor | None = None
+        self.grb_editor: AppGerberEditor | None = None
+        self.geo_editor: AppGeoEditor | None = None
 
         # when True, the app has to return from any thread
         self.abort_flag = False

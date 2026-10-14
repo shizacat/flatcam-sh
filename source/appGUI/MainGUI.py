@@ -3894,9 +3894,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_pad_ar_btn.setChecked(True)
 
-                        cursor = self.app.mouse_pos
-                        self.app.grb_editor.x = None if cursor is None else cursor.x
-                        self.app.grb_editor.y = None if cursor is None else cursor.y
+                        self.app.grb_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.grb_editor.select_tool('array')
                         return
@@ -3980,9 +3978,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit(_("Click on target point."))
                         self.app.ui.add_pad_ar_btn.setChecked(True)
 
-                        cursor = self.app.mouse_pos
-                        self.app.grb_editor.x = None if cursor is None else cursor.x
-                        self.app.grb_editor.y = None if cursor is None else cursor.y
+                        self.app.grb_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.grb_editor.select_tool('pad')
                         return

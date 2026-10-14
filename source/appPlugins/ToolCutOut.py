@@ -7,6 +7,8 @@
 
 from typing import TYPE_CHECKING
 
+from settings.st_types import PointXY
+
 from PyQt6 import QtWidgets, QtGui, QtCore
 from appTool import AppTool
 from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, GLay, FCComboBox, RadioSet, \
@@ -80,8 +82,7 @@ class CutOut(AppTool):
         self.mr = None
 
         # hold the mouse position here
-        self.x_pos = None
-        self.y_pos = None
+        self.cursor_pos: PointXY | None = None
 
         # store the default data for the resulting Geometry Object
         self.default_data = {}
@@ -1974,11 +1975,10 @@ class CutOut(AppTool):
             return
 
         if self.app.grid_status():
-            snap_x, snap_y = self.app.geo_editor.snap(x, y)
+            self.cursor_pos = self.app.geo_editor.snap(x, y)
         else:
-            snap_x, snap_y = x, y
-
-        self.x_pos, self.y_pos = snap_x, snap_y
+            self.cursor_pos = PointXY(x, y)
+        snap_x, snap_y = self.cursor_pos
 
         # #################################################
         # ### This section makes the cutting geo to #######
