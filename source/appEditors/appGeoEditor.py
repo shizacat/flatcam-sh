@@ -1320,7 +1320,7 @@ class AppGeoEditor(QtCore.QObject):
 
         self.snap_x = x
         self.snap_y = y
-        self.app.mouse_pos = [x, y]
+        self.app.mouse_pos = PointXY(x, y)
 
         if self.pos is None:
             self.pos = PointXY(0, 0)
@@ -3193,8 +3193,12 @@ class FCCircle(FCShapeTool):
                         QtCore.Qt.Key.Key_Plus, QtCore.Qt.Key.Key_Comma, QtCore.Qt.Key.Key_Period,
                         QtCore.Qt.Key.Key_Slash, QtCore.Qt.Key.Key_Asterisk]:
 
-            if self.draw_app.app.mouse_pos[0] != self.points[-1].x or (
-                    self.draw_app.app.mouse_pos[1] != self.points[-1].y and
+            cursor = self.draw_app.app.mouse_pos
+            cursor_x = None if cursor is None else cursor.x
+            cursor_y = None if cursor is None else cursor.y
+
+            if cursor_x != self.points[-1].x or (
+                    cursor_y != self.points[-1].y and
                     self.circle_tool.ui.radius_link_btn.isChecked()):
                 try:
                     # VisPy keys
@@ -3209,8 +3213,8 @@ class FCCircle(FCShapeTool):
                     else:
                         self.circle_tool.radius_x = str(self.circle_tool.radius_x) + chr(key)
 
-            if self.draw_app.app.mouse_pos[1] != self.points[-1].y or (
-                    self.draw_app.app.mouse_pos[0] != self.points[-1].x and
+            if cursor_y != self.points[-1].y or (
+                    cursor_x != self.points[-1].x and
                     self.circle_tool.ui.radius_link_btn.isChecked()):
                 try:
                     # VisPy keys
@@ -3736,7 +3740,11 @@ class FCRectangle(FCShapeTool):
                         QtCore.Qt.Key.Key_Plus, QtCore.Qt.Key.Key_Comma, QtCore.Qt.Key.Key_Period,
                         QtCore.Qt.Key.Key_Slash, QtCore.Qt.Key.Key_Asterisk]:
 
-            if self.draw_app.app.mouse_pos[0] != self.points[-1].x:
+            cursor = self.draw_app.app.mouse_pos
+            cursor_x = None if cursor is None else cursor.x
+            cursor_y = None if cursor is None else cursor.y
+
+            if cursor_x != self.points[-1].x:
                 try:
                     # VisPy keys
                     if self.rect_tool.length == 0:
@@ -3749,7 +3757,7 @@ class FCRectangle(FCShapeTool):
                         self.rect_tool.length = chr(key)
                     else:
                         self.rect_tool.length = str(self.rect_tool.length) + chr(key)
-            if self.draw_app.app.mouse_pos[1] != self.points[-1].y:
+            if cursor_y != self.points[-1].y:
                 try:
                     # VisPy keys
                     if self.rect_tool.width == 0:
@@ -3983,7 +3991,9 @@ class FCPolygon(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
+                last_pt = self.draw_app.app.mouse_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -4266,7 +4276,9 @@ class FCPath(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
+                last_pt = self.draw_app.app.mouse_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -4798,7 +4810,9 @@ class FCMove(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
+                last_pt = self.draw_app.app.mouse_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -5316,7 +5330,9 @@ class FCCopy(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
+                last_pt = self.draw_app.app.mouse_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)

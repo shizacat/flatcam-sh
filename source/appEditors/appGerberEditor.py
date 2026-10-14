@@ -378,7 +378,9 @@ class PadEditorGrb(ShapeToolEditorGrb):
                     return _("Failed.")
 
                 first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
-                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
+                last_pt = self.draw_app.app.mouse_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -1565,7 +1567,9 @@ class RegionEditorGrb(ShapeToolEditorGrb):
                     return _("Failed.")
 
                 first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
-                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
+                last_pt = self.draw_app.app.mouse_pos
+                if last_pt is None:
+                    return
 
                 delta = last_pt - first_pt
                 seg_length = abs(delta)
@@ -3532,7 +3536,7 @@ class ImportEditorGrb(QtCore.QObject, DrawTool):
         self.snap_x = x
         self.snap_y = y
 
-        self.app.mouse_pos = [x, y]
+        self.app.mouse_pos = PointXY(x, y)
 
         if self.pos is None:
             self.pos = (0, 0)
@@ -6024,7 +6028,7 @@ class AppGerberEditor(QtCore.QObject):
         self.snap_x = x
         self.snap_y = y
 
-        self.app.mouse_pos = [x, y]
+        self.app.mouse_pos = PointXY(x, y)
 
         if self.pos is None:
             self.pos = (0, 0)

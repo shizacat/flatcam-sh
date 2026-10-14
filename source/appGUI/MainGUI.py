@@ -42,7 +42,7 @@ from typing import TYPE_CHECKING
 
 import darkdetect
 from settings.gui_settings import GuiSettings
-from settings.st_types import PointXY, Theme
+from settings.st_types import Theme
 
 if TYPE_CHECKING:
     from appMain import App
@@ -3894,8 +3894,9 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_pad_ar_btn.setChecked(True)
 
-                        self.app.grb_editor.x = self.app.mouse_pos[0]
-                        self.app.grb_editor.y = self.app.mouse_pos[1]
+                        cursor = self.app.mouse_pos
+                        self.app.grb_editor.x = None if cursor is None else cursor.x
+                        self.app.grb_editor.y = None if cursor is None else cursor.y
 
                         self.app.grb_editor.select_tool('array')
                         return
@@ -3979,8 +3980,9 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit(_("Click on target point."))
                         self.app.ui.add_pad_ar_btn.setChecked(True)
 
-                        self.app.grb_editor.x = self.app.mouse_pos[0]
-                        self.app.grb_editor.y = self.app.mouse_pos[1]
+                        cursor = self.app.mouse_pos
+                        self.app.grb_editor.x = None if cursor is None else cursor.x
+                        self.app.grb_editor.y = None if cursor is None else cursor.y
 
                         self.app.grb_editor.select_tool('pad')
                         return
@@ -4166,8 +4168,7 @@ class MainGUI(QtWidgets.QMainWindow):
                     self.app.inform.emit(_("Click on target point."))
                     self.app.ui.add_slot_btn.setChecked(True)
 
-                    mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
-                    self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
+                    self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                     self.app.exc_editor.select_tool('slot_add')
                     return
@@ -4191,8 +4192,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_drill_array_btn.setChecked(True)
 
-                        mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
-                        self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
+                        self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.exc_editor.select_tool('drill_array')
                         return
@@ -4217,8 +4217,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit(_("Click on target point."))
                         self.app.ui.add_drill_btn.setChecked(True)
 
-                        mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
-                        self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
+                        self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.exc_editor.select_tool('drill_add')
                         return
@@ -4247,8 +4246,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_slot_array_btn.setChecked(True)
 
-                        mouse_x, mouse_y = self.app.mouse_pos[0], self.app.mouse_pos[1]
-                        self.app.exc_editor.cursor_pos = None if mouse_x is None or mouse_y is None else PointXY(mouse_x, mouse_y)
+                        self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.exc_editor.select_tool('slot_array')
                         return

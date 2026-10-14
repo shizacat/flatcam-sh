@@ -355,7 +355,7 @@ class App(QtCore.QObject):
 
         # variable to store mouse coordinates
         self._mouse_click_pos = [0, 0]
-        self._mouse_pos = [0, 0]
+        self._mouse_pos: PointXY | None = PointXY(0, 0)
         self.mouse_down = None
 
         # variable to store the delta positions on canvas
@@ -4678,9 +4678,7 @@ class App(QtCore.QObject):
                         return
 
                     if dia_box.reference == 'rel':
-                        rel_x = self.mouse_pos[0] + location[0]
-                        rel_y = self.mouse_pos[1] + location[1]
-                        location = (rel_x, rel_y)
+                        location = self.mouse_pos + PointXY(location[0], location[1])
                     self.options.global_jump_ref = dia_box.reference
                 except Exception:
                     return
@@ -6042,7 +6040,7 @@ class App(QtCore.QObject):
             self.ui.update_location_labels(self.dx, self.dy, pos[0], pos[1])
             self.plotcanvas.on_update_text_hud(self.dx, self.dy, pos[0], pos[1])
 
-            self.mouse_pos = [pos[0], pos[1]]
+            self.mouse_pos = pos if isinstance(pos, PointXY) else PointXY(pos[0], pos[1])
 
             if self.options.global_selection_shape is False:
                 self.selection_type = None
@@ -6132,7 +6130,7 @@ class App(QtCore.QObject):
             # self.ui.position_label.setText("")
             # self.ui.rel_position_label.setText("")
             self.ui.update_location_labels(0.0, 0.0, 0.0, 0.0)
-            self.mouse_pos = [None, None]
+            self.mouse_pos = None
 
     def on_mouse_click_release_over_plot(self, event):
         """
@@ -6336,12 +6334,18 @@ class App(QtCore.QObject):
         self._mouse_click_pos = m_pos
 
     @property
-    def mouse_pos(self) -> list[float]:
-        return [self._mouse_pos[0], self._mouse_pos[1]]
+    def mouse_pos(self) -> PointXY | None:
+        return self._mouse_pos
 
     @mouse_pos.setter
-    def mouse_pos(self, m_pos: Union[list[float], tuple[float]]):
-        self._mouse_pos = m_pos
+    def mouse_pos(self, m_pos: PointXY | tuple[float | None, float | None] | list | None) -> None:
+        if m_pos is None or m_pos[0] is None or m_pos[1] is None:
+            self._mouse_pos = None
+            return
+        if isinstance(m_pos, PointXY):
+            self._mouse_pos = m_pos
+            return
+        self._mouse_pos = PointXY(m_pos[0], m_pos[1])
 
     def selection_area_handler(self, start_pos, end_pos, sel_type):
         """
