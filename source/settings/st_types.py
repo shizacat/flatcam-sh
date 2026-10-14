@@ -1,5 +1,8 @@
 """Shared annotated types for settings fields."""
 
+from __future__ import annotations
+
+import math
 from enum import StrEnum
 from typing import Annotated, NamedTuple
 
@@ -51,10 +54,65 @@ class PointXY(NamedTuple):
     A point on the plane: X then Y, in project units.
 
     ``x`` and ``y`` name the two coordinates. Index 0 and index 1 are the same numbers.
+    Adding or subtracting two points returns another point. Multiplying or dividing by a
+    number scales both coordinates. ``abs(point)`` is the distance from the origin.
     """
 
     x: float
     y: float
+
+    def __add__(self, other: PointXY) -> PointXY:
+        """
+        Adds the coordinates of another point.
+
+        :param other: point to add
+        :return:      sum of the coordinates
+        """
+        return PointXY(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: PointXY) -> PointXY:
+        """
+        Subtracts the coordinates of another point.
+
+        :param other: point to subtract
+        :return:      difference of the coordinates
+        """
+        return PointXY(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, scale: float) -> PointXY:
+        """
+        Scales both coordinates by a number.
+
+        :param scale: multiplier
+        :return:      scaled point
+        """
+        return PointXY(self.x * scale, self.y * scale)
+
+    def __rmul__(self, scale: float) -> PointXY:
+        """
+        Scales both coordinates by a number written on the left.
+
+        :param scale: multiplier
+        :return:      scaled point
+        """
+        return self * scale
+
+    def __truediv__(self, scale: float) -> PointXY:
+        """
+        Divides both coordinates by a number.
+
+        :param scale: divisor
+        :return:      scaled point
+        """
+        return PointXY(self.x / scale, self.y / scale)
+
+    def __abs__(self) -> float:
+        """
+        Measures the distance from the origin.
+
+        :return: length of the point as a vector
+        """
+        return math.hypot(self.x, self.y)
 
 
 def _xy_pair(value: object) -> object:

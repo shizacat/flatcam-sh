@@ -8,7 +8,7 @@ A point is X then Y, in the project units (inch or millimeter).
 
 ### `PointXY`
 
-`PointXY` is a named tuple of two floats. `point.x` and `point.y` are the coordinates. `point[0]` and `point[1]` are those same numbers, so existing index access still works.
+`PointXY` is a named tuple of two floats. `point.x` and `point.y` are the coordinates. `point[0]` and `point[1]` are those same numbers, so existing index access still works. Adding or subtracting two points returns a point. Multiplying or dividing by a number scales both coordinates. `abs(point)` is the distance from the origin.
 
 A canvas click becomes this pair after `translate_coords` turns pixel coordinates into project coordinates. When grid snap is on, the pair is the snapped grid point. Polygon selection stores the pairs in click order. Three or more pairs build a Shapely polygon.
 

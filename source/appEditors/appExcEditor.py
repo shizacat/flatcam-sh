@@ -478,22 +478,18 @@ class DrillAdd(FCShapeTool):
                     self.drill_tool.length = 0.0
                     return _("Failed.")
 
-                first_pt = self.ui.x_entry.get_value(), self.ui.y_entry.get_value()
-                last_pt = self.draw_app.snap_x, self.draw_app.snap_y
+                first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
+                last_pt = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if first_pt != (new_x, new_y):
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.add_drill(drill_pos=(new_x, new_y))
+                if first_pt != new_pt:
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
+                    self.add_drill(drill_pos=new_pt)
 
         if key == 'C' or key == QtCore.Qt.Key.Key_C:
             self.cursor_data_control = not self.cursor_data_control
@@ -957,7 +953,7 @@ class DrillArray(FCShapeTool):
 
         self.points = [self.draw_app.snap_x, self.draw_app.snap_y]
         self.origin = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
-        self.destination = PointXY(self.origin.x + self.drill_radius, self.origin.y)
+        self.destination = self.origin + PointXY(self.drill_radius, 0)
         self.flag_for_circ_array = True
         self.make()
 
@@ -1305,22 +1301,18 @@ class SlotAdd(FCShapeTool):
                     self.slot_tool.length = 0.0
                     return _("Failed.")
 
-                first_pt = self.ui.x_entry.get_value(), self.ui.y_entry.get_value()
-                last_pt = self.draw_app.snap_x, self.draw_app.snap_y
+                first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
+                last_pt = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if first_pt != (new_x, new_y):
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.add_slot(slot_pos=(new_x, new_y))
+                if first_pt != new_pt:
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
+                    self.add_slot(slot_pos=new_pt)
 
         if key == 'C' or key == QtCore.Qt.Key.Key_C:
             self.cursor_data_control = not self.cursor_data_control
@@ -2912,24 +2904,21 @@ class CopyEditorExc(FCShapeTool):
                     self.copy_tool.length = 0.0
                     return _("Failed.")
 
-                first_pt = self.points[-1]
-                last_pt = self.draw_app.app.mouse
+                raw_first = self.points[-1]
+                raw_last = self.draw_app.app.mouse
+                first_pt = raw_first if isinstance(raw_first, PointXY) else PointXY(raw_first[0], raw_first[1])
+                last_pt = raw_last if isinstance(raw_last, PointXY) else PointXY(raw_last[0], raw_last[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0]) ** 2 + (last_pt[1] - first_pt[1]) ** 2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.points = []
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if self.points[-1] != (new_x, new_y):
-                    self.points.append(PointXY(new_x, new_y))
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.destination = (new_x, new_y)
+                if self.points[-1] != new_pt:
+                    self.points.append(new_pt)
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
+                    self.destination = new_pt
                     self.make()
                     self.draw_app.on_shape_complete()
                     self.draw_app.select_tool("select")

@@ -42,6 +42,7 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 from settings.gui_settings import GuiSettings
+from settings.st_types import PointXY
 
 if TYPE_CHECKING:
     from appMain import App
@@ -376,22 +377,18 @@ class PadEditorGrb(ShapeToolEditorGrb):
                     self.pad_tool.length = 0.0
                     return _("Failed.")
 
-                first_pt = self.ui.x_entry.get_value(), self.ui.y_entry.get_value()
-                last_pt = self.draw_app.app.mouse_pos
+                first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
+                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     self.draw_app.app.log.debug("PadEditorGrb.on_key() --> 'ENTER'. Segment is zero.")
                     return
-                try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if first_pt != (new_x, new_y):
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
+                if first_pt != new_pt:
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
                     if len(self.points) > 0:
                         msg = '%s: %s. %s' % (
                             _("Projected"), str(self.pad_tool.length),
@@ -1567,22 +1564,18 @@ class RegionEditorGrb(ShapeToolEditorGrb):
                     self.reg_tool.length = 0.0
                     return _("Failed.")
 
-                first_pt = self.ui.x_entry.get_value(), self.ui.y_entry.get_value()
-                last_pt = self.draw_app.app.mouse_pos
+                first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
+                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     self.draw_app.app.log.debug("GrbRegionEditorGrb.on_key() --> 'ENTER'. Segment is zero.")
                     return
-                try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if first_pt != (new_x, new_y):
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
+                if first_pt != new_pt:
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
                     if len(self.points) > 0:
                         msg = '%s: %s. %s' % (
                             _("Projected"), str(self.reg_tool.length),
@@ -2012,22 +2005,18 @@ class TrackEditorGrb(ShapeToolEditorGrb):
                     self.track_tool.length = 0.0
                     return _("Failed.")
 
-                first_pt = self.ui.x_entry.get_value(), self.ui.y_entry.get_value()
-                last_pt = self.draw_app.snap_x, self.draw_app.snap_y
+                first_pt = PointXY(self.ui.x_entry.get_value(), self.ui.y_entry.get_value())
+                last_pt = PointXY(self.draw_app.snap_x, self.draw_app.snap_y)
 
-                seg_length = math.sqrt((last_pt[0] - first_pt[0])**2 + (last_pt[1] - first_pt[1])**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt[0] + (last_pt[0] - first_pt[0]) / seg_length * target_length
-                    new_y = first_pt[1] + (last_pt[1] - first_pt[1]) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if first_pt != (new_x, new_y):
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.add_track(track_pos=(new_x, new_y))
+                if first_pt != new_pt:
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
+                    self.add_track(track_pos=new_pt)
 
     def add_track(self, track_pos):
         self.draw_app.last_length = self.track_tool.length

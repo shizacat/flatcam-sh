@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added coordinate arithmetic on `PointXY`, so a step, offset, or length is one point operation
+
 ### Changed
 
 - Changed the startup splash so the version and year are drawn from `App.version` and `App.version_date`

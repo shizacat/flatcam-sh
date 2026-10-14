@@ -3095,7 +3095,7 @@ class FCCircle(FCShapeTool):
                 p1 = self.points[0]
                 p2 = data
 
-                radius = np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+                radius = abs(p2 - p1)
                 self.ui.radius_x_entry.set_value(radius)
                 util_geo = Point(p1).buffer(radius, int(self.steps_per_circ))
                 self.util_geo = util_geo
@@ -3104,8 +3104,9 @@ class FCCircle(FCShapeTool):
             if len(self.points) == 1:
                 p1 = self.points[0]
                 p2 = data
-                radius = np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
-                angle = math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / math.pi
+                delta = p2 - p1
+                radius = abs(delta)
+                angle = math.atan2(delta.y, delta.x) * 180 / math.pi
 
                 axis_min_radius = radius * 0.66
                 if axis_min_radius > 3:
@@ -3119,7 +3120,7 @@ class FCCircle(FCShapeTool):
 
                 angle = self.ui.angle_entry.get_value()
                 radius = self.ui.radius_x_entry.get_value()
-                axis_min_radius = np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+                axis_min_radius = abs(p2 - p1)
                 self.ui.radius_y_entry.set_value(axis_min_radius)
             else:
                 return
@@ -3153,7 +3154,7 @@ class FCCircle(FCShapeTool):
 
         try:
             last = self.points[-1]
-            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
+            length = abs(pos - last)
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
@@ -3388,9 +3389,11 @@ class FCArc(FCShapeTool):
                 p1 = self.points[1]
                 p2 = data
 
-                radius = np.sqrt((center.x - p1.x) ** 2 + (center.y - p1.y) ** 2)
-                startangle = np.arctan2(p1.y - center.y, p1.x - center.x)
-                stopangle = np.arctan2(p2.y - center.y, p2.x - center.x)
+                start = p1 - center
+                stop = p2 - center
+                radius = abs(start)
+                startangle = np.arctan2(start.y, start.x)
+                stopangle = np.arctan2(stop.y, stop.x)
 
                 return DrawToolUtilityShape([LineString(arc(center, radius, startangle, stopangle,
                                                             self.direction, self.steps_per_circ)),
@@ -3691,7 +3694,7 @@ class FCRectangle(FCShapeTool):
 
         try:
             last = self.points[-1]
-            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
+            length = abs(pos - last)
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
@@ -3904,7 +3907,7 @@ class FCPolygon(FCShapeTool):
 
         try:
             last = self.points[-1]
-            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
+            length = abs(pos - last)
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
@@ -3980,23 +3983,18 @@ class FCPolygon(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = self.draw_app.app.mouse_pos
+                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
-                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.points = []
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if self.points[-1] != (new_x, new_y):
-                    self.points.append(PointXY(new_x, new_y))
+                if self.points[-1] != new_pt:
+                    self.points.append(new_pt)
                     self.new_segment = True
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
                     if len(self.points) > 0:
                         msg = '%s: %s. %s' % (
                             _("Projected"), str(self.polygon_tool.length),
@@ -4137,13 +4135,12 @@ class FCPath(FCShapeTool):
         return None
 
     @staticmethod
-    def closest_point_to_45_degrees(origin: PointXY, current: PointXY) -> tuple[float, float]:
+    def closest_point_to_45_degrees(origin: PointXY, current: PointXY) -> PointXY:
         # Calculate vector from origin to current point
-        vector_x = current.x - origin.x
-        vector_y = current.y - origin.y
+        vector = current - origin
 
         # Calculate the angle between the vector and the x-axis
-        angle = math.atan2(vector_y, vector_x)
+        angle = math.atan2(vector.y, vector.x)
 
         # Calculate the angle of the 45-degree line
         angle_45 = math.radians(45)
@@ -4152,11 +4149,9 @@ class FCPath(FCShapeTool):
         closest_angle = round(angle / angle_45) * angle_45
 
         # Calculate the coordinates of the closest point
-        closest_distance = math.sqrt(vector_x ** 2 + vector_y ** 2)
-        closest_point_x = origin.x + closest_distance * math.cos(closest_angle)
-        closest_point_y = origin.y + closest_distance * math.sin(closest_angle)
-
-        return closest_point_x, closest_point_y
+        closest_distance = abs(vector)
+        direction = PointXY(math.cos(closest_angle), math.sin(closest_angle))
+        return origin + direction * closest_distance
 
     def update_angle(self, dx: float, dy: float) -> float | None:
         try:
@@ -4187,7 +4182,7 @@ class FCPath(FCShapeTool):
 
         try:
             last = self.points[-1]
-            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
+            length = abs(pos - last)
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
@@ -4271,23 +4266,18 @@ class FCPath(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = self.draw_app.app.mouse_pos
+                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
-                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.points = []
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if self.points[-1] != (new_x, new_y):
-                    self.points.append(PointXY(new_x, new_y))
+                if self.points[-1] != new_pt:
+                    self.points.append(new_pt)
                     self.new_segment = True
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
                     if len(self.points) > 0:
                         msg = '%s: %s. %s' % (
                             _("Projected"), str(self.path_tool.length),
@@ -4600,8 +4590,9 @@ class FCMove(FCShapeTool):
     def make(self) -> None:
         with self.draw_app.app.proc_container.new('%s...' % _("Moving")):
             # Create new geometry
-            dx = self.destination.x - self.origin.x
-            dy = self.destination.y - self.origin.y
+            offset = self.destination - self.origin
+            dx = offset.x
+            dy = offset.y
             self.geometry = [DrawToolShape(translate(deepcopy(geom.geo), xoff=dx, yoff=dy))
                              for geom in self.draw_app.get_selected()]
 
@@ -4654,8 +4645,9 @@ class FCMove(FCShapeTool):
         if len(self.draw_app.get_selected()) == 0:
             return None
 
-        dx = data.x - self.origin.x
-        dy = data.y - self.origin.y
+        offset = data - self.origin
+        dx = offset.x
+        dy = offset.y
 
         if len(self.draw_app.get_selected()) <= self.sel_limit:
             try:
@@ -4744,7 +4736,7 @@ class FCMove(FCShapeTool):
 
         try:
             last = self.points[-1]
-            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
+            length = abs(pos - last)
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
@@ -4806,23 +4798,18 @@ class FCMove(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = self.draw_app.app.mouse_pos
+                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
-                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.points = []
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if self.points[-1] != (new_x, new_y):
-                    self.points.append(PointXY(new_x, new_y))
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.destination = PointXY(new_x, new_y)
+                if self.points[-1] != new_pt:
+                    self.points.append(new_pt)
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
+                    self.destination = new_pt
                     self.make()
                     self.draw_app.on_shape_complete()
                     self.draw_app.select_tool("select")
@@ -4993,8 +4980,9 @@ class FCCopy(FCShapeTool):
         if len(self.draw_app.get_selected()) == 0:
             return None
 
-        dx = data.x - self.origin.x
-        dy = data.y - self.origin.y
+        offset = data - self.origin
+        dx = offset.x
+        dy = offset.y
 
         if len(self.draw_app.get_selected()) <= self.sel_limit:
             copy_mode = self.copy_tool.ui.mode_radio.get_value()
@@ -5266,7 +5254,7 @@ class FCCopy(FCShapeTool):
 
         try:
             last = self.points[-1]
-            length = abs(np.sqrt((pos.x - last.x) ** 2 + (pos.y - last.y) ** 2))
+            length = abs(pos - last)
         except IndexError:
             length = self.draw_app.app.dec_format(0.0, self.draw_app.app.decimals)
         units = self.draw_app.app.app_units.lower()
@@ -5328,23 +5316,18 @@ class FCCopy(FCShapeTool):
                     return _("Failed.")
 
                 first_pt = self.points[-1]
-                last_pt = self.draw_app.app.mouse_pos
+                last_pt = PointXY(self.draw_app.app.mouse_pos[0], self.draw_app.app.mouse_pos[1])
 
-                seg_length = math.sqrt((last_pt[0] - first_pt.x)**2 + (last_pt[1] - first_pt.y)**2)
+                delta = last_pt - first_pt
+                seg_length = abs(delta)
                 if seg_length == 0.0:
                     return
-                try:
-                    new_x = first_pt.x + (last_pt[0] - first_pt.x) / seg_length * target_length
-                    new_y = first_pt.y + (last_pt[1] - first_pt.y) / seg_length * target_length
-                except ZeroDivisionError as err:
-                    self.points = []
-                    self.clean_up()
-                    return '[ERROR_NOTCL] %s %s' % (_("Failed."), str(err).capitalize())
+                new_pt = first_pt + delta * (target_length / seg_length)
 
-                if self.points[-1] != (new_x, new_y):
-                    self.points.append(PointXY(new_x, new_y))
-                    self.draw_app.app.on_jump_to(custom_location=(new_x, new_y), fit_center=False)
-                    self.destination = PointXY(new_x, new_y)
+                if self.points[-1] != new_pt:
+                    self.points.append(new_pt)
+                    self.draw_app.app.on_jump_to(custom_location=new_pt, fit_center=False)
+                    self.destination = new_pt
                     self.make()
                     self.draw_app.on_shape_complete()
                     self.draw_app.select_tool("select")
@@ -5432,8 +5415,9 @@ class FCText(FCShapeTool):
         :return:
         """
 
-        dx = data.x - self.origin.x
-        dy = data.y - self.origin.y
+        offset = data - self.origin
+        dx = offset.x
+        dy = offset.y
 
         try:
             return DrawToolUtilityShape(translate(self.text_gui.text_path, xoff=dx, yoff=dy))
@@ -5707,8 +5691,9 @@ class FCEraser(FCShapeTool):
         if len(self.draw_app.get_selected()) == 0:
             return None
 
-        dx = data.x - self.origin.x
-        dy = data.y - self.origin.y
+        offset = data - self.origin
+        dx = offset.x
+        dy = offset.y
 
         try:
             for geom in self.draw_app.get_selected():
