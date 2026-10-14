@@ -29,6 +29,19 @@ class ToolTarget(IntEnum):
     CUTOUT = 6
 
 
+class MillJobType(IntEnum):
+    """
+    Milling job stored for a tool.
+
+    The value is the combo index written with the milling parameters.
+    """
+
+    ROUGHING = 0
+    FINISHING = 1
+    ISOLATION = 2
+    POLISHING = 3
+
+
 class OperationParameters(BaseModel):
     """
     Parameters of one operation.
@@ -59,7 +72,7 @@ class MillingTool(OperationParameters):
 
     # Shape and offset type are a combo index in defaults and a label in the database form.
     tool_shape: int | str = 0
-    job_type: int = 0
+    job_type: MillJobType = MillJobType.ROUGHING
     offset_type: int | str = 0
     offset_value: float = 0.0
     cutz: float = 0.0

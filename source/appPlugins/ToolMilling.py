@@ -16,7 +16,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 import logging
 from copy import deepcopy
 import numpy as np
-from tools_database import ToolTarget, ToolsDatabase
+from tools_database import MillJobType, ToolTarget, ToolsDatabase
 import sys
 import math
 import traceback
@@ -737,7 +737,7 @@ class ToolMilling(Excellon, AppTool):
 
                         tool_data['tools_mill_offset_type'] = 0  # 'Path'
                         tool_data['tools_mill_offset_value'] = 0.0
-                        tool_data['tools_mill_job_type'] = 0    # _('Roughing')
+                        tool_data['tools_mill_job_type'] = MillJobType.ROUGHING
 
                         # we made the decision here what to do with the hidden parameters
                         # some will disable some of the hidden features but other are set by
@@ -1322,7 +1322,7 @@ class ToolMilling(Excellon, AppTool):
 
             self.ui.job_type_lbl.hide()
             self.ui.job_type_combo.hide()
-            self.ui.job_type_combo.set_value(0)  # 'iso' - will hide the Polish UI elements
+            self.ui.job_type_combo.set_value(MillJobType.ROUGHING)  # 'iso' - will hide the Polish UI elements
 
             self.ui.offset_separator_line.hide()
             self.ui.tool_shape_label.hide()
@@ -1983,7 +1983,7 @@ class ToolMilling(Excellon, AppTool):
                   "- Tool Dia -> 'Dia' column found in the Tool Table\n"
                   "NB: a value of zero means that Tool Dia = 'V-tip Dia'")
             )
-            self.ui.job_type_combo.set_value(2)   # 'Isolation'
+            self.ui.job_type_combo.set_value(MillJobType.ISOLATION)
             self.on_update_cutz()
         else:
             self.ui.tipdialabel.hide()
@@ -1995,7 +1995,7 @@ class ToolMilling(Excellon, AppTool):
                   "below the copper surface.")
             )
             self.ui.cutz_entry.setToolTip('')
-            self.ui.job_type_combo.set_value(0)   # 'Roughing'
+            self.ui.job_type_combo.set_value(MillJobType.ROUGHING)
 
     def on_update_cutz(self):
         vdia = float(self.ui.tipdia_entry.get_value())
@@ -3300,7 +3300,7 @@ class ToolMilling(Excellon, AppTool):
                 # Polishing
                 # -----------------------------------------------------------------------------------------------------
                 job_type = tools_dict[tool_uid_key]['data']['tools_mill_job_type']
-                if job_type == 3:   # Polishing
+                if job_type == MillJobType.POLISHING:
                     self.app.log.debug("Painting the polished area ...")
 
                     margin = tools_dict[tool_uid_key]['data']['tools_mill_polish_margin']

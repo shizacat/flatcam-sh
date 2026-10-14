@@ -17,7 +17,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
-from tools_database import ToolTarget, ToolsDatabase
+from tools_database import MillJobType, ToolTarget, ToolsDatabase
 import sys
 import math
 
@@ -1793,7 +1793,7 @@ class ToolIsolation(Gerber, AppTool):
                     tools_storage[tool_iso][key]["tools_iso_isoexcept"] = use_iso_except
                     tools_storage[tool_iso][key]["tools_iso_selection"] = selection_type
                     tools_storage[tool_iso][key]["tools_iso_area_shape"] = sel_area_shape
-                    tools_storage[tool_iso][key]["tools_mill_job_type"] = 2  # _("Isolation")
+                    tools_storage[tool_iso][key]["tools_mill_job_type"] = MillJobType.ISOLATION
                     tools_storage[tool_iso][key]["tools_mill_tool_shape"] = tool_tip_shape
 
         if use_combine:

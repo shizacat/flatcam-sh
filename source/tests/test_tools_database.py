@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools_database import ToolData, ToolRecord, ToolTarget, ToolsDatabase
+from tools_database import MillJobType, ToolData, ToolRecord, ToolTarget, ToolsDatabase
 
 
 def test_tools_database_loads_records_and_keeps_extra_fields() -> None:
@@ -84,6 +84,7 @@ def test_tool_data_coerces_stored_values_to_field_types() -> None:
     data = ToolData.model_validate(
         {
             "tol_min": 1,
+            "tools_mill_job_type": 2,
             "tools_mill_tool_shape": "V",
             "tools_mill_offset_type": 0,
             "tools_mill_travelz": 2,
@@ -97,6 +98,7 @@ def test_tool_data_coerces_stored_values_to_field_types() -> None:
 
     assert data.tol_min == 1.0
     assert isinstance(data.tol_min, float)
+    assert data.milling.job_type is MillJobType.ISOLATION
     assert data.milling.tool_shape == "V"
     assert data.milling.offset_type == 0
     assert data.milling.travelz == 2.0
