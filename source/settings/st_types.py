@@ -1,7 +1,10 @@
 """Shared annotated types for settings fields."""
 
+from __future__ import annotations
+
+import math
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, NamedTuple
 
 from pydantic import BeforeValidator
 
@@ -46,27 +49,97 @@ class Theme(StrEnum):
         return self is Theme.LIGHT
 
 
+class PointXY(NamedTuple):
+    """
+    A point on the plane: X then Y, in project units.
+
+    ``x`` and ``y`` name the two coordinates. Index 0 and index 1 are the same numbers.
+    Adding or subtracting two points returns another point. Multiplying or dividing by a
+    number scales both coordinates. ``abs(point)`` is the distance from the origin.
+    """
+
+    x: float
+    y: float
+
+    def __add__(self, other: PointXY) -> PointXY:
+        """
+        Adds the coordinates of another point.
+
+        :param other: point to add
+        :return:      sum of the coordinates
+        """
+        return PointXY(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: PointXY) -> PointXY:
+        """
+        Subtracts the coordinates of another point.
+
+        :param other: point to subtract
+        :return:      difference of the coordinates
+        """
+        return PointXY(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, scale: float) -> PointXY:
+        """
+        Scales both coordinates by a number.
+
+        :param scale: multiplier
+        :return:      scaled point
+        """
+        return PointXY(self.x * scale, self.y * scale)
+
+    def __rmul__(self, scale: float) -> PointXY:
+        """
+        Scales both coordinates by a number written on the left.
+
+        :param scale: multiplier
+        :return:      scaled point
+        """
+        return self * scale
+
+    def __truediv__(self, scale: float) -> PointXY:
+        """
+        Divides both coordinates by a number.
+
+        :param scale: divisor
+        :return:      scaled point
+        """
+        return PointXY(self.x / scale, self.y / scale)
+
+    def __abs__(self) -> float:
+        """
+        Measures the distance from the origin.
+
+        :return: length of the point as a vector
+        """
+        return math.hypot(self.x, self.y)
+
+
 def _xy_pair(value: object) -> object:
     """
-    Turns a comma-separated X, Y text into two numbers.
+    Turns a stored point into a :class:`PointXY`.
 
-    Lists and tuples of two numbers are returned as a pair.
+    Comma-separated X, Y text, and a list or tuple of two numbers, become that point.
     Other values are left for validation.
 
     :param value: stored position
-    :return:      pair of numbers, or the original value
+    :return:      point, or the original value
     """
+    if isinstance(value, PointXY):
+        return value
     if isinstance(value, str):
         parts = [part.strip() for part in value.split(",") if part.strip()]
         if len(parts) != 2:
             return value
-        return float(parts[0]), float(parts[1])
+        return PointXY(float(parts[0]), float(parts[1]))
     if isinstance(value, (list, tuple)) and len(value) == 2:
-        return float(value[0]), float(value[1])
+        return PointXY(float(value[0]), float(value[1]))
     return value
 
 
-XYPair = Annotated[tuple[float, float], BeforeValidator(_xy_pair)]
+# Same point as PointXY, read from settings or the tools database.
+# Both name a point and may be merged later.
+XYPair = Annotated[PointXY, BeforeValidator(_xy_pair)]
 
 
 def _tool_diameters(value: object) -> object:

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added coordinate arithmetic on `PointXY`, so a step, offset, or length is one point operation
+
 ### Changed
 
 - Changed the startup splash so the version and year are drawn from `App.version` and `App.version_date`
@@ -16,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed a repeated mouse event on the 3D canvas aborting the click that was already being handled
+- Fixed the exclusion-area start corner on the 3D canvas so it keeps the clicked project point, including when grid snap is off
+- Fixed CNC job tool ids loaded from a project staying strings, so the tool table matches the saved tools
 - Fixed the Programmers and Translators tabs in About appearing empty with the dark color, where white text was drawn on a forced white background
 
 ## [1.9.10] - 2026-10-08

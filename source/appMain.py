@@ -51,6 +51,8 @@ import tkinter as tk
 
 from typing import Union
 
+from tools_database import ToolTarget
+
 # ####################################################################################################################
 # ###################################      Imports part of FlatCAM       #############################################
 # ####################################################################################################################
@@ -94,6 +96,7 @@ from appDatabase import ToolsDB2
 from exceptions import SettingsError
 from settings import Options, Settings
 from settings.gui_settings import GuiSettings
+from settings.st_types import PointXY
 from settings.utils import copy_shared, propagate_settings
 
 # App Objects
@@ -313,9 +316,9 @@ class App(QtCore.QObject):
         self.qapp = qapp
 
         # App Editors will be instantiated further below
-        self.exc_editor = None
-        self.grb_editor = None
-        self.geo_editor = None
+        self.exc_editor: AppExcEditor | None = None
+        self.grb_editor: AppGerberEditor | None = None
+        self.geo_editor: AppGeoEditor | None = None
 
         # when True, the app has to return from any thread
         self.abort_flag = False
@@ -352,7 +355,7 @@ class App(QtCore.QObject):
 
         # variable to store mouse coordinates
         self._mouse_click_pos = [0, 0]
-        self._mouse_pos = [0, 0]
+        self._mouse_pos: PointXY | None = PointXY(0, 0)
         self.mouse_down = None
 
         # variable to store the delta positions on canvas
@@ -4626,7 +4629,11 @@ class App(QtCore.QObject):
             worker_task()
         self.should_we_save = True
 
-    def on_jump_to(self, custom_location=None, fit_center=True):
+    def on_jump_to(
+            self,
+            custom_location: PointXY | None = None,
+            fit_center: bool = True
+    ) -> tuple[float, float] | None:
         """
         Jump to a location by setting the mouse cursor location.
 
@@ -4671,9 +4678,7 @@ class App(QtCore.QObject):
                         return
 
                     if dia_box.reference == 'rel':
-                        rel_x = self.mouse_pos[0] + location[0]
-                        rel_y = self.mouse_pos[1] + location[1]
-                        location = (rel_x, rel_y)
+                        location = self.mouse_pos + PointXY(location[0], location[1])
                     self.options.global_jump_ref = dia_box.reference
                 except Exception:
                     return
@@ -5371,7 +5376,7 @@ class App(QtCore.QObject):
             return
 
         if obj.kind == 'geometry':
-            if tool['data']['tool_target'] not in [0, 1]:  # General, Milling Type
+            if tool.data.tool_target not in [ToolTarget.GENERAL, ToolTarget.MILLING]:
                 # close the tab and delete it
                 for idx in range(self.ui.plot_tab_area.count()):
                     if self.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
@@ -5392,7 +5397,7 @@ class App(QtCore.QObject):
                     self.ui.plot_tab_area.removeTab(idx)
             self.inform.emit('[success] %s' % _("Tool from DB added in Tool Table."))
         elif obj.kind == 'gerber':
-            if tool['data']['tool_target'] not in [0, 3]:  # General, Isolation Type
+            if tool.data.tool_target not in [ToolTarget.GENERAL, ToolTarget.ISOLATION]:
                 # close the tab and delete it
                 for idx in range(self.ui.plot_tab_area.count()):
                     if self.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
@@ -6035,7 +6040,7 @@ class App(QtCore.QObject):
             self.ui.update_location_labels(self.dx, self.dy, pos[0], pos[1])
             self.plotcanvas.on_update_text_hud(self.dx, self.dy, pos[0], pos[1])
 
-            self.mouse_pos = [pos[0], pos[1]]
+            self.mouse_pos = pos if isinstance(pos, PointXY) else PointXY(pos[0], pos[1])
 
             if self.options.global_selection_shape is False:
                 self.selection_type = None
@@ -6125,7 +6130,7 @@ class App(QtCore.QObject):
             # self.ui.position_label.setText("")
             # self.ui.rel_position_label.setText("")
             self.ui.update_location_labels(0.0, 0.0, 0.0, 0.0)
-            self.mouse_pos = [None, None]
+            self.mouse_pos = None
 
     def on_mouse_click_release_over_plot(self, event):
         """
@@ -6329,12 +6334,18 @@ class App(QtCore.QObject):
         self._mouse_click_pos = m_pos
 
     @property
-    def mouse_pos(self) -> list[float]:
-        return [self._mouse_pos[0], self._mouse_pos[1]]
+    def mouse_pos(self) -> PointXY | None:
+        return self._mouse_pos
 
     @mouse_pos.setter
-    def mouse_pos(self, m_pos: Union[list[float], tuple[float]]):
-        self._mouse_pos = m_pos
+    def mouse_pos(self, m_pos: PointXY | tuple[float | None, float | None] | list | None) -> None:
+        if m_pos is None or m_pos[0] is None or m_pos[1] is None:
+            self._mouse_pos = None
+            return
+        if isinstance(m_pos, PointXY):
+            self._mouse_pos = m_pos
+            return
+        self._mouse_pos = PointXY(m_pos[0], m_pos[1])
 
     def selection_area_handler(self, start_pos, end_pos, sel_type):
         """

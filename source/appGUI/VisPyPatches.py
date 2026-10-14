@@ -133,23 +133,28 @@ def apply_patches():
 
     Ticker._get_tick_frac_labels = _get_tick_frac_labels
 
-    # Patch CanvasBackendDesktop to suppress EventEmitter re-entrancy on rapid key input
-    _original_keyPressEvent = CanvasBackendDesktop.keyPressEvent
-    _original_keyReleaseEvent = CanvasBackendDesktop.keyReleaseEvent
+    # A mouse or key callback can open a nested Qt event. VisPy then emits the same
+    # canvas event again and raises "EventEmitter loop detected". Drop that nested emit.
+    def _ignore_event_emitter_loop(original):
+        def _safe(self, ev):
+            try:
+                original(self, ev)
+            except RuntimeError as e:
+                if 'EventEmitter loop' not in str(e):
+                    raise
 
-    def _safe_keyPressEvent(self, ev):
-        try:
-            _original_keyPressEvent(self, ev)
-        except RuntimeError as e:
-            if 'EventEmitter loop' not in str(e):
-                raise
+        return _safe
 
-    def _safe_keyReleaseEvent(self, ev):
-        try:
-            _original_keyReleaseEvent(self, ev)
-        except RuntimeError as e:
-            if 'EventEmitter loop' not in str(e):
-                raise
-
-    CanvasBackendDesktop.keyPressEvent = _safe_keyPressEvent
-    CanvasBackendDesktop.keyReleaseEvent = _safe_keyReleaseEvent
+    for _event_name in (
+            'keyPressEvent',
+            'keyReleaseEvent',
+            'mousePressEvent',
+            'mouseReleaseEvent',
+            'mouseDoubleClickEvent',
+            'mouseMoveEvent',
+    ):
+        setattr(
+            CanvasBackendDesktop,
+            _event_name,
+            _ignore_event_emitter_loop(getattr(CanvasBackendDesktop, _event_name)),
+        )

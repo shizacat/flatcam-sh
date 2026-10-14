@@ -5,7 +5,7 @@
 # License:  MIT Licence                                    #
 # ##########################################################
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6 import QtWidgets, QtCore, QtGui
 from appTool import AppTool
@@ -16,7 +16,7 @@ from appGUI.GUIElements import VerticalScrollArea, FCLabel, FCButton, FCFrame, G
 import logging
 from copy import deepcopy
 import numpy as np
-import json
+from tools_database import MillJobType, ToolTarget, ToolsDatabase
 import sys
 import math
 import traceback
@@ -29,6 +29,7 @@ import builtins
 
 from appParsers.ParseExcellon import Excellon
 from appPlugins.mill_tool_shape import MILL_TOOL_SHAPES, fill_missing_mill_fields, milling_tool_diameter
+from settings.st_types import PointXY
 from settings.utils import option_items
 from matplotlib.backend_bases import KeyEvent as mpl_key_event
 from camlib import grace
@@ -45,9 +46,9 @@ log = logging.getLogger('base')
 
 
 class HybridGeoExc:
-    def __init__(self, app):
-        self.app = app
-        self.decimals = self.app.decimals
+    def __init__(self, app: "App") -> None:
+        self.app: "App" = app
+        self.decimals: int = self.app.decimals
 
         """
         self.tools = {}
@@ -60,9 +61,9 @@ class HybridGeoExc:
                         }
             }
         """
-        self.obj_options = {}
-        self.tools = {}
-        self.solid_geometry = []
+        self.obj_options: dict[str, Any] = {}
+        self.tools: dict[int, dict[str, Any]] = {}
+        self.solid_geometry: list[Any] = []
 
         kind = 'geometry'
         for option in type(self.app.options).model_fields:
@@ -81,8 +82,8 @@ class HybridGeoExc:
         self.obj_options['xmax'] = 0
         self.obj_options['ymax'] = 0
 
-        self.multigeo = True
-        self.multitool = True
+        self.multigeo: bool = True
+        self.multitool: bool = True
 
 
 class ToolMilling(Excellon, AppTool):
@@ -103,7 +104,7 @@ class ToolMilling(Excellon, AppTool):
         # ########################## VARIABLES ########################################
         # #############################################################################
         self.units = ''
-        self.tooluid = 0
+        self.tooluid: int = 0
 
         # dict that holds the object names and the option name
         # the key is the object name (defines in ObjectUI) for each UI element that is a parameter
@@ -114,17 +115,17 @@ class ToolMilling(Excellon, AppTool):
         self.default_data = {}
 
         # store here the Geometry tools selected in the Geo Tools Table
-        self.sel_tools = {}
+        self.sel_tools: dict[int, dict[str, Any]] = {}
 
         self.obj_name = ""
         self.target_obj = None
 
         self.first_click = False
-        self.cursor_pos = None
+        self.cursor_pos: PointXY | None = None
         self.mouse_is_dragging = False
 
         # store here the points for the "Polygon" area selection shape
-        self.points = []
+        self.points: list[PointXY] = []
 
         self.mm = None
         self.mr = None
@@ -737,7 +738,7 @@ class ToolMilling(Excellon, AppTool):
 
                         tool_data['tools_mill_offset_type'] = 0  # 'Path'
                         tool_data['tools_mill_offset_value'] = 0.0
-                        tool_data['tools_mill_job_type'] = 0    # _('Roughing')
+                        tool_data['tools_mill_job_type'] = MillJobType.ROUGHING
 
                         # we made the decision here what to do with the hidden parameters
                         # some will disable some of the hidden features but other are set by
@@ -1322,7 +1323,7 @@ class ToolMilling(Excellon, AppTool):
 
             self.ui.job_type_lbl.hide()
             self.ui.job_type_combo.hide()
-            self.ui.job_type_combo.set_value(0)  # 'iso' - will hide the Polish UI elements
+            self.ui.job_type_combo.set_value(MillJobType.ROUGHING)  # 'iso' - will hide the Polish UI elements
 
             self.ui.offset_separator_line.hide()
             self.ui.tool_shape_label.hide()
@@ -1983,7 +1984,7 @@ class ToolMilling(Excellon, AppTool):
                   "- Tool Dia -> 'Dia' column found in the Tool Table\n"
                   "NB: a value of zero means that Tool Dia = 'V-tip Dia'")
             )
-            self.ui.job_type_combo.set_value(2)   # 'Isolation'
+            self.ui.job_type_combo.set_value(MillJobType.ISOLATION)
             self.on_update_cutz()
         else:
             self.ui.tipdialabel.hide()
@@ -1995,7 +1996,7 @@ class ToolMilling(Excellon, AppTool):
                   "below the copper surface.")
             )
             self.ui.cutz_entry.setToolTip('')
-            self.ui.job_type_combo.set_value(0)   # 'Roughing'
+            self.ui.job_type_combo.set_value(MillJobType.ROUGHING)
 
     def on_update_cutz(self):
         vdia = float(self.ui.tipdia_entry.get_value())
@@ -2114,7 +2115,7 @@ class ToolMilling(Excellon, AppTool):
 
         try:
             # store here the tools from Tools Database when searching in Tools Database
-            tools_db_dict = json.loads(tools)
+            tools_db_dict = ToolsDatabase.loads(tools)
         except Exception:
             e = sys.exc_info()[0]
             self.app.log.error(str(e))
@@ -2127,37 +2128,23 @@ class ToolMilling(Excellon, AppTool):
 
         # look in database tools
         for db_tool, db_tool_val in tools_db_dict.items():
-            db_tooldia = db_tool_val['tooldia']
-            low_limit = float(db_tool_val['data']['tol_min'])
-            high_limit = float(db_tool_val['data']['tol_max'])
+            db_tooldia = db_tool_val.tooldia
+            low_limit = db_tool_val.data.tol_min
+            high_limit = db_tool_val.data.tol_max
 
             # we need only tool marked for Milling Tool (Geometry Object)
-            if db_tool_val['data']['tool_target'] != 1:     # _('Milling')
+            if db_tool_val.data.tool_target != ToolTarget.MILLING:
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update its data
             if truncated_tooldia == db_tooldia:
                 tool_found += 1
-                for d in db_tool_val['data']:
-                    if d.find('tools_mill_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
-                    elif d.find('tools_') == 0:
-                        # don't need data for other App Tools; this tests after 'tools_mill_'
-                        continue
-                    else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.milling)
             # search for a tool that has a tolerance that the tool fits in
             elif high_limit >= truncated_tooldia >= low_limit:
                 tool_found += 1
                 updated_tooldia = db_tooldia
-                for d in db_tool_val['data']:
-                    if d.find('tools_mill_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
-                    elif d.find('tools_') == 0:
-                        # don't need data for other App Tools; this tests after 'tools_mill_'
-                        continue
-                    else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.milling)
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:
@@ -2300,7 +2287,7 @@ class ToolMilling(Excellon, AppTool):
         self.ui_disconnect()
         self.units = self.app.app_units.upper()
 
-        tooldia = float(tool['tooldia'])
+        tooldia = float(tool.tooldia)
 
         # construct a list of all 'tooluid' in the self.tools
         tool_uid_list = []
@@ -2320,7 +2307,7 @@ class ToolMilling(Excellon, AppTool):
         self.target_obj.tools.update({
             self.tooluid: {
                 'tooldia': tooldia,
-                'data': deepcopy(tool['data']),
+                'data': deepcopy(tool.data.parameters()),
                 'solid_geometry': self.target_obj.solid_geometry
             }
         })
@@ -3314,7 +3301,7 @@ class ToolMilling(Excellon, AppTool):
                 # Polishing
                 # -----------------------------------------------------------------------------------------------------
                 job_type = tools_dict[tool_uid_key]['data']['tools_mill_job_type']
-                if job_type == 3:   # Polishing
+                if job_type == MillJobType.POLISHING:
                     self.app.log.debug("Painting the polished area ...")
 
                     margin = tools_dict[tool_uid_key]['data']['tools_mill_polish_margin']

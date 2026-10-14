@@ -7,6 +7,8 @@
 
 from typing import TYPE_CHECKING
 
+from settings.st_types import PointXY
+
 from PyQt6 import QtWidgets, QtCore, QtGui  # noqa
 
 from appPlugins.ToolNCC.NccUI import NccUI
@@ -24,7 +26,7 @@ from appGUI.GUIElements import (
 import logging
 from copy import deepcopy
 import numpy as np
-import json
+from tools_database import ToolTarget, ToolsDatabase
 import sys
 
 from shapely import (
@@ -102,11 +104,11 @@ class ToolNcc(Gerber, AppTool):
         self.iso_dia_list = []
 
         self.first_click = False
-        self.cursor_pos = None
+        self.cursor_pos: PointXY | None = None
         self.mouse_is_dragging = False
 
         # store here the points for the "Polygon" area selection shape
-        self.points = []
+        self.points: list[PointXY] = []
         # set this as True when in middle of drawing a "Polygon" area selection shape
         # it is made False by first click to signify that the shape is complete
         self.poly_drawn = False
@@ -1351,7 +1353,7 @@ class ToolNcc(Gerber, AppTool):
 
         try:
             # store here the tools from Tools Database when searching in Tools Database
-            tools_db_dict = json.loads(tools)
+            tools_db_dict = ToolsDatabase.loads(tools)
         except Exception:
             e = sys.exc_info()[0]
             self.app.log.error(str(e))
@@ -1365,37 +1367,23 @@ class ToolNcc(Gerber, AppTool):
 
         # look in database tools
         for db_tool, db_tool_val in tools_db_dict.items():
-            db_tooldia = db_tool_val['tooldia']
-            low_limit = float(db_tool_val['data']['tol_min'])
-            high_limit = float(db_tool_val['data']['tol_max'])
+            db_tooldia = db_tool_val.tooldia
+            low_limit = db_tool_val.data.tol_min
+            high_limit = db_tool_val.data.tol_max
 
             # we need only tool marked for Isolation Tool
-            if db_tool_val['data']['tool_target'] != _('NCC'):
+            if db_tool_val.data.tool_target != _('NCC'):
                 continue
 
             # if we find a tool with the same diameter in the Tools DB just update its data
             if truncated_tooldia == db_tooldia:
                 tool_found += 1
-                for d in db_tool_val['data']:
-                    if d.find('tools_ncc_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
-                    elif d.find('tools_') == 0:
-                        # don't need data for other App Tools; this tests after 'tools_ncc_'
-                        continue
-                    else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.ncc)
             # search for a tool that has a tolerance that the tool fits in
             elif high_limit >= truncated_tooldia >= low_limit:
                 tool_found += 1
                 updated_tooldia = db_tooldia
-                for d in db_tool_val['data']:
-                    if d.find('tools_ncc_') == 0:
-                        new_tools_dict[d] = db_tool_val['data'][d]
-                    elif d.find('tools_') == 0:
-                        # don't need data for other App Tools; this tests after 'tools_ncc_'
-                        continue
-                    else:
-                        new_tools_dict[d] = db_tool_val['data'][d]
+                db_tool_val.data.copy_into(new_tools_dict, db_tool_val.data.ncc)
 
         # test we found a suitable tool in Tools Database or if multiple ones
         if tool_found == 0:
@@ -1703,7 +1691,7 @@ class ToolNcc(Gerber, AppTool):
                     self.first_click = False
                     return
             else:
-                self.points.append((x1, y1))
+                self.points.append(PointXY(x1, y1))
 
                 if len(self.points) > 1:
                     self.poly_drawn = True
@@ -1721,7 +1709,7 @@ class ToolNcc(Gerber, AppTool):
                 if self.poly_drawn is True:
                     try:
                         # try to add the point where we last clicked if it is not already in the self.points
-                        last_pt = (x1, y1)
+                        last_pt = PointXY(x1, y1)
                         if last_pt != self.points[-1]:
                             self.points.append(last_pt)
                     except IndexError:
@@ -1947,7 +1935,7 @@ class ToolNcc(Gerber, AppTool):
         """
         tool_from_db = deepcopy(tool)
 
-        if tool['data']['tool_target'] not in [0, 5]:   # [General, NCC]
+        if tool.data.tool_target not in [ToolTarget.GENERAL, ToolTarget.NCC]:
             for idx in range(self.app.ui.plot_tab_area.count()):
                 if self.app.ui.plot_tab_area.tabText(idx) == _("Tools Database"):
                     wdg = self.app.ui.plot_tab_area.widget(idx)
@@ -1986,7 +1974,7 @@ class ToolNcc(Gerber, AppTool):
         self.ui_disconnect()
         self.units = self.app.app_units.upper()
 
-        tooldia = float(tool['tooldia'])
+        tooldia = float(tool.tooldia)
 
         # construct a list of all 'tooluid' in the self.tools
         tool_uid_list = [int(tooluid_key) for tooluid_key in self.ncc_tools]
@@ -2010,7 +1998,7 @@ class ToolNcc(Gerber, AppTool):
         self.ncc_tools.update({
             tooluid: {
                 'tooldia':          truncated_tooldia,
-                'data':             deepcopy(tool['data']),
+                'data':             deepcopy(tool.data.parameters()),
                 'solid_geometry':   []
             }
         })

@@ -12,15 +12,20 @@
 # ##########################################################
 from PyQt6 import QtCore
 
-from shapely import Polygon, Point, LineString
+from shapely import MultiPoint, Polygon, Point, LineString
 from shapely.ops import unary_union
 
 from appGUI.VisPyVisuals import ShapeCollection
 from appTool import AppTool
+from settings.st_types import PointXY
 
 from copy import deepcopy
 import collections
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from appMain import App
 
 import numpy as np
 # from voronoi import Voronoi
@@ -228,7 +233,7 @@ class ExclusionAreas(QtCore.QObject):
     """
     e_shape_modified = QtCore.pyqtSignal()
 
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         """
         A class that create interdiction areas that need to be avoided by GCode
 
@@ -257,15 +262,15 @@ class ExclusionAreas(QtCore.QObject):
         self.kp = None
 
         # variables to be used in area exclusion
-        self.cursor_pos = (0, 0)
+        self.cursor_pos: PointXY | None = PointXY(0, 0)
         self.first_click = False
-        self.points = []
+        self.points: list[PointXY] = []
         self.poly_drawn = False
 
         '''
         Here we store the exclusion shapes and some other information's
         Each list element is a dictionary with the format:
-        
+
         {
             "obj_type":   string ("excellon" or "geometry")   <- self.obj_type
             "shape":      Shapely polygon
@@ -325,7 +330,7 @@ class ExclusionAreas(QtCore.QObject):
         # self.kp = self.app.plotcanvas.graph_event_connect('key_press', self.on_key_press)
 
     # To be called after clicking on the plot.
-    def on_mouse_release(self, event):
+    def on_mouse_release(self, event: Any) -> str | None:
         """
         Called on mouse click release.
 
@@ -347,11 +352,7 @@ class ExclusionAreas(QtCore.QObject):
         if self.app.grid_status():
             curr_pos = self.app.geo_editor.snap(event_pos[0], event_pos[1])
         else:
-            curr_pos = (event_pos[0], event_pos[1])
-
-        x1, y1 = curr_pos[0], curr_pos[1]
-
-        # shape_type_button = self.ui.area_shape_radio.get_value()
+            curr_pos = PointXY(event_pos[0], event_pos[1])
 
         # do clear area only for left mouse clicks
         if event.button == 1:
@@ -360,28 +361,19 @@ class ExclusionAreas(QtCore.QObject):
                     self.first_click = True
                     self.app.inform.emit('[WARNING_NOTCL] %s' % _("Click the end point of the area."))
 
-                    self.cursor_pos = self.app.plotcanvas.translate_coords(event_pos)
-                    if self.app.grid_status():
-                        self.cursor_pos = self.app.geo_editor.snap(event_pos[0], event_pos[1])
+                    self.cursor_pos = curr_pos
                 else:
                     self.app.inform.emit(_("Zone added. Click to start adding next zone or right click to finish."))
                     self.app.delete_selection_shape()
 
-                    x0, y0 = self.cursor_pos[0], self.cursor_pos[1]
+                    origin = self.cursor_pos
+                    new_rectangle = Polygon([
+                        origin,
+                        PointXY(curr_pos.x, origin.y),
+                        curr_pos,
+                        PointXY(origin.x, curr_pos.y),
+                    ])
 
-                    pt1 = (x0, y0)
-                    pt2 = (x1, y0)
-                    pt3 = (x1, y1)
-                    pt4 = (x0, y1)
-
-                    new_rectangle = Polygon([pt1, pt2, pt3, pt4])
-
-                    # {
-                    #     "obj_type":   string("excellon" or "geometry") < - self.obj_type
-                    #     "shape":      Shapely polygon
-                    #     "strategy_button":   string("over" or "around") < - self.strategy_button
-                    #     "overz":      float < - self.over_z_button
-                    # }
                     new_el = {
                         "idx":      len(self.exclusion_areas_storage) + 1,
                         "obj_type": self.obj_type,
@@ -400,7 +392,7 @@ class ExclusionAreas(QtCore.QObject):
 
                     # add a temporary shape on canvas
                     AppTool.draw_tool_selection_shape(
-                        self, old_coords=(x0, y0), coords=(x1, y1),
+                        self, old_coords=origin, coords=curr_pos,
                         color=color,
                         face_color=face_color,
                         shapes_storage=self.exclusion_shapes)
@@ -408,7 +400,7 @@ class ExclusionAreas(QtCore.QObject):
                     self.first_click = False
                     return
             else:
-                self.points.append((x1, y1))
+                self.points.append(curr_pos)
 
                 if len(self.points) > 1:
                     self.poly_drawn = True
@@ -426,7 +418,7 @@ class ExclusionAreas(QtCore.QObject):
                 if self.poly_drawn is True:
                     try:
                         # try to add the point where we last clicked if it is not already in the self.points
-                        last_pt = (x1, y1)
+                        last_pt = curr_pos
                         if last_pt != self.points[-1]:
                             self.points.append(last_pt)
                     except IndexError:
@@ -549,7 +541,7 @@ class ExclusionAreas(QtCore.QObject):
         self.app.call_source = "app"
         self.app.inform.emit("[WARNING_NOTCL] %s" % _("Cancelled. Area exclusion drawing was interrupted."))
 
-    def on_mouse_move(self, event):
+    def on_mouse_move(self, event: Any) -> None:
         """
         Called on mouse move
 
@@ -569,7 +561,7 @@ class ExclusionAreas(QtCore.QObject):
             event_is_dragging = self.app.plotcanvas.is_dragging
             # right_button = 3
 
-        curr_pos = self.app.plotcanvas.translate_coords(event_pos)
+        canvas_pos = self.app.plotcanvas.translate_coords(event_pos)
 
         # detect mouse dragging motion
         if event_is_dragging is True:
@@ -580,30 +572,32 @@ class ExclusionAreas(QtCore.QObject):
         # update the cursor position
         if self.app.grid_status():
             # Update cursor
-            curr_pos = self.app.geo_editor.snap(curr_pos[0], curr_pos[1])
+            curr_pos = self.app.geo_editor.snap(canvas_pos[0], canvas_pos[1])
 
-            self.app.app_cursor.set_data(np.asarray([(curr_pos[0], curr_pos[1])]),
+            self.app.app_cursor.set_data(np.asarray([(curr_pos.x, curr_pos.y)]),
                                          symbol='++', edge_color=self.app.cursor_color_3D,
                                          edge_width=self.app.options.global_cursor_width,
                                          size=self.app.options.global_cursor_size)
+        else:
+            curr_pos = PointXY(canvas_pos[0], canvas_pos[1])
 
         # update the positions on status bar
         if self.cursor_pos is None:
-            self.cursor_pos = (0, 0)
+            self.cursor_pos = PointXY(0, 0)
 
-        self.app.dx = curr_pos[0] - float(self.cursor_pos[0])
-        self.app.dy = curr_pos[1] - float(self.cursor_pos[1])
+        self.app.dx = curr_pos.x - float(self.cursor_pos.x)
+        self.app.dy = curr_pos.y - float(self.cursor_pos.y)
         # self.app.ui.position_label.setText("&nbsp;<b>X</b>: %.4f&nbsp;&nbsp;   "
         #                                    "<b>Y</b>: %.4f&nbsp;" % (curr_pos[0], curr_pos[1]))
         # self.app.ui.rel_position_label.setText("<b>Dx</b>: %.4f&nbsp;&nbsp;  <b>Dy</b>: "
         #                                        "%.4f&nbsp;&nbsp;&nbsp;&nbsp;" % (self.app.dx, self.app.dy))
-        self.app.ui.update_location_labels(self.app.dx, self.app.dy, curr_pos[0], curr_pos[1])
+        self.app.ui.update_location_labels(self.app.dx, self.app.dy, curr_pos.x, curr_pos.y)
 
         units = self.app.app_units.lower()
         # self.app.plotcanvas.text_hud.text = \
         #     'Dx:\t{:<.4f} [{:s}]\nDy:\t{:<.4f} [{:s}]\n\nX:  \t{:<.4f} [{:s}]\nY:  \t{:<.4f} [{:s}]'.format(
         #         self.app.dx, units, self.app.dy, units, curr_pos[0], units, curr_pos[1], units)
-        self.app.plotcanvas.on_update_text_hud(self.app.dx, self.app.dy, curr_pos[0], curr_pos[1])
+        self.app.plotcanvas.on_update_text_hud(self.app.dx, self.app.dy, curr_pos.x, curr_pos.y)
 
         if self.obj_type == 'excellon':
             color = "#FF7400"
@@ -617,17 +611,17 @@ class ExclusionAreas(QtCore.QObject):
             if self.first_click:
                 self.app.delete_selection_shape()
 
-                self.app.draw_moving_selection_shape(old_coords=(self.cursor_pos[0], self.cursor_pos[1]),
+                self.app.draw_moving_selection_shape(old_coords=self.cursor_pos,
                                                      color=color,
                                                      face_color=face_color,
-                                                     coords=(curr_pos[0], curr_pos[1]))
+                                                     coords=curr_pos)
         else:
             AppTool.delete_moving_selection_shape(self)
             AppTool.draw_moving_selection_shape_poly(
                 self, points=self.points,
                 color=color,
                 face_color=face_color,
-                data=(curr_pos[0], curr_pos[1]))
+                data=curr_pos)
 
     def on_clear_area_click(self):
         """
@@ -956,7 +950,7 @@ class AppLogging:
         self.app.inform_shell.emit('[log]ERROR %s ***\t%s' % (date, msg))
 
 
-def farthest_point(origin, points_list):
+def farthest_point(origin: Point, points_list: MultiPoint | list[Point]) -> Point | None:
     """
     Calculate the farthest Point in a list from another Point
 
@@ -1023,7 +1017,7 @@ def farthest_point(origin, points_list):
 #
 #         return voronoi_polygons
 
-def nearest_point(origin, points_list):
+def nearest_point(origin: Point, points_list: MultiPoint | list[Point]) -> Point | None:
     """
     Calculate the nearest Point in a list from another Point
 

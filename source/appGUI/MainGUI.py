@@ -38,10 +38,14 @@ import gettext
 import appTranslation as fcTranslate
 import builtins
 import traceback
+from typing import TYPE_CHECKING
 
 import darkdetect
 from settings.gui_settings import GuiSettings
 from settings.st_types import Theme
+
+if TYPE_CHECKING:
+    from appMain import App
 
 fcTranslate.apply_language('strings')
 if '_' not in builtins.__dict__:
@@ -88,7 +92,7 @@ class MainGUI(QtWidgets.QMainWindow):
             return color
 
     # https://www.w3.org/TR/SVG11/types.html#ColorKeywords
-    def __init__(self, app):
+    def __init__(self, app: "App") -> None:
         super(MainGUI, self).__init__()
         # self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
 
@@ -3562,8 +3566,11 @@ class MainGUI(QtWidgets.QMainWindow):
                                     and self.app.geo_editor.active_tool.copy_tool.width != 0.0:
                                 pass
                             else:
+                                cursor = self.app.geo_editor.cursor_pos
+                                if cursor is None:
+                                    return
                                 self.app.geo_editor.active_tool.click(
-                                    self.app.geo_editor.snap(self.app.geo_editor.x, self.app.geo_editor.y))
+                                    self.app.geo_editor.snap(cursor.x, cursor.y))
 
                                 self.app.geo_editor.active_tool.make()
 
@@ -3596,12 +3603,12 @@ class MainGUI(QtWidgets.QMainWindow):
                 # Zoom Out
                 if key == QtCore.Qt.Key.Key_Minus or key == '-':
                     self.app.plotcanvas.zoom(1 / self.app.settings.global_zoom_ratio,
-                                             [self.app.geo_editor.snap_x, self.app.geo_editor.snap_y])
+                                             self.app.geo_editor.snap_pos)
 
                 # Zoom In
                 if key == QtCore.Qt.Key.Key_Equal or key == '=':
                     self.app.plotcanvas.zoom(self.app.settings.global_zoom_ratio,
-                                             [self.app.geo_editor.snap_x, self.app.geo_editor.snap_y])
+                                             self.app.geo_editor.snap_pos)
 
                 # # Switch to Project Tab
                 # if key == QtCore.Qt.Key.Key_1 or key == '1':
@@ -3836,13 +3843,13 @@ class MainGUI(QtWidgets.QMainWindow):
                 if key == QtCore.Qt.Key.Key_Minus or key == '-':
                     self.app.grb_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(1 / self.app.settings.global_zoom_ratio,
-                                             [self.app.grb_editor.snap_x, self.app.grb_editor.snap_y])
+                                             self.app.grb_editor.snap_pos)
                     return
 
                 if key == QtCore.Qt.Key.Key_Equal or key == '=':
                     self.app.grb_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(self.app.settings.global_zoom_ratio,
-                                             [self.app.grb_editor.snap_x, self.app.grb_editor.snap_y])
+                                             self.app.grb_editor.snap_pos)
                     return
 
                 # toggle display of Notebook area
@@ -3887,8 +3894,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_pad_ar_btn.setChecked(True)
 
-                        self.app.grb_editor.x = self.app.mouse_pos[0]
-                        self.app.grb_editor.y = self.app.mouse_pos[1]
+                        self.app.grb_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.grb_editor.select_tool('array')
                         return
@@ -3908,7 +3914,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.grb_editor.on_tool_select('copy')
                             if self.app.grb_editor.active_tool is not None:
                                 self.app.grb_editor.active_tool.set_origin(
-                                    (self.app.grb_editor.snap_x, self.app.grb_editor.snap_y))
+                                    self.app.grb_editor.snap_pos
+                                    if self.app.grb_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -3955,7 +3962,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.grb_editor.on_tool_select('move')
                             if self.app.grb_editor.active_tool is not None:
                                 self.app.grb_editor.active_tool.set_origin(
-                                    (self.app.grb_editor.snap_x, self.app.grb_editor.snap_y))
+                                    self.app.grb_editor.snap_pos
+                                    if self.app.grb_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -3972,8 +3980,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit(_("Click on target point."))
                         self.app.ui.add_pad_ar_btn.setChecked(True)
 
-                        self.app.grb_editor.x = self.app.mouse_pos[0]
-                        self.app.grb_editor.y = self.app.mouse_pos[1]
+                        self.app.grb_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.grb_editor.select_tool('pad')
                         return
@@ -4071,7 +4078,7 @@ class MainGUI(QtWidgets.QMainWindow):
                                 and self.app.exc_editor.active_tool.copy_tool.length != 0.0:
                             pass
                         else:
-                            curr_pos = self.app.exc_editor.snap_x, self.app.exc_editor.snap_y
+                            curr_pos = self.app.exc_editor.snap_pos if self.app.exc_editor.snap_pos is not None else (None, None)
                             self.app.exc_editor.on_canvas_click_left_handler(curr_pos)
 
                             if self.app.exc_editor.active_tool.complete:
@@ -4097,13 +4104,13 @@ class MainGUI(QtWidgets.QMainWindow):
                 if key == QtCore.Qt.Key.Key_Minus or key == '-':
                     self.app.exc_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(1 / self.app.settings.global_zoom_ratio,
-                                             [self.app.exc_editor.snap_x, self.app.exc_editor.snap_y])
+                                             self.app.exc_editor.snap_pos)
                     return
 
                 if key == QtCore.Qt.Key.Key_Equal or key == '=':
                     self.app.exc_editor.launched_from_shortcuts = True
                     self.app.plotcanvas.zoom(self.app.settings.global_zoom_ratio,
-                                             [self.app.exc_editor.snap_x, self.app.exc_editor.snap_y])
+                                             self.app.exc_editor.snap_pos)
                     return
 
                 # toggle display of Notebook area
@@ -4159,8 +4166,7 @@ class MainGUI(QtWidgets.QMainWindow):
                     self.app.inform.emit(_("Click on target point."))
                     self.app.ui.add_slot_btn.setChecked(True)
 
-                    self.app.exc_editor.x = self.app.mouse_pos[0]
-                    self.app.exc_editor.y = self.app.mouse_pos[1]
+                    self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                     self.app.exc_editor.select_tool('slot_add')
                     return
@@ -4184,8 +4190,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_drill_array_btn.setChecked(True)
 
-                        self.app.exc_editor.x = self.app.mouse_pos[0]
-                        self.app.exc_editor.y = self.app.mouse_pos[1]
+                        self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.exc_editor.select_tool('drill_array')
                         return
@@ -4199,7 +4204,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.exc_editor.on_tool_select('drill_copy')
                             if self.app.exc_editor.active_tool is not None:
                                 self.app.exc_editor.active_tool.set_origin(
-                                    (self.app.exc_editor.snap_x, self.app.exc_editor.snap_y))
+                                    self.app.exc_editor.snap_pos
+                                    if self.app.exc_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -4210,8 +4216,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit(_("Click on target point."))
                         self.app.ui.add_drill_btn.setChecked(True)
 
-                        self.app.exc_editor.x = self.app.mouse_pos[0]
-                        self.app.exc_editor.y = self.app.mouse_pos[1]
+                        self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.exc_editor.select_tool('drill_add')
                         return
@@ -4229,7 +4234,8 @@ class MainGUI(QtWidgets.QMainWindow):
                             self.app.exc_editor.on_tool_select('drill_move')
                             if self.app.exc_editor.active_tool is not None:
                                 self.app.exc_editor.active_tool.set_origin(
-                                    (self.app.exc_editor.snap_x, self.app.exc_editor.snap_y))
+                                    self.app.exc_editor.snap_pos
+                                    if self.app.exc_editor.snap_pos is not None else (None, None))
                         else:
                             self.app.inform.emit('[WARNING_NOTCL] %s' % _("Cancelled. Nothing selected."))
                         return
@@ -4240,8 +4246,7 @@ class MainGUI(QtWidgets.QMainWindow):
                         self.app.inform.emit("Click on target point.")
                         self.app.ui.add_slot_array_btn.setChecked(True)
 
-                        self.app.exc_editor.x = self.app.mouse_pos[0]
-                        self.app.exc_editor.y = self.app.mouse_pos[1]
+                        self.app.exc_editor.cursor_pos = self.app.mouse_pos
 
                         self.app.exc_editor.select_tool('slot_array')
                         return
