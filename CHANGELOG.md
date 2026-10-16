@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed hiding a plotted shape group so the canvas drops those shapes instead of keeping the previous frame; a geometry deleted in the editor now disappears immediately
+- Fixed Geometry Editor deletion so a selected row is removed from the geometry table and the canvas without rebuilding the table
 - Fixed a repeated mouse event on the 3D canvas aborting the click that was already being handled
 - Fixed the exclusion-area start corner on the 3D canvas so it keeps the clicked project point, including when grid snap is off
 - Fixed CNC job tool ids loaded from a project staying strings, so the tool table matches the saved tools

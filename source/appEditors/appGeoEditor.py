@@ -110,7 +110,7 @@ class AppGeoEditor(QtCore.QObject):
         # # ## Data
         self.active_tool = None
 
-        self.storage = self.make_storage()
+        self.storage: AppRTreeStorage = self.make_storage()
         self.utility = []
 
         # VisPy visuals
@@ -131,9 +131,9 @@ class AppGeoEditor(QtCore.QObject):
         self.tool_shape.enabled = False
 
         # List of selected shapes.
-        self.selected = []
+        self.selected: list[DrawToolShape] = []
 
-        self.flat_geo = []
+        self.flat_geo: list[BaseGeometry] = []
 
         self.move_timer = QtCore.QTimer()
         self.move_timer.setSingleShot(True)
@@ -1528,17 +1528,79 @@ class AppGeoEditor(QtCore.QObject):
 
     def on_delete_btn(self) -> None:
         self.delete_selected()
-        # self.plot_all()
 
     def delete_selected(self) -> None:
-        self.delete_shape(self.selected)
+        """
+        Deletes the selected geometry and drops the matching rows from the geometry table.
 
-        self.build_ui()
-        self.plot_all()
+        The table is built once when the editor opens. Deletion does not rebuild it.
+        """
+        shapes = self._shapes_chosen_for_deletion()
+        if not shapes:
+            return
 
+        self.delete_shape(shapes)
+        self._remove_geometry_rows(shapes)
         self.selected.clear()
-        self.sel_shapes.clear(update=True)
-        self.sel_shapes.redraw()
+        self.plot_all()
+        self.on_tree_selection()
+
+    def _shapes_chosen_for_deletion(self) -> list[DrawToolShape]:
+        """
+        Returns the storage shapes marked by the table selection or by ``self.selected``.
+
+        A click on a row fills the table selection and then clears ``self.selected``,
+        so the selected rows are the source of the delete.
+
+        :return: shapes to remove, without duplicates
+        """
+        by_id = {id(shape): shape for shape in self.storage.get_objects()}
+        chosen: list[DrawToolShape] = []
+        seen: set[int] = set()
+
+        def take(shape: DrawToolShape | None) -> None:
+            if shape is None:
+                return
+            key = id(shape)
+            if key in seen or key not in by_id:
+                return
+            seen.add(key)
+            chosen.append(shape)
+
+        for shape in list(self.selected):
+            take(shape)
+
+        for item in self.ui.tw.selectedItems():
+            try:
+                take(by_id.get(int(item.text(0))))
+            except ValueError:
+                continue
+
+        return chosen
+
+    def _remove_geometry_rows(self, shapes: list[DrawToolShape]) -> None:
+        """
+        Removes the table rows whose id matches one of the deleted shapes.
+
+        :param shapes: shapes that have just been removed from storage
+        """
+        shape_ids = {str(id(shape)) for shape in shapes}
+        pending = []
+        iterator = QtWidgets.QTreeWidgetItemIterator(self.ui.tw)
+        while iterator.value():
+            item = iterator.value()
+            if item.text(0) in shape_ids:
+                pending.append(item)
+            iterator += 1
+
+        self.ui.tw.blockSignals(True)
+        try:
+            for item in pending:
+                parent = item.parent() or self.ui.geo_parent
+                parent.removeChild(item)
+            self.ui.tw.clearSelection()
+        finally:
+            self.ui.tw.blockSignals(False)
 
     def delete_shape(self, shapes: DrawToolShape | list[DrawToolShape]) -> None:
         """
@@ -1666,22 +1728,19 @@ class AppGeoEditor(QtCore.QObject):
                 else:
                     geo_drawn.append(shape.geo)
 
-        if geo_drawn:
-            self.shapes.clear(update=True)
+        # Always replace both layers. An empty list still has to clear the previous buffers,
+        # otherwise the last deleted shape stays on the canvas.
+        self.shapes.clear(update=False)
+        for geo in geo_drawn:
+            self.plot_shape(storage=self.shapes, geometry=geo, color=draw_color, linewidth=1)
+        for shape in self.utility:
+            self.plot_shape(storage=self.shapes, geometry=shape.geo, linewidth=1)
+        self.shapes.redraw()
 
-            for geo in geo_drawn:
-                self.plot_shape(storage=self.shapes, geometry=geo, color=draw_color, linewidth=1)
-
-            for shape in self.utility:
-                self.plot_shape(storage=self.shapes, geometry=shape.geo, linewidth=1)
-
-            self.shapes.redraw()
-
-        if geos_selected:
-            self.sel_shapes.clear(update=True)
-            for geo in geos_selected:
-                self.plot_shape(storage=self.sel_shapes, geometry=geo, color=sel_color, linewidth=3)
-            self.sel_shapes.redraw()
+        self.sel_shapes.clear(update=False)
+        for geo in geos_selected:
+            self.plot_shape(storage=self.sel_shapes, geometry=geo, color=sel_color, linewidth=3)
+        self.sel_shapes.redraw()
 
     def on_shape_complete(self) -> str | None:
         self.app.log.debug("on_shape_complete()")
@@ -2601,15 +2660,14 @@ class DrawToolShape(object):
     tolerance = None
 
     @staticmethod
-    def get_pts(o: BaseGeometry | DrawToolShape | list | None) -> list | None:
+    def get_pts(o: BaseGeometry | DrawToolShape | list | None) -> list[tuple[float, float]] | None:
         """
         Returns a list of all points in the object, where
         the object can be a Polygon, Not a polygon, or a list
         of such. Search is done recursively.
 
         :param o:   geometric object
-        :return:    List of points
-        :rtype:     list
+        :return:    coordinate pairs ``(x, y)`` taken from Shapely ``coords``, or ``None`` when ``o`` is ``None``
         """
         pts = []
 
@@ -2649,16 +2707,16 @@ class DrawToolShape(object):
     def __init__(self, geo: BaseGeometry | list[BaseGeometry] | None) -> None:
 
         # Shapely type or list of such
-        self.geo = geo
-        self.utility = False
-        self.data = {
+        self.geo: BaseGeometry | list[BaseGeometry] | None = geo
+        self.utility: bool = False
+        self.data: dict[str, str | tuple[float, float, float, float]] = {
             'name': _("Geo Elem"),
             'type': _('Path'),  # 'Path', 'Arc', 'Rectangle', 'Polygon', 'Circle',
             'origin': 'center',  # 'center', 'tl', 'tr', 'bl', 'br'
             'bounds': self.bounds()  # xmin, ymin, xmax, ymax
         }
 
-    def get_all_points(self) -> list | None:
+    def get_all_points(self) -> list[tuple[float, float]] | None:
         return DrawToolShape.get_pts(self)
 
     def bounds(self) -> tuple[float, float, float, float]:

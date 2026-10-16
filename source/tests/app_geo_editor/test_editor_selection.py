@@ -2,10 +2,33 @@
 
 from types import SimpleNamespace
 
-from shapely import Point
+import pytest
+from PyQt6 import QtWidgets
+from shapely import LineString, Point
 
 from appEditors.appGeoEditor import AppGeoEditor, DrawTool, DrawToolShape, DrawToolUtilityShape
 from settings.st_types import PointXY
+
+
+@pytest.fixture
+def qapplication() -> QtWidgets.QApplication:
+    """Provides one QApplication so the geometry table can be built in a test."""
+    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+
+
+def _line(y: float) -> DrawToolShape:
+    return DrawToolShape(LineString([(0, y), (1, y)]))
+
+
+def _table_for(shapes: list[DrawToolShape]) -> tuple[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]:
+    tree = QtWidgets.QTreeWidget()
+    tree.setColumnCount(3)
+    tree.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+    tree.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+    parent = tree.invisibleRootItem()
+    for shape in shapes:
+        QtWidgets.QTreeWidgetItem(parent, [str(id(shape)), "Line", "Geo Elem"])
+    return tree, parent
 
 
 def test_selecting_a_shape_moves_it_to_the_end() -> None:
@@ -32,6 +55,55 @@ def test_unselect_removes_only_that_shape() -> None:
     editor.set_unselected(first)
 
     assert editor.get_selected() == [second]
+
+
+def test_delete_drops_the_selected_table_row(qapplication) -> None:
+    """Verify deletion removes the selected row and leaves the table otherwise intact."""
+    keep = _line(0)
+    drop = _line(1)
+    editor = AppGeoEditor.__new__(AppGeoEditor)
+    editor.storage = AppGeoEditor.make_storage()
+    editor.utility = []
+    editor.selected = []
+    editor.storage.insert(keep)
+    editor.storage.insert(drop)
+    tree, parent = _table_for([keep, drop])
+    tree.topLevelItem(1).setSelected(True)
+    editor.ui = SimpleNamespace(tw=tree, geo_parent=parent)
+    rebuilt = []
+    editor.build_ui = lambda: rebuilt.append(True)
+    editor.plot_all = lambda: None
+    editor.on_tree_selection = lambda: None
+
+    editor.delete_selected()
+
+    assert rebuilt == []
+    assert list(editor.storage.get_objects()) == [keep]
+    assert tree.topLevelItemCount() == 1
+    assert tree.topLevelItem(0).text(0) == str(id(keep))
+    assert editor.selected == []
+
+
+def test_delete_removes_a_row_chosen_only_in_storage_selection(qapplication) -> None:
+    """Verify a shape kept in self.selected loses its row even when the row is not selected."""
+    keep = _line(0)
+    drop = _line(1)
+    editor = AppGeoEditor.__new__(AppGeoEditor)
+    editor.storage = AppGeoEditor.make_storage()
+    editor.utility = []
+    editor.selected = [drop]
+    editor.storage.insert(keep)
+    editor.storage.insert(drop)
+    tree, parent = _table_for([keep, drop])
+    editor.ui = SimpleNamespace(tw=tree, geo_parent=parent)
+    editor.plot_all = lambda: None
+    editor.on_tree_selection = lambda: None
+
+    editor.delete_selected()
+
+    assert list(editor.storage.get_objects()) == [keep]
+    assert tree.topLevelItemCount() == 1
+    assert tree.topLevelItem(0).text(0) == str(id(keep))
 
 
 def test_unselect_ignores_a_shape_that_is_not_selected() -> None:
