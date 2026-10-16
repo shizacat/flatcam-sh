@@ -232,6 +232,9 @@ class ShapeGroup(object):
         for i in self._indexes:
             self._collection.data[i]['visible'] = value
 
+        # Visibility is not a new vertex buffer, but the canvas still has to be rebuilt.
+        # redraw() skips that work while the collection is clean.
+        self._collection._dirty = True
         self._collection.redraw([])
 
     @property
@@ -260,6 +263,7 @@ class ShapeGroup(object):
             for i in self._indexes:
                 self._collection.data[i]['visible'] = state
 
+        self._collection._dirty = True
         self._collection.redraw([])
 
 
