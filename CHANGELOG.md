@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.11] - 2026-10-16
+
 ### Added
 
 - Added coordinate arithmetic on `PointXY`, so a step, offset, or length is one point operation
