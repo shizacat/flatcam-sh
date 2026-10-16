@@ -1,4 +1,4 @@
-"""Tests for the folder that stores user settings."""
+"""Tests for application data paths."""
 
 import sys
 from pathlib import Path
@@ -13,13 +13,14 @@ import appMain
 from appMain import App
 
 
-def _host() -> SimpleNamespace:
+def _host(data_path: Path | None = None) -> SimpleNamespace:
     """
-    Builds the small stand-in the folder method needs.
+    Builds the small stand-in the path methods need.
 
-    :return: object with a log and a headless flag
+    :param data_path: folder that stores application data
+    :return:          object with a log, a headless flag, and a data path
     """
-    return SimpleNamespace(cmd_line_headless=0, log=Mock())
+    return SimpleNamespace(cmd_line_headless=0, data_path=data_path, log=Mock())
 
 
 def _windows_app(monkeypatch: pytest.MonkeyPatch, app_file: Path) -> None:
@@ -131,3 +132,8 @@ def test_user_settings_folder_raises_when_the_config_path_cannot_be_read(
 
     with pytest.raises(OSError):
         App.user_settings_folder(_host())
+
+
+def test_tools_database_path_has_no_version(tmp_path: Path) -> None:
+    """Verify the tools database name stays the same across application versions."""
+    assert Path(App.tools_database_path(_host(tmp_path))) == tmp_path / "tools_db.json"

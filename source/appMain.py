@@ -490,14 +490,14 @@ class App(QtCore.QObject):
             self.preprocessorpaths.mkdir(parents=True)
             self.log.debug('Created preprocessors folder: %s' % self.preprocessorpaths)
 
-        # create tools_db.FlatDB file if there is none
+        # create tools_db.json file if there is none
         db_path = self.tools_database_path()
 
         try:
             f = open(db_path)
             f.close()
         except IOError:
-            self.log.debug('Creating empty tools_db.FlatDB')
+            self.log.debug('Creating empty tools_db.json')
             f = open(db_path, 'w')
             json.dump({}, f)
             f.close()
@@ -1553,7 +1553,14 @@ class App(QtCore.QObject):
         return app_dir / "config" / "configuration.txt"
 
     def tools_database_path(self) -> str:
-        return str(self.data_path / ("tools_db_%s.FlatDB" % self.version))
+        """
+        Returns the tools database file path.
+
+        The name does not include the application version, so an update keeps the saved tools.
+
+        :return: path to ``tools_db.json``
+        """
+        return str(self.data_path / "tools_db.json")
 
     def load_settings(self, filename: Path | None = None) -> Settings:
         """
