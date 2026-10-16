@@ -22,7 +22,7 @@ import platform
 import traceback
 from decimal import Decimal
 from copy import deepcopy
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from copy import copy
 from typing import Any
 
@@ -8495,15 +8495,15 @@ class AppRTree(object):
 
         # ## Track object-point relationship
         # Each is list of points in object.
-        self.obj2points = []
+        self.obj2points: list[list[int]] = []
 
         # Index is index in rtree, value is index of
         # object in obj2points.
-        self.points2obj = []
+        self.points2obj: list[int] = []
 
         self.get_points = lambda go: go.coords
 
-    def grow_obj2points(self, idx):
+    def grow_obj2points(self, idx: int) -> None:
         """
         Increases the size of self.obj2points to fit
         idx + 1 items.
@@ -8520,7 +8520,7 @@ class AppRTree(object):
             for i in range(len(self.obj2points), idx + 1):
                 self.obj2points.append([])
 
-    def insert(self, objid, obj):
+    def insert(self, objid: int, obj: Any) -> None:
         self.grow_obj2points(objid)
         self.obj2points[objid] = []
 
@@ -8529,7 +8529,7 @@ class AppRTree(object):
             self.obj2points[objid].append(len(self.points2obj))
             self.points2obj.append(objid)
 
-    def remove_obj(self, objid, obj):
+    def remove_obj(self, objid: int, obj: Any) -> None:
         # Use all ptids to delete from index
         for i, pt in enumerate(self.get_points(obj)):
             try:
@@ -8537,7 +8537,7 @@ class AppRTree(object):
             except IndexError:
                 pass
 
-    def nearest(self, pt):
+    def nearest(self, pt: PointXY | tuple[float, float]) -> rtindex.Item:
         """
         Will raise StopIteration if no items are found.
 
@@ -8546,7 +8546,7 @@ class AppRTree(object):
         """
         return next(self.rti.nearest(pt, objects=True))
 
-    def intersection(self, pt):
+    def intersection(self, pt: PointXY | tuple[float, float]) -> rtindex.Item:
         """
         Will raise StopIteration if no items are found.
 
@@ -8563,13 +8563,12 @@ class AppRTreeStorage(AppRTree):
     """
 
     def __init__(self):
-        # super(AppRTreeStorage, self).__init__()
         super().__init__()
 
-        self.objects = []
+        self.objects: list[Any | None] = []
 
         # Optimization attempt!
-        self.indexes = {}
+        self.indexes: dict[int, int] = {}
 
     def insert(self, obj):
         self.objects.append(obj)
@@ -8587,7 +8586,6 @@ class AppRTreeStorage(AppRTree):
         # super(AppRTreeStorage, self).insert(idx, obj)
         super().insert(idx, obj)
 
-    # @profile
     def remove(self, obj):
         # See note about self.indexes in insert().
         # objidx = self.indexes[obj]
@@ -8599,7 +8597,7 @@ class AppRTreeStorage(AppRTree):
         # Remove from index
         self.remove_obj(objidx, obj)
 
-    def get_objects(self):
+    def get_objects(self) -> Iterator[Any]:
         return (o for o in self.objects if o is not None)
 
     def nearest(self, pt: PointXY | tuple[float, float]) -> tuple[tuple[float, float], Any]:
@@ -8614,59 +8612,3 @@ class AppRTreeStorage(AppRTree):
         """
         tidx = super(AppRTreeStorage, self).nearest(pt)
         return (tidx.bbox[0], tidx.bbox[1]), self.objects[tidx.object]
-
-# class myO:
-#     def __init__(self, coords):
-#         self.coords = coords
-#
-#
-# def test_rti():
-#
-#     o1 = myO([(0, 0), (0, 1), (1, 1)])
-#     o2 = myO([(2, 0), (2, 1), (2, 1)])
-#     o3 = myO([(2, 0), (2, 1), (3, 1)])
-#
-#     os = [o1, o2]
-#
-#     idx = AppRTree()
-#
-#     for o in range(len(os)):
-#         idx.insert(o, os[o])
-#
-#     print [x.bbox for x in idx.rti.nearest((0, 0), num_results=20, objects=True)]
-#
-#     idx.remove_obj(0, o1)
-#
-#     print [x.bbox for x in idx.rti.nearest((0, 0), num_results=20, objects=True)]
-#
-#     idx.remove_obj(1, o2)
-#
-#     print [x.bbox for x in idx.rti.nearest((0, 0), num_results=20, objects=True)]
-#
-#
-# def test_rtis():
-#
-#     o1 = myO([(0, 0), (0, 1), (1, 1)])
-#     o2 = myO([(2, 0), (2, 1), (2, 1)])
-#     o3 = myO([(2, 0), (2, 1), (3, 1)])
-#
-#     os = [o1, o2]
-#
-#     idx = AppRTreeStorage()
-#
-#     for o in range(len(os)):
-#         idx.insert(os[o])
-#
-#     #os = None
-#     #o1 = None
-#     #o2 = None
-#
-#     print [x.bbox for x in idx.rti.nearest((0, 0), num_results=20, objects=True)]
-#
-#     idx.remove(idx.nearest((2,0))[1])
-#
-#     print [x.bbox for x in idx.rti.nearest((0, 0), num_results=20, objects=True)]
-#
-#     idx.remove(idx.nearest((0,0))[1])
-#
-#     print [x.bbox for x in idx.rti.nearest((0, 0), num_results=20, objects=True)]
